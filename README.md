@@ -1,6 +1,6 @@
 # vfm
 
-Virtual File Manager - A lightweight alternative of [file-service v1.2.7](https://github.com/CurtisNewbie/file-server).
+Virtual File Manager - A lightweight alternative of [file-service v1.2.7](https://github.com/CurtisNewbie/file-server/tree/v1.2.7). This app will run using schema originally created by `file-service v1.2.7`.
 
 Unlike file-service, vfm doesn't manage the actual file storage. The file storage is managed by [mini-fstore](https://github.com/CurtisNewbie/mini-fstore), a light-weight and simple solution designed for general usage.
 
@@ -26,8 +26,37 @@ Unlike file-service, vfm doesn't manage the actual file storage. The file storag
 
 ## Difference between vfm and file-service
 
-| Feature/Functionality      | vfm                                    | file-service |
-|----------------------------|----------------------------------------|--------------|
-| Manage File Storage        | not supported, mini-fstore is required | supported    |
-| File Event Synchronization | not supported yet                      | supported    |
-| File Package And Export    | not supported yet                      | supported    |
+| Feature/Functionality                               | vfm                                      | file-service |
+|-----------------------------------------------------|------------------------------------------|--------------|
+| Manage File Storage                                 | not supported, `mini-fstore` is required | supported    |
+| File Event Synchronization                          | not supported yet                        | supported    |
+| File Package And Export (File Task)                 | not supported yet                        | supported    |
+| Manage App Files (files that don't belong to users) | not supported                            | supported    |
+| Virtual Folders (VFolders)                          | not supported yet                        | supported    |
+
+## Migration From File-Service
+
+If `vfm` is migrated from `file-service`, the following SQL script should be executed:
+
+```sql
+ALTER TABLE file_info ADD COLUMN fstore_file_id VARCHAR(32) NOT NULL DEFAULT '' COMMENT 'mini-fstore file id';
+```
+
+Then in `mini-fstore`, add the following configuration:
+
+```yaml
+fstore:
+  migr:
+    file-server:
+      storage: ${PATH_TO_FILE_SERVER_FILES}
+      enabled: true  # enable migration
+      dry-run: false # disable dry-run
+      mysql:
+        user: ${USERNAME}
+        password: ${PASSWORD}
+        database: ${FILE_SERVER_DATABASE_NAME}
+        host: ${HOST}
+        port: ${PORT}
+```
+
+For more information, please read mini-fstore's [README](https://github.com/CurtisNewbie/mini-fstore).

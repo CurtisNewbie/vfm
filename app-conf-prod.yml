@@ -6,7 +6,7 @@ mysql:
   enabled: true
   user: "${mysqlusername}"
   password: "${mysqlpassword}"
-  database: "vfm"
+  database: "fileserver"
   host: "${mysqladdr}"
   port: 3306
 
