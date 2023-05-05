@@ -1,4 +1,4 @@
--- schema copied from github.com/curtisnewbie/file-server v1.2.7, not all tables included
+-- schema copied from github.com/curtisnewbie/file-server v1.2.7, not all tables included because some of them are not supported in vfm
 CREATE TABLE IF NOT EXISTS file_info (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL COMMENT 'name of the file',
@@ -126,3 +126,19 @@ CREATE TABLE IF NOT EXISTS file_task (
   KEY (task_no),
   KEY (file_key)
 ) ENGINE=InnoDB COMMENT 'File Task';
+
+CREATE TABLE IF NOT EXISTS fs_group (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL COMMENT 'group name',
+  `base_folder` varchar(255) NOT NULL COMMENT 'base folder',
+  `mode` int NOT NULL DEFAULT '2' COMMENT '1-read, 2-read/write',
+  `type` varchar(32) NOT NULL DEFAULT 'USER' COMMENT 'FsGroup Type',
+  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'when the record is created',
+  `create_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who created this record',
+  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'when the record is updated',
+  `update_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who updated this record',
+  `is_del` tinyint NOT NULL DEFAULT '0' COMMENT '0-normal, 1-deleted',
+  `size` bigint NOT NULL DEFAULT '0' COMMENT 'size in bytes',
+  `scan_time` timestamp NULL DEFAULT NULL COMMENT 'previous scan time',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='FileSystem group, used to differentiate which base folder or mounted folder should be used';

@@ -1,8 +1,12 @@
 module github.com/curtisnewbie/vfm
 
-go 1.20
+go 1.18
 
-require github.com/curtisnewbie/gocommon v1.0.6
+require (
+	github.com/curtisnewbie/goauth/client/goauth-client-go v0.0.0-20230505122958-609b199d9b07
+	github.com/curtisnewbie/gocommon v1.0.6
+	github.com/gin-gonic/gin v1.8.1
+)
 
 require (
 	github.com/armon/go-metrics v0.4.0 // indirect
@@ -10,7 +14,6 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.8.1 // indirect
 	github.com/go-co-op/gocron v1.17.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -39,7 +42,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
-	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/rabbitmq/amqp091-go v1.5.0 // indirect
