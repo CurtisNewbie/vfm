@@ -1,0 +1,5 @@
+package vfm
+
+func PrepareServer() {
+
+}
