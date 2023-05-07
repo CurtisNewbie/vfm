@@ -1,6 +1,6 @@
 # vfm
 
-Virtual File Manager - A lightweight alternative of [file-service v1.2.7](https://github.com/CurtisNewbie/file-server/tree/v1.2.7). This app will run using schema originally created by `file-service v1.2.7`.
+Virtual File Manager - A lightweight alternative of [file-service v1.2.7](https://github.com/CurtisNewbie/file-server/tree/v1.2.7). This app will run using the schema originally created by `file-service v1.2.7`.
 
 Unlike file-service, vfm doesn't manage the actual file storage. The file storage is managed by [mini-fstore](https://github.com/CurtisNewbie/mini-fstore), a light-weight and simple solution designed for general usage.
 
@@ -26,15 +26,16 @@ Unlike file-service, vfm doesn't manage the actual file storage. The file storag
 
 ## Difference between vfm and file-service
 
-| Feature/Functionality                               | vfm                                      | file-service |
-|-----------------------------------------------------|------------------------------------------|--------------|
-| Manage File Storage                                 | not supported, `mini-fstore` is required | supported    |
-| File Event Synchronization                          | not supported yet                        | supported    |
-| File Package And Export (File Task)                 | not supported yet                        | supported    |
-| Manage App Files (files that don't belong to users) | not supported                            | supported    |
-| Virtual Folders (VFolders)                          | not supported yet                        | supported    |
+| Feature/Functionality                               | vfm                                                       | file-service |
+|-----------------------------------------------------|-----------------------------------------------------------|--------------|
+| Manage File Storage                                 | not supported, `mini-fstore` is required                  | supported    |
+| File Event Synchronization                          | not supported, should be handled by `mini-fstore` instead | supported    |
+| Manage App Files (files that don't belong to users) | not supported, should be handled by `mini-fstore` instead | supported    |
+| File Package And Export (File Task)                 | not supported                                             | supported    |
+| Virtual Folders (VFolders)                          | will be supported                                         | supported    |
+| Virtual Directories                                 | will be supported                                         | supported    |
 
-## Migration From File-Service
+## Migration from File-Service
 
 If `vfm` is migrated from `file-service`, the following SQL script should be executed:
 
