@@ -18,6 +18,9 @@ const (
 
 	OWNERSHIP_ALL   = 0
 	OWNERSHIP_OWNER = 1
+
+	FILE_LDEL_N = 0
+	FILE_LDEL_Y = 1
 )
 
 type ListedFile struct {
@@ -175,8 +178,6 @@ func listFilesInVFolder(c common.ExecContext, r ListFileReq) (ListFilesRes, erro
 }
 
 func ListFiles(c common.ExecContext, r ListFileReq) (ListFilesRes, error) {
-	c.Log.Debugf("ListFiles, %+v", r)
-
 	// query files in vfolder
 	if r.FolderNo != nil && *r.FolderNo != "" {
 		return listFilesInVFolder(c, r)
@@ -332,4 +333,25 @@ func newListFilesForTagsQuery(c common.ExecContext, t *gorm.DB, r ListFileReq) *
 		Where("t.name = ?", *r.TagName)
 
 	return t
+}
+
+func FileExists(c common.ExecContext, filename string, parentFileKey string) (any, error) {
+	var id int
+	t := mysql.GetMySql().
+		Select("id").
+		Table("file_info").
+		Where("parent_file = ?", parentFileKey).
+		Where("name = ?", filename).
+		Where("uploader_id = ?", c.UserId()).
+		Where("file_type = ?", FILE_TYPE_FILE).
+		Where("is_logic_deleted = ?", FILE_LDEL_N).
+		Where("is_del = ?", common.IS_DEL_N).
+		Limit(1).
+		Scan(&id)
+
+	if t.Error != nil {
+		return false, fmt.Errorf("failed to match file, %v", t.Error)
+	}
+
+	return id > 0, nil
 }

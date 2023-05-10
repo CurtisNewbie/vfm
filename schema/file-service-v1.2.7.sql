@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS file_info (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid_uk` (`uuid`),
   KEY `parent_file_type_idx` (`parent_file`,`file_type`),
-  KEY `uploader_id_idx` (`uploader_id`)
+  KEY `uploader_id_idx` (`uploader_id`),
+  KEY `name` (`name`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS file_tag (

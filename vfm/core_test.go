@@ -10,8 +10,8 @@ import (
 
 func preTest(t *testing.T) {
 	user := "root"
-	pw := ""
-	db := "fileserver"
+	pw := "123456"
+	db := "fileServer"
 	host := "localhost"
 	port := "3306"
 	connParam := "charset=utf8mb4&parseTime=True&loc=Local&readTimeout=30s&writeTimeout=30s&timeout=3s"
@@ -81,4 +81,21 @@ func TestListFilesForTags(t *testing.T) {
 		t.Fatal(e)
 	}
 	t.Logf("%+v", r)
+}
+
+func TestFileExists(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+
+	fname := "test-files.zip"
+	b, e := FileExists(c, fname, "")
+	if e != nil {
+		t.Fatal(e)
+	}
+	exist, ok := b.(bool)
+	if !ok {
+		t.Fatal("returned value is not of bool type")
+	}
+	t.Logf("%s exists? %v", fname, exist)
 }

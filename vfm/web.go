@@ -2,6 +2,7 @@ package vfm
 
 import (
 	"context"
+	"strings"
 
 	"github.com/curtisnewbie/goauth/client/goauth-client-go/gclient"
 	"github.com/curtisnewbie/gocommon/common"
@@ -75,8 +76,10 @@ func updateFile(c *gin.Context, ec common.ExecContext, req UpdateFileReq) (any, 
 }
 
 func uploadPreflightCheck(c *gin.Context, ec common.ExecContext) (any, error) {
-	// TODO
-	return nil, nil
+	filename := strings.TrimSpace(c.Query("fileName"))
+	parentFileKey := strings.TrimSpace(c.Query("parentFileKey"))
+	ec.Log.Debugf("uploadPreflightCheck, filename: %v, parentFileKey: %v", filename, parentFileKey)
+	return FileExists(ec, filename, parentFileKey)
 }
 
 func fetchParentFileInfo(c *gin.Context, ec common.ExecContext) (any, error) {
@@ -115,6 +118,7 @@ func listDirs(c *gin.Context, ec common.ExecContext) (any, error) {
 }
 
 func listFiles(c *gin.Context, ec common.ExecContext, req ListFileReq) (any, error) {
+	ec.Log.Debugf("ListFiles, %+v", req)
 	return ListFiles(ec, req)
 }
 
