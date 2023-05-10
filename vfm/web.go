@@ -9,103 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type MoveIntoDirReq struct {
-	Uuid           string `json:"uuid" validation:"notEmpty"`
-	ParentFileUuid string `json:"parentFileUuid"`
-}
-
-type MakeDirReq struct {
-	ParentFile string `json:"parentFile"`                 // Key of parent file
-	Name       string `json:"name" validation:"notEmpty"` // name of the directory
-	UserGroup  string `json:"userGroup"`                  // User Group
-}
-
-type GrantAccessReq struct {
-	FileId    int    `json:"fileId" validation:"positive"`
-	GrantedTo string `json:"grantedTo" validation:"notEmpty"`
-}
-
-type ListGrantedAcessReq struct {
-	common.Paging
-	FileId int `json:"fileId" validation:"positive"`
-}
-
-type RemoveGrantedAccessReq struct {
-	FileId int `json:"fileId" validation:"positive"`
-	UserId int `json:"userId" validation:"positive"`
-}
-
-type ListFileReq struct {
-	common.Paging
-	UserGroup  string `json:"userGroup"`
-	Filename   string `json:"filename"`
-	Ownership  int    `json:"ownership"`
-	TagName    string `json:"tagName"`
-	FolderNo   string `json:"folderNo"`
-	FileType   string `json:"fileType"`
-	ParentFile string `json:"parentFile"`
-}
-
-type DeleteFileReq struct {
-	Uuid string `json:"uuid"`
-}
-
-type UpdateFileReq struct {
-	Id        int    `json:"id"`
-	UserGroup string `json:"userGroup"`
-	Name      string `json:"name"`
-}
-
-type ListFileTagReq struct {
-	common.Paging
-	FileId int `json:"fileId" validation:"positive"`
-}
-
-type TagFileReq struct {
-	FileId  int    `json:"fileId" validation:"positive"`
-	TagName string `json:"tagName" validation:"notEmpty"`
-}
-
-type UntagFileReq struct {
-	FileId  int    `json:"fileId" validation:"positive"`
-	TagName string `json:"tagName" validation:"notEmpty"`
-}
-
-type ListVfolderReq struct {
-	common.Paging
-
-	Name string `json:"name"`
-}
-
-type CreateVfolderReq struct {
-	Name string `json:"name"`
-}
-
-type AddFileToVfolderReq struct {
-	FolderNo string   `json:"folderNo"`
-	FileKeys []string `json:"fileKeys"`
-}
-
-type RemoveFileFromVfolderReq struct {
-	FolderNo string   `json:"folderNo"`
-	FileKeys []string `json:"fileKeys"`
-}
-
-type ShareVfolderReq struct {
-	FolderNo string `json:"folderNo"`
-	Username string `json:"username"`
-}
-
-type RemoveGrantedFolderAccessReq struct {
-	FolderNo string `json:"folderNo"`
-	UserNo   string `json:"userNo"`
-}
-
-type ListGrantedFolderAccessReq struct {
-	common.Paging
-	FolderNo string `json:"folderNo"`
-}
-
 func listGrantedFolderAccess(c *gin.Context, ec common.ExecContext, req ListGrantedFolderAccessReq) (any, error) {
 	// TODO
 	return nil, nil
@@ -212,8 +115,7 @@ func listDirs(c *gin.Context, ec common.ExecContext) (any, error) {
 }
 
 func listFiles(c *gin.Context, ec common.ExecContext, req ListFileReq) (any, error) {
-	// TODO
-	return nil, nil
+	return ListFiles(ec, req)
 }
 
 func deleteFile(c *gin.Context, ec common.ExecContext, req DeleteFileReq) (any, error) {
@@ -226,11 +128,11 @@ func PrepareServer() {
 		server.OnServerBootstrapped(func() {
 			c := common.EmptyExecContext()
 			if e := gclient.AddResource(context.Background(), gclient.AddResourceReq{Name: MANAGE_FILE_NAME, Code: MANAGE_FILE_CODE}); e != nil {
-				c.Log.Errorf("Failed to create goauth resource", e)
+				c.Log.Errorf("Failed to create goauth resource, %v", e)
 			}
 
 			if e := gclient.AddResource(context.Background(), gclient.AddResourceReq{Name: ADMIN_FS_NAME, Code: ADMIN_FS_CODE}); e != nil {
-				c.Log.Errorf("Failed to create goauth resource", e)
+				c.Log.Errorf("Failed to create goauth resource, %v", e)
 			}
 		})
 
