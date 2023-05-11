@@ -60,12 +60,11 @@ func tagFile(c *gin.Context, ec common.ExecContext, req TagFileReq) (any, error)
 	return nil, nil
 }
 
-func listFileTags(c *gin.Context, ec common.ExecContext, req ListFileTagReq) (any, error) {
-	// TODO
-	return nil, nil
+func listFileTagsEp(c *gin.Context, ec common.ExecContext, req ListFileTagReq) (any, error) {
+	return ListFileTags(ec, req)
 }
 
-func listTags(c *gin.Context, ec common.ExecContext) (any, error) {
+func listTagsEp(c *gin.Context, ec common.ExecContext) (any, error) {
 	// TODO
 	return nil, nil
 }
@@ -75,7 +74,7 @@ func updateFile(c *gin.Context, ec common.ExecContext, req UpdateFileReq) (any, 
 	return nil, nil
 }
 
-func uploadPreflightCheck(c *gin.Context, ec common.ExecContext) (any, error) {
+func uploadPreflightCheckEp(c *gin.Context, ec common.ExecContext) (any, error) {
 	filename := strings.TrimSpace(c.Query("fileName"))
 	parentFileKey := strings.TrimSpace(c.Query("parentFileKey"))
 	ec.Log.Debugf("uploadPreflightCheck, filename: %v, parentFileKey: %v", filename, parentFileKey)
@@ -143,7 +142,7 @@ func PrepareServer() {
 		gclient.ReportPathsOnBootstrapped()
 	}
 
-	server.Get("/open/api/file/upload/duplication/preflight", uploadPreflightCheck,
+	server.Get("/open/api/file/upload/duplication/preflight", uploadPreflightCheckEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User - preflight check for duplicate file uploads", Code: MANAGE_FILE_CODE}))
 
 	server.Get("/open/api/file/parent", fetchParentFileInfo,
@@ -176,10 +175,10 @@ func PrepareServer() {
 	server.PostJ("/open/api/file/info/update", updateFile,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User update file", Code: MANAGE_FILE_CODE}))
 
-	server.Get("/open/api/file/tag/list/all", listTags,
+	server.Get("/open/api/file/tag/list/all", listTagsEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list all file tags", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/tag/list-for-file", listFileTags,
+	server.PostJ("/open/api/file/tag/list-for-file", listFileTagsEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list tags of file", Code: MANAGE_FILE_CODE}))
 
 	server.PostJ("/open/api/file/tag", tagFile,

@@ -99,3 +99,15 @@ func TestFileExists(t *testing.T) {
 	}
 	t.Logf("%s exists? %v", fname, exist)
 }
+
+func TestListFileTags(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "3"
+
+	r, e := ListFileTags(c, ListFileTagReq{FileId: 1892})
+	if e != nil {
+		t.Fatal(e)
+	}
+	t.Logf("%+v", r)
+}

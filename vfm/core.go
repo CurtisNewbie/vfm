@@ -54,8 +54,8 @@ type GrantAccessReq struct {
 }
 
 type ListGrantedAcessReq struct {
-	common.Paging
-	FileId int `json:"fileId" validation:"positive"`
+	Page   common.Paging `json:"pagingVo"`
+	FileId int           `json:"fileId" validation:"positive"`
 }
 
 type RemoveGrantedAccessReq struct {
@@ -85,8 +85,20 @@ type UpdateFileReq struct {
 }
 
 type ListFileTagReq struct {
-	common.Paging
-	FileId int `json:"fileId" validation:"positive"`
+	Page   common.Paging `json:"pagingVo"`
+	FileId int           `json:"fileId" validation:"positive"`
+}
+
+type ListFileTagRes struct {
+	Page    common.Paging   `json:"pagingVo"`
+	Payload []ListedFileTag `json:"payload"`
+}
+
+type ListedFileTag struct {
+	Id         int          `json:"id"`
+	Name       string       `json:"name"`
+	CreateTime common.ETime `json:"createTime"`
+	CreateBy   string       `json:"createBy"`
 }
 
 type TagFileReq struct {
@@ -100,8 +112,8 @@ type UntagFileReq struct {
 }
 
 type ListVfolderReq struct {
-	common.Paging
-	Name string `json:"name"`
+	Page common.Paging `json:"pagingVo"`
+	Name string        `json:"name"`
 }
 
 type CreateVfolderReq struct {
@@ -129,13 +141,13 @@ type RemoveGrantedFolderAccessReq struct {
 }
 
 type ListGrantedFolderAccessReq struct {
-	common.Paging
-	FolderNo string `json:"folderNo"`
+	Page     common.Paging `json:"pagingVo"`
+	FolderNo string        `json:"folderNo"`
 }
 
 type ListFilesRes struct {
-	common.Paging
-	Payload []ListedFile `json:"payload"`
+	Page    common.Paging `json:"pagingVo"`
+	Payload []ListedFile  `json:"payload"`
 }
 
 func listFilesInVFolder(c common.ExecContext, r ListFileReq) (ListFilesRes, error) {
@@ -174,7 +186,7 @@ func listFilesInVFolder(c common.ExecContext, r ListFileReq) (ListFilesRes, erro
 		return ListFilesRes{}, fmt.Errorf("failed to count files in vfolder, %v", t.Error)
 	}
 
-	return ListFilesRes{Payload: files, Paging: common.RespPage(r.Page, total)}, nil
+	return ListFilesRes{Payload: files, Page: common.RespPage(r.Page, total)}, nil
 }
 
 func ListFiles(c common.ExecContext, r ListFileReq) (ListFilesRes, error) {
@@ -219,7 +231,7 @@ func listFilesForTags(c common.ExecContext, r ListFileReq) (ListFilesRes, error)
 		return ListFilesRes{}, fmt.Errorf("failed to count files, %v", t.Error)
 	}
 
-	return ListFilesRes{Payload: files, Paging: common.RespPage(r.Page, total)}, nil
+	return ListFilesRes{Payload: files, Page: common.RespPage(r.Page, total)}, nil
 }
 
 func listFilesSelective(c common.ExecContext, r ListFileReq) (ListFilesRes, error) {
@@ -258,7 +270,7 @@ func listFilesSelective(c common.ExecContext, r ListFileReq) (ListFilesRes, erro
 		return ListFilesRes{}, fmt.Errorf("failed to count files, %v", t.Error)
 	}
 
-	return ListFilesRes{Payload: files, Paging: common.RespPage(r.Page, total)}, nil
+	return ListFilesRes{Payload: files, Page: common.RespPage(r.Page, total)}, nil
 }
 
 func newListFilesSelectiveQuery(c common.ExecContext, t *gorm.DB, r ListFileReq) *gorm.DB {
@@ -354,4 +366,33 @@ func FileExists(c common.ExecContext, filename string, parentFileKey string) (an
 	}
 
 	return id > 0, nil
+}
+
+func ListFileTags(c common.ExecContext, r ListFileTagReq) (ListFileTagRes, error) {
+	var ftags []ListedFileTag
+
+	t := newListFileTagsQuery(c, r).
+		Select("*").
+		Scan(&ftags)
+	if t.Error != nil {
+		return ListFileTagRes{}, fmt.Errorf("failed to list file tags for req: %v, %v", r, t.Error)
+	}
+
+	var total int
+	t = newListFileTagsQuery(c, r).
+		Select("count(*)").
+		Scan(&total)
+	if t.Error != nil {
+		return ListFileTagRes{}, fmt.Errorf("failed to count file tags for req: %v, %v", r, t.Error)
+	}
+
+	return ListFileTagRes{Payload: ftags}, nil
+}
+
+func newListFileTagsQuery(c common.ExecContext, r ListFileTagReq) *gorm.DB {
+	userId, _ := c.UserIdI()
+	return mysql.GetMySql().
+		Table("file_tag ft").
+		Joins("left join tag t on ft.tag_id = t.id").
+		Where("t.user_id = ? and ft.file_id = ? and ft.is_del = 0 and t.is_del = 0", userId, r.FileId)
 }
