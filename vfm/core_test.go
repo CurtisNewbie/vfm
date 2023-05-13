@@ -5,21 +5,25 @@ import (
 
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/mysql"
-	"github.com/curtisnewbie/gocommon/server"
+	"github.com/curtisnewbie/gocommon/redis"
+	"github.com/sirupsen/logrus"
 )
 
 func preTest(t *testing.T) {
 	user := "root"
-	pw := "123456"
+	pw := ""
 	db := "fileServer"
 	host := "localhost"
 	port := "3306"
 	connParam := "charset=utf8mb4&parseTime=True&loc=Local&readTimeout=30s&writeTimeout=30s&timeout=3s"
 
-	server.ConfigureLogging()
 	if e := mysql.InitMySql(user, pw, db, host, port, connParam); e != nil {
 		t.Fatal(e)
 	}
+	if _, e := redis.InitRedisFromProp(); e != nil {
+		t.Fatal(e)
+	}
+	logrus.SetLevel(logrus.DebugLevel)
 }
 
 func TestListFilesInVFolder(t *testing.T) {
@@ -110,4 +114,66 @@ func TestListFileTags(t *testing.T) {
 		t.Fatal(e)
 	}
 	t.Logf("%+v", r)
+}
+
+func TestFindParentFile(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+
+	pf, e := FindParentFile(c, "ZZZ687250496077824971813")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if pf.FileKey != "ZZZ687238965264384925123" {
+		t.Fatalf("Incorrent ParentFileInfo, fileKey: %v", pf.FileKey)
+	}
+	t.Logf("%+v", pf)
+}
+
+func TestMoveFileToDir(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+
+	e := MoveFileToDir(c, MoveIntoDirReq{
+		Uuid:           "ZZZ687238965264384971813",
+		ParentFileUuid: "ZZZ687238965264384925123",
+	})
+	if e != nil {
+		t.Fatal(e)
+	}
+}
+
+func TestMakeDir(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+
+	fileKey, e := MakeDir(c, MakeDirReq{Name: "mydir"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	if fileKey == "" {
+		t.Fatal("fileKey is empty")
+	}
+	t.Logf("fileKey: %v", fileKey)
+}
+
+func TestCreateVFolder(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+
+	folderNo, e := CreateVFolder(c, CreateVfolderReq{"MyFolder3"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	if folderNo == "" {
+		t.Fatal("folderNo is empty")
+	}
+
+	t.Logf("FolderNo: %v", folderNo)
 }

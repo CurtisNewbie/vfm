@@ -2,7 +2,6 @@ package vfm
 
 import (
 	"context"
-	"strings"
 
 	"github.com/curtisnewbie/goauth/client/goauth-client-go/gclient"
 	"github.com/curtisnewbie/gocommon/common"
@@ -10,57 +9,58 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func listGrantedFolderAccess(c *gin.Context, ec common.ExecContext, req ListGrantedFolderAccessReq) (any, error) {
+func listGrantedFolderAccessEp(c *gin.Context, ec common.ExecContext, req ListGrantedFolderAccessReq) (any, error) {
 	// TODO
 	return nil, nil
 }
 
-func removeGrantedFolderAccess(c *gin.Context, ec common.ExecContext, req RemoveGrantedFolderAccessReq) (any, error) {
+func removeGrantedFolderAccessEp(c *gin.Context, ec common.ExecContext, req RemoveGrantedFolderAccessReq) (any, error) {
 	// TODO
 	return nil, nil
 }
 
-func shareVfolder(c *gin.Context, ec common.ExecContext, req ShareVfolderReq) (any, error) {
+func shareVFolderEp(c *gin.Context, ec common.ExecContext, req ShareVfolderReq) (any, error) {
 	// TODO
 	return nil, nil
 }
 
-func removeFileFromVfolder(c *gin.Context, ec common.ExecContext, req RemoveFileFromVfolderReq) (any, error) {
+func removeFileFromVfolderEp(c *gin.Context, ec common.ExecContext, req RemoveFileFromVfolderReq) (any, error) {
 	// TODO
 	return nil, nil
 }
 
-func addFileToVfolder(c *gin.Context, ec common.ExecContext, req AddFileToVfolderReq) (any, error) {
+func addFileToVfolderEp(c *gin.Context, ec common.ExecContext, req AddFileToVfolderReq) (any, error) {
 	// TODO
 	return nil, nil
 }
 
-func createVfolder(c *gin.Context, ec common.ExecContext, req CreateVfolderReq) (any, error) {
+func createVFolderEp(c *gin.Context, ec common.ExecContext, req CreateVfolderReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
+	return CreateVFolder(ec, req)
+}
+
+func listVfoldersEp(c *gin.Context, ec common.ExecContext, req ListVfolderReq) (any, error) {
 	// TODO
 	return nil, nil
 }
 
-func listVfolders(c *gin.Context, ec common.ExecContext, req ListVfolderReq) (any, error) {
+func listVfolderBriefEp(c *gin.Context, ec common.ExecContext) (any, error) {
 	// TODO
 	return nil, nil
 }
 
-func listVfolderBrief(c *gin.Context, ec common.ExecContext) (any, error) {
+func untagFileEp(c *gin.Context, ec common.ExecContext, req UntagFileReq) (any, error) {
 	// TODO
 	return nil, nil
 }
 
-func untagFile(c *gin.Context, ec common.ExecContext, req UntagFileReq) (any, error) {
-	// TODO
-	return nil, nil
-}
-
-func tagFile(c *gin.Context, ec common.ExecContext, req TagFileReq) (any, error) {
+func tagFileEp(c *gin.Context, ec common.ExecContext, req TagFileReq) (any, error) {
 	// TODO
 	return nil, nil
 }
 
 func listFileTagsEp(c *gin.Context, ec common.ExecContext, req ListFileTagReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
 	return ListFileTags(ec, req)
 }
 
@@ -69,59 +69,74 @@ func listTagsEp(c *gin.Context, ec common.ExecContext) (any, error) {
 	return nil, nil
 }
 
-func updateFile(c *gin.Context, ec common.ExecContext, req UpdateFileReq) (any, error) {
+func updateFileEp(c *gin.Context, ec common.ExecContext, req UpdateFileReq) (any, error) {
 	// TODO
 	return nil, nil
 }
 
 func uploadPreflightCheckEp(c *gin.Context, ec common.ExecContext) (any, error) {
-	filename := strings.TrimSpace(c.Query("fileName"))
-	parentFileKey := strings.TrimSpace(c.Query("parentFileKey"))
-	ec.Log.Debugf("uploadPreflightCheck, filename: %v, parentFileKey: %v", filename, parentFileKey)
+	filename := c.Query("fileName")
+	parentFileKey := c.Query("parentFileKey")
+	ec.Log.Debugf("filename: %v, parentFileKey: %v", filename, parentFileKey)
 	return FileExists(ec, filename, parentFileKey)
 }
 
-func fetchParentFileInfo(c *gin.Context, ec common.ExecContext) (any, error) {
+func fetchParentFileInfoEp(c *gin.Context, ec common.ExecContext) (any, error) {
+	fk := c.Query("fileKey")
+	if fk == "" {
+		return nil, common.NewWebErr("fileKey is required")
+	}
+	ec.Log.Debugf("fileKey: %v", fk)
+	pf, e := FindParentFile(ec, fk)
+	if e != nil {
+		return nil, e
+	}
+	if pf.Zero {
+		return nil, nil
+	}
+	return pf, nil
+}
+
+func moveFileIntoDirEp(c *gin.Context, ec common.ExecContext, req MoveIntoDirReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
+	return nil, MoveFileToDir(ec, req)
+}
+
+func makeDirEp(c *gin.Context, ec common.ExecContext, req MakeDirReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
+	return MakeDir(ec, req)
+}
+
+func grantAccessEp(c *gin.Context, ec common.ExecContext, req GrantAccessReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
 	// TODO
 	return nil, nil
 }
 
-func moveFileIntoDir(c *gin.Context, ec common.ExecContext, req MoveIntoDirReq) (any, error) {
+func listGrantedAccessEp(c *gin.Context, ec common.ExecContext, req ListGrantedAcessReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
 	// TODO
 	return nil, nil
 }
 
-func makeDir(c *gin.Context, ec common.ExecContext, req MakeDirReq) (any, error) {
+func removeGrantedAccessEp(c *gin.Context, ec common.ExecContext, req RemoveGrantedAccessReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
 	// TODO
 	return nil, nil
 }
 
-func grantAccess(c *gin.Context, ec common.ExecContext, req GrantAccessReq) (any, error) {
+func listDirsEp(c *gin.Context, ec common.ExecContext) (any, error) {
 	// TODO
 	return nil, nil
 }
 
-func listGrantedAccess(c *gin.Context, ec common.ExecContext, req ListGrantedAcessReq) (any, error) {
-	// TODO
-	return nil, nil
-}
-
-func removeGrantedAccess(c *gin.Context, ec common.ExecContext, req RemoveGrantedAccessReq) (any, error) {
-	// TODO
-	return nil, nil
-}
-
-func listDirs(c *gin.Context, ec common.ExecContext) (any, error) {
-	// TODO
-	return nil, nil
-}
-
-func listFiles(c *gin.Context, ec common.ExecContext, req ListFileReq) (any, error) {
-	ec.Log.Debugf("ListFiles, %+v", req)
+func listFilesEp(c *gin.Context, ec common.ExecContext, req ListFileReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
 	return ListFiles(ec, req)
 }
 
-func deleteFile(c *gin.Context, ec common.ExecContext, req DeleteFileReq) (any, error) {
+func deleteFileEp(c *gin.Context, ec common.ExecContext, req DeleteFileReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
 	// TODO
 	return nil, nil
 }
@@ -145,34 +160,34 @@ func PrepareServer() {
 	server.Get("/open/api/file/upload/duplication/preflight", uploadPreflightCheckEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User - preflight check for duplicate file uploads", Code: MANAGE_FILE_CODE}))
 
-	server.Get("/open/api/file/parent", fetchParentFileInfo,
+	server.Get("/open/api/file/parent", fetchParentFileInfoEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User fetch parent file info", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/move-to-dir", moveFileIntoDir,
+	server.PostJ("/open/api/file/move-to-dir", moveFileIntoDirEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User move files into directory", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/make-dir", makeDir,
+	server.PostJ("/open/api/file/make-dir", makeDirEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User make directory", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/grant-access", grantAccess,
+	server.PostJ("/open/api/file/grant-access", grantAccessEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User grant file access", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/list-granted-access", listGrantedAccess,
+	server.PostJ("/open/api/file/list-granted-access", listGrantedAccessEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list granted file access", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/remove-granted-access", removeGrantedAccess,
+	server.PostJ("/open/api/file/remove-granted-access", removeGrantedAccessEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User remove granted file access", Code: MANAGE_FILE_CODE}))
 
-	server.Get("/open/api/file/dir/list", listDirs,
+	server.Get("/open/api/file/dir/list", listDirsEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list directories", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/list", listFiles,
+	server.PostJ("/open/api/file/list", listFilesEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list files", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/delete", deleteFile,
+	server.PostJ("/open/api/file/delete", deleteFileEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User delete file", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/info/update", updateFile,
+	server.PostJ("/open/api/file/info/update", updateFileEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User update file", Code: MANAGE_FILE_CODE}))
 
 	server.Get("/open/api/file/tag/list/all", listTagsEp,
@@ -181,33 +196,33 @@ func PrepareServer() {
 	server.PostJ("/open/api/file/tag/list-for-file", listFileTagsEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list tags of file", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/tag", tagFile,
+	server.PostJ("/open/api/file/tag", tagFileEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User tag file", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/untag", untagFile,
+	server.PostJ("/open/api/file/untag", untagFileEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User untag file", Code: MANAGE_FILE_CODE}))
 
-	server.Get("/open/api/vfolder/brief/owned", listVfolderBrief,
+	server.Get("/open/api/vfolder/brief/owned", listVfolderBriefEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list virtual folder briefs", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/list", listVfolders,
+	server.PostJ("/open/api/vfolder/list", listVfoldersEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list virtual folders", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/create", createVfolder,
+	server.PostJ("/open/api/vfolder/create", createVFolderEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User create virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/file/add", addFileToVfolder,
+	server.PostJ("/open/api/vfolder/file/add", addFileToVfolderEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User add file to virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/file/remove", removeFileFromVfolder,
+	server.PostJ("/open/api/vfolder/file/remove", removeFileFromVfolderEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User remove file from virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/share", shareVfolder,
+	server.PostJ("/open/api/vfolder/share", shareVFolderEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "Share access to virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/access/remove", removeGrantedFolderAccess,
+	server.PostJ("/open/api/vfolder/access/remove", removeGrantedFolderAccessEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "Remove granted access to virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/granted/list", listGrantedFolderAccess,
+	server.PostJ("/open/api/vfolder/granted/list", listGrantedFolderAccessEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "List granted access to virtual folder", Code: MANAGE_FILE_CODE}))
 }

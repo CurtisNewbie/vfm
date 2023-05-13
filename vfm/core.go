@@ -3,9 +3,11 @@ package vfm
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/mysql"
+	"github.com/curtisnewbie/gocommon/redis"
 	"gorm.io/gorm"
 )
 
@@ -16,11 +18,17 @@ const (
 	FILE_TYPE_FILE = "FILE"
 	FILE_TYPE_DIR  = "DIR"
 
-	OWNERSHIP_ALL   = 0
-	OWNERSHIP_OWNER = 1
+	FOWNERSHIP_ALL   = 0
+	FOWNERSHIP_OWNER = 1
 
 	FILE_LDEL_N = 0
 	FILE_LDEL_Y = 1
+
+	FILE_PDEL_N = 0
+	FILE_PDEL_Y = 1
+
+	VFOWNERSHIP_OWNER   = "OWNER"
+	VFOWNERSHIP_GRANTED = "GRANTED"
 )
 
 type ListedFile struct {
@@ -45,7 +53,6 @@ type MoveIntoDirReq struct {
 type MakeDirReq struct {
 	ParentFile string `json:"parentFile"`                 // Key of parent file
 	Name       string `json:"name" validation:"notEmpty"` // name of the directory
-	UserGroup  int    `json:"userGroup"`                  // User Group
 }
 
 type GrantAccessReq struct {
@@ -150,20 +157,81 @@ type ListFilesRes struct {
 	Payload []ListedFile  `json:"payload"`
 }
 
+type ParentFileInfo struct {
+	Zero     bool   `json:"-"`
+	FileKey  string `json:"fileKey"`
+	Filename string `json:"fileName"`
+}
+
+type FileInfo struct {
+	Id               int
+	Name             string
+	Uuid             string
+	FstoreFileId     string
+	IsLogicDeleted   int
+	IsPhysicDeleted  int
+	SizeInBytes      int64
+	UploaderId       int
+	UploaderName     string
+	UploadTime       common.ETime
+	LogicDeleteTime  common.ETime
+	PhysicDeleteTime common.ETime
+	UserGroup        int
+	FsGroupId        int
+	FileType         string
+	ParentFile       string
+	CreateTime       common.ETime
+	CreateBy         string
+	UpdateTime       common.ETime
+	UpdateBy         string
+}
+
+func (f FileInfo) IsZero() bool {
+	return f.Id < 1
+}
+
+type VFolder struct {
+	Id         int
+	FolderNo   string
+	Name       string
+	CreateTime common.ETime
+	CreateBy   string
+	UpdateTime common.ETime
+	UpdateBy   string
+}
+
+type UserVFolder struct {
+	Id         int
+	UserNo     string
+	FolderNo   string
+	Ownership  string
+	GrantedBy  string // grantedBy (user_no)
+	CreateTime common.ETime
+	CreateBy   string
+	UpdateTime common.ETime
+	UpdateBy   string
+}
+
+func newListFilesInVFolderQuery(c common.ExecContext, r ListFileReq) *gorm.DB {
+	return mysql.GetMySql().
+		Table("file_info fi").
+		Joins("left join file_vfolder fv on (fi.uuid = fv.uuid and fv.is_del = 0)").
+		Joins("left join user_vfolder uv on (fv.folder_no = uv.folder_no and uv.is_del = 0)").
+		Where("uv.user_no = ? and uv.folder_no = ?", c.UserNo(), r.FolderNo)
+}
+
 func listFilesInVFolder(c common.ExecContext, r ListFileReq) (ListFilesRes, error) {
-	userNo := c.UserNo()
 	offset := r.Page.GetOffset()
 	limit := r.Page.GetLimit()
 
 	var files []ListedFile
 
-	t := mysql.GetMySql().Raw(`
-		select fi.id, fi.name, fi.uuid, fi.size_in_bytes, fi.user_group, fi.uploader_id, fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time
-		from file_info fi
-		left join file_vfolder fv on (fi.uuid = fv.uuid and fv.is_del = 0)
-		left join user_vfolder uv on (fv.folder_no = uv.folder_no and uv.is_del = 0)
-		where uv.user_no = ? and uv.folder_no = ?
-		limit ?, ?`, userNo, r.FolderNo, offset, limit).Scan(&files)
+	t := newListFilesInVFolderQuery(c, r).
+		Select("fi.*").
+		Offset(offset).
+		Limit(limit).
+		Scan(&files)
+
 	if t.Error != nil {
 		return ListFilesRes{}, fmt.Errorf("failed to list files in vfolder, %v", t.Error)
 	}
@@ -175,13 +243,9 @@ func listFilesInVFolder(c common.ExecContext, r ListFileReq) (ListFilesRes, erro
 	}
 
 	var total int
-	t = mysql.GetMySql().Raw(`
-		select count(*)
-		from file_info fi
-		left join file_vfolder fv on (fi.uuid = fv.uuid and fv.is_del = 0)
-		left join user_vfolder uv on (fv.folder_no = uv.folder_no and uv.is_del = 0)
-		where uv.user_no = ? and uv.folder_no = ?
-		limit ?, ?`, userNo, r.FolderNo, offset, limit).Scan(&total)
+	t = newListFilesInVFolderQuery(c, r).
+		Select("count(fi.id)").
+		Scan(&total)
 	if t.Error != nil {
 		return ListFilesRes{}, fmt.Errorf("failed to count files in vfolder, %v", t.Error)
 	}
@@ -280,7 +344,7 @@ func newListFilesSelectiveQuery(c common.ExecContext, t *gorm.DB, r ListFileReq)
 		Table("file_info fi").
 		Joins("left join file_sharing fs on (fi.id = fs.file_id and fs.user_id = ?)", userId)
 
-	if r.Ownership != nil && *r.Ownership == OWNERSHIP_OWNER {
+	if r.Ownership != nil && *r.Ownership == FOWNERSHIP_OWNER {
 		t = t.Where("fi.uploader_id = ?", userId)
 	} else {
 		if r.UserGroup == nil {
@@ -319,7 +383,7 @@ func newListFilesForTagsQuery(c common.ExecContext, t *gorm.DB, r ListFileReq) *
 		Joins("left join tag t on (ft.tag_id = t.id)").
 		Joins("left join file_sharing fs on (fi.id = fs.file_id and fs.user_id = ?)", userId)
 
-	if r.Ownership != nil && *r.Ownership == OWNERSHIP_OWNER {
+	if r.Ownership != nil && *r.Ownership == FOWNERSHIP_OWNER {
 		t = t.Where("fi.uploader_id = ?", userId)
 	} else {
 		if r.UserGroup == nil {
@@ -395,4 +459,190 @@ func newListFileTagsQuery(c common.ExecContext, r ListFileTagReq) *gorm.DB {
 		Table("file_tag ft").
 		Joins("left join tag t on ft.tag_id = t.id").
 		Where("t.user_id = ? and ft.file_id = ? and ft.is_del = 0 and t.is_del = 0", userId, r.FileId)
+}
+
+func findFile(c common.ExecContext, fileKey string) (FileInfo, error) {
+	var f FileInfo
+
+	t := mysql.GetConn().
+		Raw("select * from file_info where uuid = ? and is_del = 0", fileKey).
+		Scan(&f)
+	if t.Error != nil {
+		return f, t.Error
+	}
+	return f, nil
+}
+
+func FindParentFile(c common.ExecContext, fileKey string) (ParentFileInfo, error) {
+	var f FileInfo
+	f, e := findFile(c, fileKey)
+	if e != nil {
+		return ParentFileInfo{}, e
+	}
+	if f.IsZero() {
+		return ParentFileInfo{}, common.NewWebErr("File not found")
+	}
+
+	// dir is only visible to the uploader for now
+	userId, _ := c.UserIdI()
+	if f.UploaderId != userId {
+		return ParentFileInfo{}, common.NewWebErr("Not permitted")
+	}
+
+	if f.ParentFile == "" {
+		return ParentFileInfo{Zero: true}, nil
+	}
+
+	pf, e := findFile(c, f.ParentFile)
+	if e != nil {
+		return ParentFileInfo{}, e
+	}
+
+	return ParentFileInfo{FileKey: pf.Uuid, Filename: pf.Name, Zero: false}, nil
+}
+
+func MakeDir(c common.ExecContext, r MakeDirReq) (string, error) {
+
+	var dir FileInfo
+	dir.Name = r.Name
+	dir.Uuid = common.GenIdP("ZZZ")
+	dir.SizeInBytes = 0
+	dir.UserGroup = USER_GROUP_PRIVATE
+	dir.FileType = FILE_TYPE_DIR
+
+	if e := _saveFile(c, dir); e != nil {
+		return "", e
+	}
+
+	if r.ParentFile != "" {
+		if e := MoveFileToDir(c, MoveIntoDirReq{Uuid: dir.Uuid, ParentFileUuid: r.ParentFile}); e != nil {
+			return dir.Uuid, e
+		}
+	}
+
+	return dir.Uuid, nil
+}
+
+func MoveFileToDir(c common.ExecContext, req MoveIntoDirReq) error {
+	if req.Uuid == "" || req.ParentFileUuid == "" || req.Uuid == req.ParentFileUuid {
+		return nil
+	}
+
+	// lock the file
+	return _lockFileExec(c, req.Uuid, func() error {
+
+		// lock directory
+		return _lockFileExec(c, req.ParentFileUuid, func() error {
+
+			pr, e := findFile(c, req.ParentFileUuid)
+			if e != nil {
+				return fmt.Errorf("failed to find parentFile, %v", e)
+			}
+			c.Log.Debugf("parentFile: %+v", pr)
+
+			if pr.IsZero() {
+				return fmt.Errorf("perentFile not found, parentFileKey: %v", req.ParentFileUuid)
+			}
+
+			userId, _ := c.UserIdI()
+			if pr.UploaderId != userId {
+				return common.NewWebErr("you are not the owner of this directory")
+			}
+
+			if pr.FileType != FILE_TYPE_DIR {
+				return common.NewWebErr("target file is not a directory")
+			}
+
+			if pr.IsLogicDeleted != FILE_LDEL_N {
+				return common.NewWebErr("target file deleted")
+			}
+
+			return mysql.GetConn().
+				Exec("update file_info set parent_file = ?, update_by = ?, update_time = ? where uuid = ?",
+					req.ParentFileUuid, c.Username(), time.Now(), req.Uuid).Error
+		})
+	})
+}
+
+func _saveFile(c common.ExecContext, f FileInfo) error {
+	userId, _ := c.UserIdI()
+	uname := c.Username()
+	now := common.ETime(time.Now())
+
+	f.IsLogicDeleted = FILE_LDEL_N
+	f.IsPhysicDeleted = FILE_PDEL_N
+	f.UploaderId = userId
+	f.UploaderName = uname
+	f.CreateBy = uname
+	f.UploadTime = now
+	f.CreateTime = now
+
+	return mysql.GetConn().Table("file_info").Omit("id", "update_time", "update_by").Create(&f).Error
+}
+
+func _lockFileExec(c common.ExecContext, fileKey string, r redis.Runnable) error {
+	return redis.RLockExec(c, "file:uuid:"+fileKey, r)
+}
+
+func _lockFileGet(c common.ExecContext, fileKey string, r redis.LRunnable) (any, error) {
+	return redis.RLockRun(c, "file:uuid:"+fileKey, r)
+}
+
+func CreateVFolder(c common.ExecContext, r CreateVfolderReq) (string, error) {
+	userNo := c.UserNo()
+
+	v, e := redis.RLockRun(c, "vfolder:user:"+userNo, func() (any, error) {
+
+		var id int
+		t := mysql.GetConn().
+			Select("vf.id").
+			Table("vfolder vf").
+			Joins("left join user_vfolder uv on (vf.folder_no = uv.folder_no)").
+			Where("uv.user_no = ? and uv.ownership = 'OWNER'", userNo).
+			Where("vf.name = ?", r.Name).
+			Where("vf.is_del = 0 and uv.is_del = 0").
+			Limit(1).
+			Scan(&id)
+		if t.Error != nil {
+			return "", t.Error
+		}
+		if id > 0 {
+			return "", common.NewWebErr(fmt.Sprintf("Found folder with same name ('%s')", r.Name))
+		}
+
+		folderNo := common.GenIdP("VFLD")
+
+		e := mysql.GetConn().Transaction(func(tx *gorm.DB) error {
+
+			ctime := common.ETime(time.Now())
+
+			// for the vfolder
+			vf := VFolder{Name: r.Name, FolderNo: folderNo, CreateTime: ctime, CreateBy: c.Username()}
+			if e := tx.Omit("id", "update_by", "update_time").Table("vfolder").Create(&vf).Error; e != nil {
+				return fmt.Errorf("failed to save VFolder, %v", e)
+			}
+
+			// for the user - vfolder relation
+			uv := UserVFolder{
+				FolderNo:   folderNo,
+				UserNo:     userNo,
+				Ownership:  VFOWNERSHIP_OWNER,
+				GrantedBy:  userNo,
+				CreateTime: ctime,
+				CreateBy:   c.Username()}
+			if e := tx.Omit("id", "update_by", "update_time").Table("user_vfolder").Create(&uv).Error; e != nil {
+				return fmt.Errorf("failed to save UserVFolder, %v", e)
+			}
+			return nil
+		})
+		if e != nil {
+			return "", e
+		}
+
+		return folderNo, nil
+	})
+	if e != nil {
+		return "", e
+	}
+	return v.(string), e
 }
