@@ -31,6 +31,12 @@ const (
 	VFOWNERSHIP_GRANTED = "GRANTED"
 )
 
+type ListedDir struct {
+	Id   int    `json:"id"`
+	Uuid string `json:"uuid"`
+	Name string `json:"name"`
+}
+
 type ListedFile struct {
 	Id           int          `json:"id"`
 	Uuid         string       `json:"uuid"`
@@ -645,4 +651,19 @@ func CreateVFolder(c common.ExecContext, r CreateVfolderReq) (string, error) {
 		return "", e
 	}
 	return v.(string), e
+}
+
+func ListDirs(c common.ExecContext) ([]ListedDir, error) {
+	userId, _ := c.UserIdI()
+
+	var dirs []ListedDir
+	e := mysql.GetConn().
+		Select("id, uuid, name").
+		Table("file_info").
+		Where("uploader_id = ?", userId).
+		Where("file_type = 'DIR'").
+		Where("is_logic_deleted = 0").
+		Where("is_del = 0").
+		Scan(&dirs).Error
+	return dirs, e
 }

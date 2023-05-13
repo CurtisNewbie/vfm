@@ -177,3 +177,15 @@ func TestCreateVFolder(t *testing.T) {
 
 	t.Logf("FolderNo: %v", folderNo)
 }
+
+func TestListDirs(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	dirs, e := ListDirs(c)
+	if e != nil {
+		t.Fatal(e)
+	}
+	t.Logf("%+v", dirs)
+}

@@ -126,8 +126,7 @@ func removeGrantedAccessEp(c *gin.Context, ec common.ExecContext, req RemoveGran
 }
 
 func listDirsEp(c *gin.Context, ec common.ExecContext) (any, error) {
-	// TODO
-	return nil, nil
+	return ListDirs(ec)
 }
 
 func listFilesEp(c *gin.Context, ec common.ExecContext, req ListFileReq) (any, error) {
