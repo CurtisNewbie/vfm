@@ -167,7 +167,8 @@ func TestCreateVFolder(t *testing.T) {
 	c.User.UserId = "1"
 	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
 
-	folderNo, e := CreateVFolder(c, CreateVfolderReq{"MyFolder3"})
+	r, _ := common.ERand(5)
+	folderNo, e := CreateVFolder(c, CreateVfolderReq{"MyFolder_" + r})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -188,4 +189,30 @@ func TestListDirs(t *testing.T) {
 		t.Fatal(e)
 	}
 	t.Logf("%+v", dirs)
+}
+
+func TestGranteFileAccess(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.Username = "zhuangyongj"
+
+	e := GranteFileAccess(c, 2, 3)
+	if e != nil {
+		t.Fatal(e)
+	}
+}
+
+func TestListGrantedFileAccess(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.Username = "zhuangyongj"
+	l, e := ListGrantedFileAccess(c, ListGrantedAccessReq{FileId: 3})
+	if e != nil {
+		t.Fatal(e)
+	}
+	t.Logf("%+v", l)
 }

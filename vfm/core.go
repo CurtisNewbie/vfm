@@ -31,6 +31,17 @@ const (
 	VFOWNERSHIP_GRANTED = "GRANTED"
 )
 
+type FileSharing struct {
+	Id         int
+	FileId     int
+	UserId     int
+	CreateTime common.ETime
+	CreateBy   string
+	UpdateTime common.ETime
+	UpdateBy   string
+	IsDel      common.IS_DEL
+}
+
 type ListedDir struct {
 	Id   int    `json:"id"`
 	Uuid string `json:"uuid"`
@@ -66,7 +77,20 @@ type GrantAccessReq struct {
 	GrantedTo string `json:"grantedTo" validation:"notEmpty"`
 }
 
-type ListGrantedAcessReq struct {
+type ListedFileSharing struct {
+	Id         int          `json:"id"`
+	UserId     int          `json:"userId"`
+	Username   string       `json:"username"`
+	CreateDate common.ETime `json:"CreateDate"`
+	CreateBy   string       `json:"createBy"`
+}
+
+type ListGrantedAccessRes struct {
+	Page    common.Paging       `json:"pagingVo"`
+	Payload []ListedFileSharing `json:"payload"`
+}
+
+type ListGrantedAccessReq struct {
 	Page   common.Paging `json:"pagingVo"`
 	FileId int           `json:"fileId" validation:"positive"`
 }
@@ -190,6 +214,7 @@ type FileInfo struct {
 	CreateBy         string
 	UpdateTime       common.ETime
 	UpdateBy         string
+	IsDel            int
 }
 
 func (f FileInfo) IsZero() bool {
@@ -479,6 +504,18 @@ func findFile(c common.ExecContext, fileKey string) (FileInfo, error) {
 	return f, nil
 }
 
+func findFileById(c common.ExecContext, id int) (FileInfo, error) {
+	var f FileInfo
+
+	t := mysql.GetConn().
+		Raw("select * from file_info where id = ? and is_del = 0", id).
+		Scan(&f)
+	if t.Error != nil {
+		return f, t.Error
+	}
+	return f, nil
+}
+
 func FindParentFile(c common.ExecContext, fileKey string) (ParentFileInfo, error) {
 	var f FileInfo
 	f, e := findFile(c, fileKey)
@@ -552,15 +589,15 @@ func MoveFileToDir(c common.ExecContext, req MoveIntoDirReq) error {
 
 			userId, _ := c.UserIdI()
 			if pr.UploaderId != userId {
-				return common.NewWebErr("you are not the owner of this directory")
+				return common.NewWebErr("You are not the owner of this directory")
 			}
 
 			if pr.FileType != FILE_TYPE_DIR {
-				return common.NewWebErr("target file is not a directory")
+				return common.NewWebErr("Target file is not a directory")
 			}
 
 			if pr.IsLogicDeleted != FILE_LDEL_N {
-				return common.NewWebErr("target file deleted")
+				return common.NewWebErr("Target file deleted")
 			}
 
 			return mysql.GetConn().
@@ -666,4 +703,93 @@ func ListDirs(c common.ExecContext) ([]ListedDir, error) {
 		Where("is_del = 0").
 		Scan(&dirs).Error
 	return dirs, e
+}
+
+func GranteFileAccess(c common.ExecContext, grantedToUserId int, fileId int) error {
+	userId, _ := c.UserIdI()
+	if grantedToUserId == userId {
+		return common.NewWebErr("You can't grant file access to yourself")
+	}
+
+	f, e := findFileById(c, fileId)
+	if e != nil {
+		c.Log.Errorf("Failed to find find by id, %v", e)
+		return common.NewWebErr("Unable to find file")
+	}
+
+	if f.IsZero() {
+		return common.NewWebErr("File not found")
+	}
+
+	if f.IsLogicDeleted != FILE_LDEL_N {
+		return common.NewWebErr("File deleted already")
+	}
+
+	if f.UploaderId != userId {
+		return common.NewWebErr("Only uploader can grant access to the file")
+	}
+
+	if f.FileType != FILE_TYPE_FILE {
+		return common.NewWebErr("You can't not grant access to directory type files")
+	}
+	c.Log.Debugf("Granting file access to file: %v (%v) to user: %v", fileId, f.Uuid, grantedToUserId)
+
+	return _lockFileExec(c, f.Uuid, func() error {
+		var fs FileSharing
+		t := mysql.GetConn().
+			Select("id, is_del").
+			Table("file_sharing").
+			Where("file_id = ?", fileId).
+			Where("user_id = ?", grantedToUserId).
+			Scan(&fs)
+		if t.Error != nil {
+			return t.Error
+		}
+
+		if t.RowsAffected < 1 {
+			fs = FileSharing{
+				UserId:     grantedToUserId,
+				FileId:     fileId,
+				CreateTime: common.ETime(time.Now()),
+				CreateBy:   c.Username(),
+				IsDel:      common.IS_DEL_N,
+			}
+			return mysql.GetConn().
+				Table("file_sharing").
+				Omit("id", "update_by", "update_time").
+				Create(&fs).Error
+		}
+
+		if fs.IsDel == common.IS_DEL_Y {
+			return mysql.GetConn().Exec("update file_sharing set is_del = 0 where id = ?", fs.Id).Error
+		}
+		return nil
+	})
+}
+
+func ListGrantedFileAccess(c common.ExecContext, r ListGrantedAccessReq) (ListGrantedAccessRes, error) {
+	var lfs []ListedFileSharing
+	e := newListGrantedFileAccessQuery(c, r).
+		Select("id, user_id, create_time 'create_date', 'create_by'").
+		Order("id desc").
+		Scan(&lfs).Error
+	if e != nil {
+		return ListGrantedAccessRes{}, fmt.Errorf("failed to list file_sharing, req: %+v, %v", r, e)
+	}
+
+	var total int
+	e = newListGrantedFileAccessQuery(c, r).
+		Select("count(*)").
+		Scan(&total).Error
+	if e != nil {
+		return ListGrantedAccessRes{}, fmt.Errorf("failed to count file_sharing, req: %+v, %v", r, e)
+	}
+	return ListGrantedAccessRes{Page: common.RespPage(r.Page, total), Payload: lfs}, nil
+}
+
+func newListGrantedFileAccessQuery(c common.ExecContext, r ListGrantedAccessReq) *gorm.DB {
+	return mysql.GetConn().
+		Table("file_sharing").
+		Where("file_id = ?", r.FileId).
+		Where("is_del = 0")
 }

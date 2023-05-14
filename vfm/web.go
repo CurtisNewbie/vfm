@@ -109,14 +109,17 @@ func makeDirEp(c *gin.Context, ec common.ExecContext, req MakeDirReq) (any, erro
 
 func grantAccessEp(c *gin.Context, ec common.ExecContext, req GrantAccessReq) (any, error) {
 	ec.Log.Debugf("req: %+v", req)
-	// TODO
-	return nil, nil
+	uid, e := FindUserId(ec, req.GrantedTo)
+	if e != nil {
+		ec.Log.Warnf("Unable to find user id, grantedTo: %s, %v", req.GrantedTo, e)
+		return nil, common.NewWebErr("Failed to find user")
+	}
+	return nil, GranteFileAccess(ec, uid, req.FileId)
 }
 
-func listGrantedAccessEp(c *gin.Context, ec common.ExecContext, req ListGrantedAcessReq) (any, error) {
+func listGrantedAccessEp(c *gin.Context, ec common.ExecContext, req ListGrantedAccessReq) (any, error) {
 	ec.Log.Debugf("req: %+v", req)
-	// TODO
-	return nil, nil
+	return ListGrantedFileAccess(ec, req)
 }
 
 func removeGrantedAccessEp(c *gin.Context, ec common.ExecContext, req RemoveGrantedAccessReq) (any, error) {
