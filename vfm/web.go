@@ -15,13 +15,18 @@ func listGrantedFolderAccessEp(c *gin.Context, ec common.ExecContext, req ListGr
 }
 
 func removeGrantedFolderAccessEp(c *gin.Context, ec common.ExecContext, req RemoveGrantedFolderAccessReq) (any, error) {
-	// TODO
-	return nil, nil
+	ec.Log.Debugf("req: %+v", req)
+	return nil, RemoveVFolderAccess(ec, req)
 }
 
 func shareVFolderEp(c *gin.Context, ec common.ExecContext, req ShareVfolderReq) (any, error) {
-	// TODO
-	return nil, nil
+	ec.Log.Debugf("req: %+v", req)
+	sharedTo, e := FindUser(ec, FindUserReq{Username: &req.Username})
+	if e != nil {
+		ec.Log.Warnf("Unable to find user, sharedTo: %s, %v", req.Username, e)
+		return nil, common.NewWebErr("Failed to find user")
+	}
+	return nil, ShareVFolder(ec, sharedTo, req.FolderNo)
 }
 
 func removeFileFromVfolderEp(c *gin.Context, ec common.ExecContext, req RemoveFileFromVfolderReq) (any, error) {

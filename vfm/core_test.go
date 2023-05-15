@@ -216,3 +216,27 @@ func TestListGrantedFileAccess(t *testing.T) {
 	}
 	t.Logf("%+v", l)
 }
+
+func TestShareVFolder(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.Username = "zhuangyongj"
+
+	if e := ShareVFolder(c, UserInfo{Id: 3, Username: "banana", UserNo: "UE202303190019399941339"}, "hfKh3QZSsWjKufZWflqu8jb0n"); e != nil {
+		t.Fatal(e)
+	}
+}
+
+func TestRemoveVFolderAccess(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.Username = "zhuangyongj"
+
+	if e := RemoveVFolderAccess(c, RemoveGrantedFolderAccessReq{UserNo: "UE202303190019399941339", FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n"}); e != nil {
+		t.Fatal(e)
+	}
+}

@@ -221,6 +221,17 @@ func (f FileInfo) IsZero() bool {
 	return f.Id < 1
 }
 
+type VFolderWithOwnership struct {
+	Id         int
+	FolderNo   string
+	Name       string
+	CreateTime common.ETime
+	CreateBy   string
+	UpdateTime common.ETime
+	UpdateBy   string
+	Ownership  string
+}
+
 type VFolder struct {
 	Id         int
 	FolderNo   string
@@ -792,4 +803,95 @@ func newListGrantedFileAccessQuery(c common.ExecContext, r ListGrantedAccessReq)
 		Table("file_sharing").
 		Where("file_id = ?", r.FileId).
 		Where("is_del = 0")
+}
+
+func findVFolder(c common.ExecContext, folderNo string, userNo string) (VFolderWithOwnership, error) {
+	var vfo VFolderWithOwnership
+	t := mysql.GetConn().
+		Table("vfolder vf").
+		Select("vf.*, uv.ownership").
+		Joins("left join user_vfolder uv on (vf.folder_no = uv.folder_no and uv.is_del = 0)").
+		Where("vf.is_del = 0").
+		Where("uv.user_no = ?", userNo).
+		Where("uv.folder_no = ?", folderNo).
+		Limit(1).
+		Scan(&vfo)
+	if t.Error != nil {
+		return vfo, fmt.Errorf("failed to fetch vfolder info for current user, userNo: %v, folderNo: %v, %v", userNo, folderNo, t.Error)
+	}
+	if t.RowsAffected < 1 {
+		return vfo, fmt.Errorf("vfolder not found, userNo: %v, folderNo: %v", userNo, folderNo)
+	}
+	return vfo, nil
+}
+
+func _lockFolderExec(c common.ExecContext, folderNo string, r redis.Runnable) error {
+	return redis.RLockExec(c, "vfolder:"+folderNo, r)
+}
+
+func _lockFolderGet(c common.ExecContext, folderNo string, r redis.LRunnable) (any, error) {
+	return redis.RLockRun(c, "vfolder:"+folderNo, r)
+}
+
+func ShareVFolder(c common.ExecContext, sharedTo UserInfo, folderNo string) error {
+	if c.UserNo() == sharedTo.UserNo {
+		return nil
+	}
+	return _lockFolderExec(c, folderNo, func() error {
+		vfo, e := findVFolder(c, folderNo, c.UserNo())
+		if e != nil {
+			return e
+		}
+		if vfo.Ownership != VFOWNERSHIP_OWNER {
+			return common.NewWebErr("Operation not permitted")
+		}
+
+		var id int
+		e = mysql.GetConn().
+			Table("user_vfolder").
+			Select("id").
+			Where("folder_no = ?", folderNo).
+			Where("user_no = ?", sharedTo.UserNo).
+			Where("is_del = 0").
+			Limit(1).
+			Scan(&id).Error
+		if e != nil {
+			return fmt.Errorf("error occurred while querying user_vfolder, %v", e)
+		}
+		if id > 0 {
+			c.Log.Infof("VFolder is shared already, folderNo: %s, sharedTo: %s", folderNo, sharedTo.Username)
+			return nil
+		}
+
+		uv := UserVFolder{
+			FolderNo:   folderNo,
+			UserNo:     sharedTo.UserNo,
+			Ownership:  VFOWNERSHIP_GRANTED,
+			GrantedBy:  c.Username(),
+			CreateTime: common.ETime(time.Now()),
+			CreateBy:   c.Username()}
+		if e := mysql.GetConn().Omit("id", "update_by", "update_time").Table("user_vfolder").Create(&uv).Error; e != nil {
+			return fmt.Errorf("failed to save UserVFolder, %v", e)
+		}
+		c.Log.Infof("VFolder %s shared to %s by %s", folderNo, sharedTo.Username, c.Username())
+		return nil
+	})
+}
+
+func RemoveVFolderAccess(c common.ExecContext, r RemoveGrantedFolderAccessReq) error {
+	if c.UserNo() == r.UserNo {
+		return nil
+	}
+	return _lockFolderExec(c, r.FolderNo, func() error {
+		vfo, e := findVFolder(c, r.FolderNo, c.UserNo())
+		if e != nil {
+			return e
+		}
+		if vfo.Ownership != VFOWNERSHIP_OWNER {
+			return common.NewWebErr("Operation not permitted")
+		}
+		return mysql.GetConn().
+			Exec("delete from user_vfolder where folder_no = ? and user_no = ? and ownership = 'GRANTED'", r.FolderNo, r.UserNo).
+			Error
+	})
 }
