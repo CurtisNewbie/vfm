@@ -34,9 +34,9 @@ func removeFileFromVfolderEp(c *gin.Context, ec common.ExecContext, req RemoveFi
 	return nil, nil
 }
 
-func addFileToVfolderEp(c *gin.Context, ec common.ExecContext, req AddFileToVfolderReq) (any, error) {
-	// TODO
-	return nil, nil
+func addFileToVFolderEp(c *gin.Context, ec common.ExecContext, req AddFileToVfolderReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
+	return nil, AddFileToVFolder(ec, req)
 }
 
 func createVFolderEp(c *gin.Context, ec common.ExecContext, req CreateVfolderReq) (any, error) {
@@ -50,8 +50,7 @@ func listVfoldersEp(c *gin.Context, ec common.ExecContext, req ListVfolderReq) (
 }
 
 func listVfolderBriefEp(c *gin.Context, ec common.ExecContext) (any, error) {
-	// TODO
-	return nil, nil
+	return ListVFolderBrief(ec)
 }
 
 func untagFileEp(c *gin.Context, ec common.ExecContext, req UntagFileReq) (any, error) {
@@ -218,7 +217,7 @@ func PrepareServer() {
 	server.PostJ("/open/api/vfolder/create", createVFolderEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User create virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/file/add", addFileToVfolderEp,
+	server.PostJ("/open/api/vfolder/file/add", addFileToVFolderEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User add file to virtual folder", Code: MANAGE_FILE_CODE}))
 
 	server.PostJ("/open/api/vfolder/file/remove", removeFileFromVfolderEp,

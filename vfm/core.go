@@ -31,6 +31,21 @@ const (
 	VFOWNERSHIP_GRANTED = "GRANTED"
 )
 
+type FileVFolder struct {
+	FolderNo   string
+	Uuid       string
+	CreateTime common.ETime
+	CreateBy   string
+	UpdateTime common.ETime
+	UpdateBy   string
+	IsDel      common.IS_DEL
+}
+
+type VFolderBrief struct {
+	FolderNo string `json:"folderNo"`
+	Name     string `json:"name"`
+}
+
 type FileSharing struct {
 	Id         int
 	FileId     int
@@ -893,5 +908,83 @@ func RemoveVFolderAccess(c common.ExecContext, r RemoveGrantedFolderAccessReq) e
 		return mysql.GetConn().
 			Exec("delete from user_vfolder where folder_no = ? and user_no = ? and ownership = 'GRANTED'", r.FolderNo, r.UserNo).
 			Error
+	})
+}
+
+func ListVFolderBrief(c common.ExecContext) ([]VFolderBrief, error) {
+	var vfb []VFolderBrief
+	e := mysql.GetConn().
+		Select("f.folder_no, f.name").
+		Table("vfolder f").
+		Joins("left join user_vfolder uv on (f.folder_no = uv.folder_no and uv.is_del = 0)").
+		Where("f.is_del = 0 and uv.user_no = ? and uv.ownership = 'OWNER'", c.UserNo()).
+		Scan(&vfb).Error
+	return vfb, e
+}
+
+func AddFileToVFolder(c common.ExecContext, r AddFileToVfolderReq) error {
+	if len(r.FileKeys) < 1 {
+		return nil
+	}
+
+	return _lockFolderExec(c, r.FolderNo, func() error {
+
+		vfo, e := findVFolder(c, r.FolderNo, c.UserNo())
+		if e != nil {
+			return e
+		}
+		if vfo.Ownership != VFOWNERSHIP_OWNER {
+			return common.NewWebErr("Operation not permitted")
+		}
+
+		s := common.NewSet[string]()
+		for _, v := range r.FileKeys {
+			s.Add(v)
+		}
+		if s.IsEmpty() {
+			return nil
+		}
+
+		filtered := common.KeysOfSet(s)
+		userId, _ := c.UserIdI()
+		now := common.ETime(time.Now())
+		username := c.Username()
+		for _, fk := range filtered {
+			f, e := findFile(c, fk)
+			if e != nil {
+				return e
+			}
+			if f.IsZero() {
+				continue // file not found
+			}
+			if f.UploaderId != userId {
+				continue // not the uploader of the file
+			}
+
+			if f.FileType != FILE_TYPE_FILE {
+				continue // not a file type, may be a dir
+			}
+
+			var id int
+			e = mysql.GetConn().
+				Select("id").
+				Table("file_vfolder").
+				Where("folder_no = ? and uuid = ?", r.FolderNo, fk).
+				Scan(&id).
+				Error
+			if e != nil {
+				return fmt.Errorf("failed to query file_vfolder record, %v", e)
+			}
+			if id > 0 {
+				continue // file already in vfolder
+			}
+
+			fvf := FileVFolder{FolderNo: r.FolderNo, Uuid: fk, CreateTime: now, CreateBy: username}
+			e = mysql.GetConn().Table("file_vfolder").Omit("id", "update_by", "update_time").Create(&fvf).Error
+			if e != nil {
+				return fmt.Errorf("failed to save file_vfolder record, %v", e)
+			}
+		}
+		return nil
 	})
 }
