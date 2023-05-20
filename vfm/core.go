@@ -163,12 +163,28 @@ type UntagFileReq struct {
 	TagName string `json:"tagName" validation:"notEmpty"`
 }
 
-type ListVfolderReq struct {
+type ListedVFolder struct {
+	Id         int          `json:"id"`
+	FolderNo   string       `json:"folderNo"`
+	Name       string       `json:"name"`
+	CreateTime common.ETime `json:"createTime"`
+	CreateBy   string       `json:"createBy"`
+	UpdateTime common.ETime `json:"updateTime"`
+	UpdateBy   string       `json:"updateBy"`
+	Ownership  string       `json:"ownership"`
+}
+
+type ListVFolderRes struct {
+	Page    common.Paging   `json:"pagingVo"`
+	Payload []ListedVFolder `json:"payload"`
+}
+
+type ListVFolderReq struct {
 	Page common.Paging `json:"pagingVo"`
 	Name string        `json:"name"`
 }
 
-type CreateVfolderReq struct {
+type CreateVFolderReq struct {
 	Name string `json:"name"`
 }
 
@@ -657,7 +673,7 @@ func _lockFileGet(c common.ExecContext, fileKey string, r redis.LRunnable) (any,
 	return redis.RLockRun(c, "file:uuid:"+fileKey, r)
 }
 
-func CreateVFolder(c common.ExecContext, r CreateVfolderReq) (string, error) {
+func CreateVFolder(c common.ExecContext, r CreateVFolderReq) (string, error) {
 	userNo := c.UserNo()
 
 	v, e := redis.RLockRun(c, "vfolder:user:"+userNo, func() (any, error) {
@@ -986,5 +1002,115 @@ func AddFileToVFolder(c common.ExecContext, r AddFileToVfolderReq) error {
 			}
 		}
 		return nil
+	})
+}
+
+func RemoveFileFromVFolder(c common.ExecContext, r RemoveFileFromVfolderReq) error {
+	if len(r.FileKeys) < 1 {
+		return nil
+	}
+
+	return _lockFolderExec(c, r.FolderNo, func() error {
+
+		vfo, e := findVFolder(c, r.FolderNo, c.UserNo())
+		if e != nil {
+			return e
+		}
+		if vfo.Ownership != VFOWNERSHIP_OWNER {
+			return common.NewWebErr("Operation not permitted")
+		}
+
+		s := common.NewSet[string]()
+		for _, v := range r.FileKeys {
+			s.Add(v)
+		}
+		if s.IsEmpty() {
+			return nil
+		}
+
+		filtered := common.KeysOfSet(s)
+		userId, _ := c.UserIdI()
+		for _, fk := range filtered {
+			f, e := findFile(c, fk)
+			if e != nil {
+				return e
+			}
+			if f.IsZero() {
+				continue // file not found
+			}
+			if f.UploaderId != userId {
+				continue // not the uploader of the file
+			}
+			if f.FileType != FILE_TYPE_FILE {
+				continue // not a file type, may be a dir
+			}
+
+			e = mysql.GetConn().Exec("delete from file_vfolder where folder_no = ? and uuid = ?", r.FolderNo, fk).Error
+			if e != nil {
+				return fmt.Errorf("failed to delete file_vfolder record, %v", e)
+			}
+		}
+
+		return nil
+	})
+}
+
+func ListVFolders(c common.ExecContext, r ListVFolderReq) (ListVFolderRes, error) {
+	t := newListVFoldersQuery(c, r).
+		Select("f.id, f.create_time, f.create_by, f.update_time, f.update_by, f.folder_no, f.name, uv.ownership").
+		Order("f.id desc")
+
+	var lvf []ListedVFolder
+	if e := t.Scan(&lvf).Error; e != nil {
+		return ListVFolderRes{}, fmt.Errorf("failed to query vfolder, req: %+v, %v", r, e)
+	}
+
+	var total int
+	e := newListVFoldersQuery(c, r).
+		Select("count(*)").
+		Scan(&total).Error
+	if e != nil {
+		return ListVFolderRes{}, fmt.Errorf("failed to count vfolder, req: %+v, %v", r, e)
+	}
+
+	return ListVFolderRes{Page: common.RespPage(r.Page, total), Payload: lvf}, nil
+}
+
+func newListVFoldersQuery(c common.ExecContext, r ListVFolderReq) *gorm.DB {
+	t := mysql.GetConn().
+		Table("vfolder f").
+		Joins("left join user_vfolder uv on (f.folder_no = uv.folder_no and uv.is_del = 0)").
+		Where("f.is_del = 0 and uv.user_no = ?", c.UserNo())
+
+	if r.Name != "" {
+		t = t.Where("f.name like ?", "%"+r.Name+"%")
+	}
+	return t
+}
+
+func RemoveGrantedFileAccess(c common.ExecContext, r RemoveGrantedAccessReq) error {
+	f, e := findFileById(c, r.FileId)
+	if e != nil {
+		return fmt.Errorf("failed to find file, %v", e)
+	}
+
+	if f.IsZero() {
+		return common.NewWebErr("File not found")
+	}
+
+	if f.IsLogicDeleted != FILE_LDEL_N {
+		return common.NewWebErr("File deleted already")
+	}
+
+	userId, _ := c.UserIdI()
+	if f.UploaderId != userId {
+		return common.NewWebErr("Not permitted")
+	}
+
+	return _lockFileExec(c, f.Uuid, func() error {
+		// it was a logical delete in file-server, it now becomes a physical delete
+		return mysql.GetConn().
+			Exec("delete from file_sharing where file_id = ? and user_id = ? limit 1", r.FileId, r.UserId).
+			Error
 	})
 }

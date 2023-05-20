@@ -168,7 +168,7 @@ func TestCreateVFolder(t *testing.T) {
 	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
 
 	r, _ := common.ERand(5)
-	folderNo, e := CreateVFolder(c, CreateVfolderReq{"MyFolder_" + r})
+	folderNo, e := CreateVFolder(c, CreateVFolderReq{"MyFolder_" + r})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -199,6 +199,18 @@ func TestGranteFileAccess(t *testing.T) {
 	c.User.Username = "zhuangyongj"
 
 	e := GranteFileAccess(c, 2, 3)
+	if e != nil {
+		t.Fatal(e)
+	}
+}
+
+func TestRemoveGrantedFileAccess(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.Username = "zhuangyongj"
+	e := RemoveGrantedFileAccess(c, RemoveGrantedAccessReq{FileId: 3, UserId: 2})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -271,4 +283,31 @@ func TestAddFileToVFolder(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
+}
+
+func TestRemoveFileFromVFolder(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+
+	e := RemoveFileFromVFolder(c, RemoveFileFromVfolderReq{
+		FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
+		FileKeys: []string{"ZZZ687250481528832971813"},
+	})
+	if e != nil {
+		t.Fatal(e)
+	}
+}
+
+func TestListVFolders(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	l, e := ListVFolders(c, ListVFolderReq{})
+	if e != nil {
+		t.Fatal(e)
+	}
+	t.Logf("%+v", l)
 }

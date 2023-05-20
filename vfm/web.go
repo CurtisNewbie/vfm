@@ -30,8 +30,8 @@ func shareVFolderEp(c *gin.Context, ec common.ExecContext, req ShareVfolderReq) 
 }
 
 func removeFileFromVfolderEp(c *gin.Context, ec common.ExecContext, req RemoveFileFromVfolderReq) (any, error) {
-	// TODO
-	return nil, nil
+	ec.Log.Debugf("req: %+v", req)
+	return nil, RemoveFileFromVFolder(ec, req)
 }
 
 func addFileToVFolderEp(c *gin.Context, ec common.ExecContext, req AddFileToVfolderReq) (any, error) {
@@ -39,14 +39,14 @@ func addFileToVFolderEp(c *gin.Context, ec common.ExecContext, req AddFileToVfol
 	return nil, AddFileToVFolder(ec, req)
 }
 
-func createVFolderEp(c *gin.Context, ec common.ExecContext, req CreateVfolderReq) (any, error) {
+func createVFolderEp(c *gin.Context, ec common.ExecContext, req CreateVFolderReq) (any, error) {
 	ec.Log.Debugf("req: %+v", req)
 	return CreateVFolder(ec, req)
 }
 
-func listVfoldersEp(c *gin.Context, ec common.ExecContext, req ListVfolderReq) (any, error) {
-	// TODO
-	return nil, nil
+func listVfoldersEp(c *gin.Context, ec common.ExecContext, req ListVFolderReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
+	return ListVFolders(ec, req)
 }
 
 func listVfolderBriefEp(c *gin.Context, ec common.ExecContext) (any, error) {
@@ -128,8 +128,7 @@ func listGrantedAccessEp(c *gin.Context, ec common.ExecContext, req ListGrantedA
 
 func removeGrantedAccessEp(c *gin.Context, ec common.ExecContext, req RemoveGrantedAccessReq) (any, error) {
 	ec.Log.Debugf("req: %+v", req)
-	// TODO
-	return nil, nil
+	return nil, RemoveGrantedFileAccess(ec, req)
 }
 
 func listDirsEp(c *gin.Context, ec common.ExecContext) (any, error) {
