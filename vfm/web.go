@@ -10,8 +10,8 @@ import (
 )
 
 func listGrantedFolderAccessEp(c *gin.Context, ec common.ExecContext, req ListGrantedFolderAccessReq) (any, error) {
-	// TODO
-	return nil, nil
+	ec.Log.Debugf("req: %+v", req)
+	return ListGrantedFolderAccess(ec, req)
 }
 
 func removeGrantedFolderAccessEp(c *gin.Context, ec common.ExecContext, req RemoveGrantedFolderAccessReq) (any, error) {
@@ -54,13 +54,13 @@ func listVfolderBriefEp(c *gin.Context, ec common.ExecContext) (any, error) {
 }
 
 func untagFileEp(c *gin.Context, ec common.ExecContext, req UntagFileReq) (any, error) {
-	// TODO
-	return nil, nil
+	ec.Log.Debugf("req: %+v", req)
+	return nil, UntagFile(ec, req)
 }
 
 func tagFileEp(c *gin.Context, ec common.ExecContext, req TagFileReq) (any, error) {
-	// TODO
-	return nil, nil
+	ec.Log.Debugf("req: %+v", req)
+	return nil, TagFile(ec, req)
 }
 
 func listFileTagsEp(c *gin.Context, ec common.ExecContext, req ListFileTagReq) (any, error) {
@@ -68,14 +68,13 @@ func listFileTagsEp(c *gin.Context, ec common.ExecContext, req ListFileTagReq) (
 	return ListFileTags(ec, req)
 }
 
-func listTagsEp(c *gin.Context, ec common.ExecContext) (any, error) {
-	// TODO
-	return nil, nil
+func listAllTagsEp(c *gin.Context, ec common.ExecContext) (any, error) {
+	return ListAllTags(ec)
 }
 
 func updateFileEp(c *gin.Context, ec common.ExecContext, req UpdateFileReq) (any, error) {
-	// TODO
-	return nil, nil
+	ec.Log.Debugf("req: %+v", req)
+	return nil, UpdateFile(ec, req)
 }
 
 func uploadPreflightCheckEp(c *gin.Context, ec common.ExecContext) (any, error) {
@@ -146,6 +145,12 @@ func deleteFileEp(c *gin.Context, ec common.ExecContext, req DeleteFileReq) (any
 	return nil, nil
 }
 
+func createFileEp(c *gin.Context, ec common.ExecContext, req CreateFileReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
+	// TODO
+	return nil, nil
+}
+
 func PrepareServer() {
 	if gclient.IsEnabled() {
 		server.OnServerBootstrapped(func() {
@@ -192,10 +197,13 @@ func PrepareServer() {
 	server.PostJ("/open/api/file/delete", deleteFileEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User delete file", Code: MANAGE_FILE_CODE}))
 
+	server.PostJ("/open/api/file/create", createFileEp,
+		gclient.PathDocExtra(gclient.PathDoc{Desc: "User create file", Code: MANAGE_FILE_CODE}))
+
 	server.PostJ("/open/api/file/info/update", updateFileEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User update file", Code: MANAGE_FILE_CODE}))
 
-	server.Get("/open/api/file/tag/list/all", listTagsEp,
+	server.Get("/open/api/file/tag/list/all", listAllTagsEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list all file tags", Code: MANAGE_FILE_CODE}))
 
 	server.PostJ("/open/api/file/tag/list-for-file", listFileTagsEp,

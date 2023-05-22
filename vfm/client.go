@@ -19,6 +19,14 @@ type UserInfo struct {
 	UserNo   string
 }
 
+type FetchUsernamesReq struct {
+	UserNos []string `json:"userNos"`
+}
+
+type FetchUsernamesRes struct {
+	UserNoToUsername map[string]string `json:"userNoToUsername"`
+}
+
 func FindUserId(c common.ExecContext, username string) (int, error) {
 	r := client.NewDynTClient(c, "/remote/user/id", "auth-service").
 		EnableTracing().
@@ -53,6 +61,22 @@ func FindUser(c common.ExecContext, req FindUserReq) (UserInfo, error) {
 	r.ReadJson(&res)
 	if res.Error {
 		return UserInfo{}, fmt.Errorf("failed to findUser, req: %+v, code: %v, msg: %v", req, res.ErrorCode, res.Msg)
+	}
+	return res.Data, nil
+}
+
+func FetchUsernames(c common.ExecContext, req FetchUsernamesReq) (FetchUsernamesRes, error) {
+	r := client.NewDynTClient(c, "/remote/user/userno/username", "auth-service").
+		EnableTracing().
+		PostJson(&req)
+	if r.Err != nil {
+		return FetchUsernamesRes{}, r.Err
+	}
+	defer r.Close()
+
+	var res common.GnResp[FetchUsernamesRes]
+	if e := r.ReadJson(&res); e != nil {
+		return FetchUsernamesRes{}, fmt.Errorf("failed to unmarshel to FetchUsernamesRes, %v", e)
 	}
 	return res.Data, nil
 }

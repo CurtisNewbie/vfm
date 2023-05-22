@@ -26,3 +26,12 @@ func TestFindUser(t *testing.T) {
 	}
 	t.Logf("user: %+v", u)
 }
+
+func TestFetchUsernames(t *testing.T) {
+	c := common.EmptyExecContext()
+	res, e := FetchUsernames(c, FetchUsernamesReq{UserNos: []string{"UE202205142310074386952"}})
+	if e != nil {
+		t.Fatal(e)
+	}
+	t.Logf("res: %+v", res)
+}

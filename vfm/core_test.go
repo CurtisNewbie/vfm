@@ -11,7 +11,7 @@ import (
 
 func preTest(t *testing.T) {
 	user := "root"
-	pw := ""
+	pw := "123456"
 	db := "fileServer"
 	host := "localhost"
 	port := "3306"
@@ -233,10 +233,10 @@ func TestShareVFolder(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 	c.User.Username = "zhuangyongj"
 
-	if e := ShareVFolder(c, UserInfo{Id: 3, Username: "banana", UserNo: "UE202303190019399941339"}, "hfKh3QZSsWjKufZWflqu8jb0n"); e != nil {
+	if e := ShareVFolder(c, UserInfo{Id: 30, Username: "sharon", UserNo: "UE202205142310074386952"}, "VFLD20221001211317631020565809652"); e != nil {
 		t.Fatal(e)
 	}
 }
@@ -310,4 +310,64 @@ func TestListVFolders(t *testing.T) {
 		t.Fatal(e)
 	}
 	t.Logf("%+v", l)
+}
+
+func TestListGrantedFolderAccess(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "UE202205142310076187414"
+
+	l, e := ListGrantedFolderAccess(c, ListGrantedFolderAccessReq{FolderNo: "VFLD20221001211317631020565809652"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	t.Logf("%+v", l)
+}
+
+func TestUpdateFile(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "UE202205142310076187414"
+
+	e := UpdateFile(c, UpdateFileReq{Id: 301, UserGroup: USER_GROUP_PRIVATE, Name: "test-files-222.zip"})
+	if e != nil {
+		t.Fatal(e)
+	}
+}
+
+func TestListAllTags(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "3"
+	tags, e := ListAllTags(c)
+	if e != nil {
+		t.Fatal(e)
+	}
+	t.Logf("%+v", tags)
+}
+
+func TestTagFile(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "UE202205142310076187414"
+
+	e := TagFile(c, TagFileReq{FileId: 355, TagName: "mytag"})
+	if e != nil {
+		t.Fatal(e)
+	}
+}
+
+func TestUntagFile(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "UE202205142310076187414"
+
+	e := UntagFile(c, UntagFileReq{FileId: 355, TagName: "mytag"})
+	if e != nil {
+		t.Fatal(e)
+	}
 }

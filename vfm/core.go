@@ -3,6 +3,7 @@ package vfm
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/curtisnewbie/gocommon/common"
@@ -30,6 +31,37 @@ const (
 	VFOWNERSHIP_OWNER   = "OWNER"
 	VFOWNERSHIP_GRANTED = "GRANTED"
 )
+
+type FileTag struct {
+	Id         int
+	FileId     int
+	TagId      int
+	UserId     int
+	CreateTime common.ETime
+	CreateBy   string
+	UpdateTime common.ETime
+	UpdateBy   string
+	IsDel      common.IS_DEL
+}
+
+func (t FileTag) IsZero() bool {
+	return t.Id < 1
+}
+
+type Tag struct {
+	Id         int
+	Name       string
+	UserId     int
+	CreateTime common.ETime
+	CreateBy   string
+	UpdateTime common.ETime
+	UpdateBy   string
+	IsDel      common.IS_DEL
+}
+
+func (t Tag) IsZero() bool {
+	return t.Id < 1
+}
 
 type FileVFolder struct {
 	FolderNo   string
@@ -126,6 +158,13 @@ type ListFileReq struct {
 	ParentFile *string       `json:"parentFile"`
 }
 
+type CreateFileReq struct {
+	Filename   string   `json:"filename"`
+	UserGroup  int      `json:"userGroup"`
+	Tags       []string `json:"tags"`
+	ParentFile string   `json:"parentFile"`
+}
+
 type DeleteFileReq struct {
 	Uuid string `json:"uuid"`
 }
@@ -213,6 +252,17 @@ type ListGrantedFolderAccessReq struct {
 	FolderNo string        `json:"folderNo"`
 }
 
+type ListedFolderAccess struct {
+	UserNo     string       `json:"userNo"`
+	Username   string       `json:"username"`
+	CreateTime common.ETime `json:"createTime"`
+}
+
+type ListGrantedFolderAccessRes struct {
+	Page    common.Paging        `json:"pagingVo"`
+	Payload []ListedFolderAccess `json:"payload"`
+}
+
 type ListFilesRes struct {
 	Page    common.Paging `json:"pagingVo"`
 	Payload []ListedFile  `json:"payload"`
@@ -261,6 +311,10 @@ type VFolderWithOwnership struct {
 	UpdateTime common.ETime
 	UpdateBy   string
 	Ownership  string
+}
+
+func (f *VFolderWithOwnership) IsOwner() bool {
+	return f.Ownership == VFOWNERSHIP_OWNER
 }
 
 type VFolder struct {
@@ -873,7 +927,7 @@ func ShareVFolder(c common.ExecContext, sharedTo UserInfo, folderNo string) erro
 		if e != nil {
 			return e
 		}
-		if vfo.Ownership != VFOWNERSHIP_OWNER {
+		if !vfo.IsOwner() {
 			return common.NewWebErr("Operation not permitted")
 		}
 
@@ -918,7 +972,7 @@ func RemoveVFolderAccess(c common.ExecContext, r RemoveGrantedFolderAccessReq) e
 		if e != nil {
 			return e
 		}
-		if vfo.Ownership != VFOWNERSHIP_OWNER {
+		if !vfo.IsOwner() {
 			return common.NewWebErr("Operation not permitted")
 		}
 		return mysql.GetConn().
@@ -949,7 +1003,7 @@ func AddFileToVFolder(c common.ExecContext, r AddFileToVfolderReq) error {
 		if e != nil {
 			return e
 		}
-		if vfo.Ownership != VFOWNERSHIP_OWNER {
+		if !vfo.IsOwner() {
 			return common.NewWebErr("Operation not permitted")
 		}
 
@@ -1016,7 +1070,7 @@ func RemoveFileFromVFolder(c common.ExecContext, r RemoveFileFromVfolderReq) err
 		if e != nil {
 			return e
 		}
-		if vfo.Ownership != VFOWNERSHIP_OWNER {
+		if !vfo.IsOwner() {
 			return common.NewWebErr("Operation not permitted")
 		}
 
@@ -1113,4 +1167,241 @@ func RemoveGrantedFileAccess(c common.ExecContext, r RemoveGrantedAccessReq) err
 			Exec("delete from file_sharing where file_id = ? and user_id = ? limit 1", r.FileId, r.UserId).
 			Error
 	})
+}
+
+func ListGrantedFolderAccess(c common.ExecContext, r ListGrantedFolderAccessReq) (ListGrantedFolderAccessRes, error) {
+	userNo := c.UserNo()
+	folderNo := r.FolderNo
+	vfo, e := findVFolder(c, folderNo, userNo)
+	if e != nil {
+		return ListGrantedFolderAccessRes{}, e
+	}
+	if !vfo.IsOwner() {
+		return ListGrantedFolderAccessRes{}, common.NewWebErr("Operation not permitted")
+	}
+
+	// TODO user_vfolder should have the username saved
+	var l []ListedFolderAccess
+	e = newListGrantedFolderAccessQuery(c, r).
+		Select("user_no", "create_time").
+		Offset(r.Page.GetOffset()).
+		Limit(r.Page.GetLimit()).
+		Scan(&l).Error
+	if e != nil {
+		return ListGrantedFolderAccessRes{}, fmt.Errorf("failed to list granted folder access, req: %+v, %v", r, e)
+	}
+
+	var total int
+	e = newListGrantedFolderAccessQuery(c, r).
+		Select("count(*)").
+		Scan(&total).Error
+	if e != nil {
+		return ListGrantedFolderAccessRes{}, fmt.Errorf("failed to count granted folder access, req: %+v, %v", r, e)
+	}
+
+	// TODO save usernames locally
+	userNos := []string{}
+	for _, p := range l {
+		userNos = append(userNos, p.UserNo)
+	}
+
+	if len(userNos) > 0 {
+		unr, e := FetchUsernames(c, FetchUsernamesReq{UserNos: userNos})
+		if e != nil {
+			c.Log.Errorf("Failed to fetch usernames, %v", e)
+		} else {
+			for i, p := range l {
+				if name, ok := unr.UserNoToUsername[p.UserNo]; ok {
+					p.Username = name
+					l[i] = p
+				}
+			}
+		}
+	}
+
+	return ListGrantedFolderAccessRes{Payload: l, Page: common.RespPage(r.Page, total)}, nil
+}
+
+func newListGrantedFolderAccessQuery(c common.ExecContext, r ListGrantedFolderAccessReq) *gorm.DB {
+	return mysql.GetConn().
+		Table("user_vfolder").
+		Where("folder_no = ? and ownership = 'GRANTED' and is_del = 0", r.FolderNo)
+}
+
+func UpdateFile(c common.ExecContext, r UpdateFileReq) error {
+	f, e := findFileById(c, r.Id)
+	if e != nil {
+		return e
+	}
+	if f.IsZero() {
+		return common.NewWebErr("File not found")
+	}
+
+	// dir is only visible to the uploader for now
+	userId, _ := c.UserIdI()
+	if f.UploaderId != userId {
+		return common.NewWebErr("Not permitted")
+	}
+
+	// Directory is by default private, and it's not allowed to update it
+	if f.FileType == FILE_TYPE_DIR && r.UserGroup != f.UserGroup {
+		return common.NewWebErr("Updating directory's UserGroup is not allowed")
+	}
+
+	r.Name = strings.TrimSpace(r.Name)
+	if r.Name == "" {
+		return common.NewWebErr("Name can't be empty")
+	}
+
+	return mysql.GetConn().
+		Exec("update file_info set user_group = ?, name = ? where id = ? and is_logic_deleted = 0 and is_del = 0", r.UserGroup, r.Name, r.Id).Error
+}
+
+func ListAllTags(c common.ExecContext) ([]string, error) {
+	var l []string
+	userId, _ := c.UserIdI()
+	e := mysql.GetConn().
+		Raw("select t.name from tag t where t.user_id = ? and t.is_del = 0", userId).
+		Scan(&l).
+		Error
+
+	return l, e
+}
+
+func TagFile(c common.ExecContext, req TagFileReq) error {
+	req.TagName = strings.TrimSpace(req.TagName)
+	userId, _ := c.UserIdI()
+	return _lockFileTagExec(c, userId, req.TagName, func() error {
+
+		// find the tag first, and create one for current user if necessary
+		tagId, e := tryCreateTag(c, userId, req.TagName)
+		if e != nil {
+			return e
+		}
+		if tagId < 1 {
+			return fmt.Errorf("tagId illegal, shouldn't be less than 1")
+		}
+
+		// check if it's already tagged
+		ft, e := findFileTag(c, req.FileId, tagId)
+		if e != nil {
+			return e
+		}
+
+		if ft.IsZero() {
+			ft = FileTag{UserId: userId, FileId: req.FileId, TagId: tagId, CreateTime: common.ETime(time.Now()), CreateBy: c.Username()}
+			return mysql.GetConn().
+				Table("file_tag").Omit("id", "update_time", "update_by").Create(&ft).Error
+		}
+
+		if ft.IsDel == common.IS_DEL_Y {
+			return mysql.GetConn().
+				Exec("update file_tag set is_del = 0, update_time = ?, update_by = ? where id = ?", time.Now(), c.Username(), ft.Id).
+				Error
+		}
+
+		return nil
+	})
+}
+
+func tryCreateTag(c common.ExecContext, userId int, tagName string) (int, error) {
+	t, e := findTag(c, userId, tagName)
+	if e != nil {
+		return 0, fmt.Errorf("failed to find tag, userId: %v, tagName: %v, %e", userId, tagName, e)
+	}
+
+	if t.IsZero() {
+		t = Tag{Name: tagName, UserId: userId, CreateBy: c.Username(), CreateTime: common.ETime(time.Now())}
+		e := mysql.GetConn().Table("tag").Omit("id", "update_time", "update_by").Create(&t).Error
+		if e != nil {
+			return 0, fmt.Errorf("failed to create tag, userId: %v, tagName: %v, %e", userId, tagName, e)
+		}
+		return t.Id, nil
+	}
+
+	if t.IsDel == common.IS_DEL_Y {
+		e := mysql.GetConn().Exec("update tag set is_del = 0, update_time = ?, update_by = ? where id = ?", time.Now(), c.Username(), t.Id).Error
+		if e != nil {
+			return 0, fmt.Errorf("failed to update tag, id: %v, %e", t.Id, e)
+		}
+	}
+
+	return t.Id, nil
+}
+
+func findTag(c common.ExecContext, userId int, tagName string) (Tag, error) {
+	var t Tag
+	e := mysql.GetConn().
+		Raw("select * from tag where user_id = ? and name = ?", userId, tagName).
+		Scan(&t).Error
+	return t, e
+}
+
+func findFileTag(c common.ExecContext, fileId int, tagId int) (FileTag, error) {
+	var ft FileTag
+	e := mysql.GetConn().
+		Raw("select * from file_tag where file_id = ? and tag_id = ?", fileId, tagId).
+		Scan(&ft).Error
+	return ft, e
+}
+
+func UntagFile(c common.ExecContext, req UntagFileReq) error {
+	req.TagName = strings.TrimSpace(req.TagName)
+	userId, _ := c.UserIdI()
+	return _lockFileTagExec(c, userId, req.TagName, func() error {
+		// each tag is bound to a specific user
+		tag, e := findTag(c, userId, req.TagName)
+		if e != nil {
+			return e
+		}
+		if tag.IsZero() {
+			c.Log.Infof("Tag for '%v' doesn't exist, unable to untag file", req.TagName)
+			return nil // tag doesn't exist
+		}
+
+		fileTag, e := findFileTag(c, req.FileId, tag.Id)
+		if e != nil {
+			return e
+		}
+
+		if fileTag.IsZero() || fileTag.IsDel == common.IS_DEL_Y {
+			c.Log.Infof("FileTag for file_id: %d, tag_id: %d, doesn't exist", req.FileId, tag.Id)
+			return nil
+		}
+
+		return mysql.GetConn().Transaction(func(tx *gorm.DB) error {
+			// it was a logic delete in file-server, it now becomes a physical delete
+			e = tx.Exec("delete from file_tag where id = ?", fileTag.Id).Error
+			if e != nil {
+				return fmt.Errorf("failed to update file_tag, %v", e)
+			}
+
+			c.Log.Infof("Untagged file, file_id: %d, tag_name: %s", req.FileId, req.TagName)
+
+			/*
+			   check if the tag is still associated with other files, if not, we remove it
+			   remember, the tag is bound for a specific user only, so this doesn't affect
+			   other users
+			*/
+			var anyFileTagId int
+			e = tx.Table("file_tag").
+				Where("tag_id = ? and is_del = 0", tag.Id).
+				Limit(1).
+				Scan(&anyFileTagId).
+				Error
+			if e != nil {
+				return e
+			}
+
+			if anyFileTagId < 1 {
+				// it was a logic delete in file-server, it now becomes a physical delete
+				return tx.Exec("delete from tag where id = ?", tag.Id).Error
+			}
+			return nil
+		})
+	})
+}
+
+func _lockFileTagExec(c common.ExecContext, userId int, tagName string, run redis.Runnable) error {
+	return redis.RLockExec(c, fmt.Sprintf("file:tag:uid:%d:name:%s", userId, tagName), run)
 }
