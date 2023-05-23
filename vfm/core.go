@@ -32,9 +32,18 @@ const (
 	VFOWNERSHIP_GRANTED = "GRANTED"
 )
 
-var (
-	fileDownloadInfCache = redis.NewLazyRCache(15 * time.Minute)
-)
+type FileInfoResp struct {
+	Name         string `json:"name"`
+	Uuid         string `json:"uuid"`
+	SizeInBytes  int64  `json:"sizeInBytes"`
+	UploaderId   int    `json:"uploaderId"`
+	UploaderName string `json:"uploaderName"`
+	IsDeleted    bool   `json:"isDeleted"`
+	FileType     string `json:"fileType"`
+	ParentFile   string `json:"parentFile"`
+	LocalPath    string `json:"localPath"`
+	FstoreFileId string `json:"fstoreFileId"`
+}
 
 type GenerateTempTokenReq struct {
 	FileKey string `json:"fileKey"`
@@ -1566,4 +1575,54 @@ func GenTempToken(c common.ExecContext, r GenerateTempTokenReq) (string, error) 
 		return "", e
 	}
 	return t, nil
+}
+
+func ListFilesInDir(c common.ExecContext, fileKey string, limit int, page int) ([]string, error) {
+	var fileKeys []string
+	e := mysql.GetConn().
+		Table("file_info").
+		Select("uuid").
+		Where("parent_file = ?", fileKey).
+		Where("file_type = 'FILE'").
+		Where("is_del = 0").
+		Offset((page - 1) * limit).
+		Limit(limit).
+		Scan(&fileKeys).Error
+	return fileKeys, e
+}
+
+func FetchFileInfoInternal(c common.ExecContext, fileKey string) (FileInfoResp, error) {
+	var fir FileInfoResp
+	f, e := findFile(c, fileKey)
+	if e != nil {
+		return fir, e
+	}
+	if f.IsZero() {
+		return fir, common.NewWebErr("File not found")
+	}
+
+	fir.Name = f.Name
+	fir.Uuid = f.Uuid
+	fir.SizeInBytes = f.SizeInBytes
+	fir.UploaderId = f.UploaderId
+	fir.UploaderName = f.UploaderName
+	fir.IsDeleted = f.IsLogicDeleted == FILE_LDEL_Y
+	fir.FileType = f.FileType
+	fir.ParentFile = f.ParentFile
+	fir.LocalPath = "" // files are managed mini-fstore
+	fir.FstoreFileId = f.FstoreFileId
+	return fir, nil
+}
+
+func ValidateFileOwner(c common.ExecContext, fileKey string, userId string) (bool, error) {
+	var id int
+	e := mysql.GetConn().
+		Select("id").
+		Table("file_info").
+		Where("uuid = ?", fileKey).
+		Where("uploader_id = ?", userId).
+		Where("is_logic_deleted = 0").
+		Limit(1).
+		Scan(&id).Error
+	return id > 0, e
 }

@@ -2,6 +2,7 @@ package vfm
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/curtisnewbie/gocommon/client"
 	"github.com/curtisnewbie/gocommon/common"
@@ -144,7 +145,7 @@ func GetFstoreTmpToken(c common.ExecContext, fileId string, filename string) (st
 	r := client.NewDynTClient(c, "/file/key", "fstore").
 		EnableTracing().
 		EnableRequestLog().
-		Get(map[string][]string{"fileId": {fileId}, "filename": {filename}})
+		Get(map[string][]string{"fileId": {fileId}, "filename": {url.QueryEscape(filename)}})
 	if r.Err != nil {
 		return "", r.Err
 	}

@@ -2,6 +2,7 @@ package vfm
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/curtisnewbie/goauth/client/goauth-client-go/gclient"
 	"github.com/curtisnewbie/gocommon/common"
@@ -154,6 +155,34 @@ func generateTempTokenEp(c *gin.Context, ec common.ExecContext, req GenerateTemp
 	return GenTempToken(ec, req)
 }
 
+func listFilesInDirInternalEp(c *gin.Context, ec common.ExecContext) (any, error) {
+	fileKey := c.Query("fileKey")
+	limit, e := strconv.Atoi(c.Query("limit"))
+	if e != nil {
+		return nil, e
+	}
+	page, e := strconv.Atoi(c.Query("page"))
+	if e != nil {
+		return nil, e
+	}
+
+	if limit < 0 || limit > 100 {
+		limit = 100
+	}
+	if page < 1 {
+		page = 1
+	}
+	return ListFilesInDir(ec, fileKey, limit, page)
+}
+
+func fetchFileInfoInternalEp(c *gin.Context, ec common.ExecContext) (any, error) {
+	return FetchFileInfoInternal(ec, c.Query("fileKey"))
+}
+
+func validateFileOwnerEp(c *gin.Context, ec common.ExecContext) (any, error) {
+	return ValidateFileOwner(ec, c.Query("fileKey"), c.Query("userId"))
+}
+
 func PrepareServer() {
 	if gclient.IsEnabled() {
 		server.OnServerBootstrapped(func() {
@@ -244,4 +273,9 @@ func PrepareServer() {
 
 	server.PostJ("/open/api/file/token/generate", generateTempTokenEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User generate temporary token", Code: MANAGE_FILE_CODE}))
+
+	server.Get("/remote/user/file/indir/list", listFilesInDirInternalEp)
+	server.Get("/remote/user/file/info", fetchFileInfoInternalEp)
+	server.Get("/remote/user/file/owner/validation", validateFileOwnerEp)
+
 }
