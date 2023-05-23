@@ -32,6 +32,14 @@ const (
 	VFOWNERSHIP_GRANTED = "GRANTED"
 )
 
+var (
+	fileDownloadInfCache = redis.NewLazyRCache(15 * time.Minute)
+)
+
+type GenerateTempTokenReq struct {
+	FileKey string `json:"fileKey"`
+}
+
 type FileTag struct {
 	Id         int
 	FileId     int
@@ -273,6 +281,17 @@ type ParentFileInfo struct {
 	Zero     bool   `json:"-"`
 	FileKey  string `json:"fileKey"`
 	Filename string `json:"fileName"`
+}
+
+type FileDownloadInfo struct {
+	FileId         int
+	Name           string
+	UserGroup      int
+	UploaderId     int
+	IsLogicDeleted int
+	FileType       string
+	FileSharingId  int
+	FstoreFileId   string
 }
 
 type FileInfo struct {
@@ -1479,4 +1498,72 @@ func DeleteFile(c common.ExecContext, r DeleteFileReq) error {
 
 		return mysql.GetConn().Exec("UPDATE file_info SET is_logic_deleted = 1, logic_delete_time = NOW() WHERE id = ? AND is_logic_deleted = 0", f.Id).Error
 	})
+}
+
+func validateFileAccess(c common.ExecContext, fileKey string) (bool, FileDownloadInfo, error) {
+	userId := c.UserIdInt()
+	var f FileDownloadInfo
+	e := mysql.GetConn().
+		Select("fi.id 'file_id', fi.fstore_file_id, fi.name, fi.user_group, fi.uploader_id, fi.is_logic_deleted, fi.file_type, fs.id 'file_sharing_id'").
+		Table("file_info fi").
+		Joins("left join file_sharing fs on (fi.id = fs.file_id and fs.user_id = ?)", userId).
+		Where("fi.uuid = ? and fi.is_del = 0", fileKey).
+		Limit(1).
+		Scan(&f).Error
+	if e != nil {
+		return false, f, e
+	}
+
+	if f.FileId < 1 {
+		return false, f, common.NewWebErr("File not found")
+	}
+	if f.IsLogicDeleted == FILE_LDEL_Y {
+		return false, f, common.NewWebErr("File deleted")
+	}
+	if f.FileType != FILE_TYPE_FILE {
+		return false, f, common.NewWebErr("Downloading a directory is not supported")
+	}
+
+	var permitted bool = f.UserGroup == USER_GROUP_PUBLIC // publicly accessible
+	if !permitted {
+		permitted = f.UploaderId == c.UserIdInt() // owner of the file
+	}
+	if !permitted {
+		permitted = f.FileSharingId > 0 // granted access to the file
+	}
+	if !permitted {
+		var uvid int
+		e := mysql.GetConn().
+			Select("uv.id").
+			Table("file_info fi").
+			Joins("left join file_vfolder fv on (fi.uuid = fv.uuid and fv.is_del = 0)").
+			Joins("left join user_vfolder uv on (uv.user_no = ? and uv.folder_no = fv.folder_no and uv.is_del = 0)", c.UserNo()).
+			Where("fi.id = ?", f.FileId).
+			Limit(1).
+			Scan(&uvid).Error
+		if e != nil {
+			return false, f, fmt.Errorf("failed to query user folder relation for file, id: %v, %v", f.FileId, e)
+		}
+		permitted = uvid > 0 // granted access to a folder that contains this file
+	}
+	return permitted, f, nil
+}
+
+func GenTempToken(c common.ExecContext, r GenerateTempTokenReq) (string, error) {
+	ok, f, e := validateFileAccess(c, r.FileKey)
+	if e != nil {
+		return "", e
+	}
+	if !ok {
+		return "", common.NewWebErr("Not permitted")
+	}
+	if f.FstoreFileId == "" {
+		return "", common.NewWebErr("File cannot be downloaded, please contact system administrator")
+	}
+
+	t, e := GetFstoreTmpToken(c, f.FstoreFileId, f.Name)
+	if e != nil {
+		return "", e
+	}
+	return t, nil
 }

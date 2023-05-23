@@ -400,3 +400,18 @@ func TestDeleteFile(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+
+func TestGenTempToken(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "UE202205142310076187414"
+	tkn, e := GenTempToken(c, GenerateTempTokenReq{"ZZZ687250496077824971813"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	if tkn == "" {
+		t.Fatal("Token is empty")
+	}
+	t.Logf("tkn: %v", tkn)
+}

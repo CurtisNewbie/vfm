@@ -139,3 +139,24 @@ func DeleteFstoreFile(c common.ExecContext, fileId string) error {
 	}
 	return nil
 }
+
+func GetFstoreTmpToken(c common.ExecContext, fileId string, filename string) (string, error) {
+	r := client.NewDynTClient(c, "/file/key", "fstore").
+		EnableTracing().
+		EnableRequestLog().
+		Get(map[string][]string{"fileId": {fileId}, "filename": {filename}})
+	if r.Err != nil {
+		return "", r.Err
+	}
+	defer r.Close()
+
+	var res common.GnResp[string]
+	if e := r.ReadJson(&res); e != nil {
+		return "", e
+	}
+
+	if res.Error {
+		return "", res.Err()
+	}
+	return res.Data, nil
+}

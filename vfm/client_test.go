@@ -50,3 +50,14 @@ func TestDeleteFstoreFile(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+
+func TestGetFstoreTmpToken(t *testing.T) {
+	tkn, e := GetFstoreTmpToken(common.EmptyExecContext(), "file_688399963701248926527", "tempfile")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if tkn == "" {
+		t.Fatal("temp token is empty")
+	}
+	t.Logf("tkn: %v", tkn)
+}

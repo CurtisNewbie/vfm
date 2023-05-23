@@ -149,6 +149,11 @@ func createFileEp(c *gin.Context, ec common.ExecContext, req CreateFileReq) (any
 	return nil, CreateFile(ec, req)
 }
 
+func generateTempTokenEp(c *gin.Context, ec common.ExecContext, req GenerateTempTokenReq) (any, error) {
+	ec.Log.Debugf("req: %+v", req)
+	return GenTempToken(ec, req)
+}
+
 func PrepareServer() {
 	if gclient.IsEnabled() {
 		server.OnServerBootstrapped(func() {
@@ -236,4 +241,7 @@ func PrepareServer() {
 
 	server.PostJ("/open/api/vfolder/granted/list", listGrantedFolderAccessEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "List granted access to virtual folder", Code: MANAGE_FILE_CODE}))
+
+	server.PostJ("/open/api/file/token/generate", generateTempTokenEp,
+		gclient.PathDocExtra(gclient.PathDoc{Desc: "User generate temporary token", Code: MANAGE_FILE_CODE}))
 }
