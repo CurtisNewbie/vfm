@@ -28,12 +28,13 @@ Unlike file-service, vfm doesn't manage the actual file storage. The file storag
 
 | Feature/Functionality                               | vfm                                                       | file-service |
 |-----------------------------------------------------|-----------------------------------------------------------|--------------|
+| Manage User Files (virtually)                       | supported                                                 | supported    |
+| Virtual Folders (VFolders)                          | supported                                                 | supported    |
+| Virtual Directories                                 | supported                                                 | supported    |
 | Manage File Storage                                 | not supported, `mini-fstore` is required                  | supported    |
-| File Event Synchronization                          | not supported, should be handled by `mini-fstore` instead | supported    |
 | Manage App Files (files that don't belong to users) | not supported, should be handled by `mini-fstore` instead | supported    |
+| File Event Synchronization                          | not supported, should be handled by `mini-fstore` instead | supported    |
 | File Package And Export (File Task)                 | not supported                                             | supported    |
-| Virtual Folders (VFolders)                          | will be supported                                         | supported    |
-| Virtual Directories                                 | will be supported                                         | supported    |
 
 ## Migration from File-Service
 
