@@ -159,10 +159,11 @@ type ListFileReq struct {
 }
 
 type CreateFileReq struct {
-	Filename   string   `json:"filename"`
-	UserGroup  int      `json:"userGroup"`
-	Tags       []string `json:"tags"`
-	ParentFile string   `json:"parentFile"`
+	Filename     string   `json:"filename"`
+	FstoreFileId string   `json:"fstoreFileId"`
+	UserGroup    int      `json:"userGroup"`
+	Tags         []string `json:"tags"`
+	ParentFile   string   `json:"parentFile"`
 }
 
 type DeleteFileReq struct {
@@ -1404,4 +1405,78 @@ func UntagFile(c common.ExecContext, req UntagFileReq) error {
 
 func _lockFileTagExec(c common.ExecContext, userId int, tagName string, run redis.Runnable) error {
 	return redis.RLockExec(c, fmt.Sprintf("file:tag:uid:%d:name:%s", userId, tagName), run)
+}
+
+func CreateFile(c common.ExecContext, r CreateFileReq) error {
+	fsf, e := FetchFstoreFileInfo(c, r.FstoreFileId)
+	if e != nil {
+		return fmt.Errorf("failed to fetch file info from fstore, %v", e)
+	}
+	if fsf.IsZero() || fsf.Status != FS_STATUS_NORMAL {
+		return common.NewWebErr("File not found or deleted")
+	}
+
+	var f FileInfo
+	f.Name = r.Filename
+	f.Uuid = common.GenIdP("ZZZ")
+	f.FstoreFileId = fsf.FileId
+	f.SizeInBytes = fsf.Size
+	f.UserGroup = USER_GROUP_PRIVATE
+	f.FileType = FILE_TYPE_FILE
+
+	if e := _saveFile(c, f); e != nil {
+		return e
+	}
+
+	if r.ParentFile != "" {
+		if e := MoveFileToDir(c, MoveIntoDirReq{Uuid: f.Uuid, ParentFileUuid: r.ParentFile}); e != nil {
+			return e
+		}
+	}
+	return nil
+}
+
+func DeleteFile(c common.ExecContext, r DeleteFileReq) error {
+	return _lockFileExec(c, r.Uuid, func() error {
+		f, e := findFile(c, r.Uuid)
+		if e != nil {
+			return fmt.Errorf("unable to find file, uuid: %v, %v", r.Uuid, e)
+		}
+		if f.IsZero() {
+			return common.NewWebErr("File not found")
+		}
+
+		userId, _ := c.UserIdI()
+		if f.UploaderId != userId {
+			return common.NewWebErr("Not permitted")
+		}
+
+		if f.IsLogicDeleted == FILE_LDEL_Y {
+			return nil // deleted already
+		}
+
+		if f.FileType == FILE_TYPE_DIR { // if it's dir make sure it's empty
+			var anyId int
+			e := mysql.GetConn().
+				Select("id").
+				Table("file_info").
+				Where("parent_file = ? and is_logic_deleted = 0 and is_del = 0", r.Uuid).
+				Limit(1).
+				Scan(&anyId).Error
+			if e != nil {
+				return fmt.Errorf("failed to count files in dir, uuid: %v, %v", r.Uuid, e)
+			}
+			if anyId > 0 {
+				return common.NewWebErr("Directory is not empty, unable to delete it")
+			}
+		}
+
+		if f.FstoreFileId != "" {
+			if e := DeleteFstoreFile(c, f.FstoreFileId); e != nil {
+				return fmt.Errorf("failed to delete fstore file, fileId: %v, %v", f.FstoreFileId, e)
+			}
+		}
+
+		return mysql.GetConn().Exec("UPDATE file_info SET is_logic_deleted = 1, logic_delete_time = NOW() WHERE id = ? AND is_logic_deleted = 0", f.Id).Error
+	})
 }

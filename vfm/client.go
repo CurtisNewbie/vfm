@@ -7,6 +7,26 @@ import (
 	"github.com/curtisnewbie/gocommon/common"
 )
 
+const (
+	FS_STATUS_NORMAL = "NORMAL" // file.status - normal
+)
+
+type FstoreFile struct {
+	Id         int64         `json:"id"`
+	FileId     string        `json:"fileId"`
+	Name       string        `json:"name"`
+	Status     string        `json:"status"`
+	Size       int64         `json:"size"`
+	Md5        string        `json:"md5"`
+	UplTime    common.ETime  `json:"uplTime"`
+	LogDelTime *common.ETime `json:"logDelTime"`
+	PhyDelTime *common.ETime `json:"phyDelTime"`
+}
+
+func (f FstoreFile) IsZero() bool {
+	return f.Id < 1
+}
+
 type FindUserReq struct {
 	UserId   *int    `json:"userId"`
 	UserNo   *string `json:"userNo"`
@@ -76,7 +96,46 @@ func FetchUsernames(c common.ExecContext, req FetchUsernamesReq) (FetchUsernames
 
 	var res common.GnResp[FetchUsernamesRes]
 	if e := r.ReadJson(&res); e != nil {
-		return FetchUsernamesRes{}, fmt.Errorf("failed to unmarshel to FetchUsernamesRes, %v", e)
+		return FetchUsernamesRes{}, e
 	}
-	return res.Data, nil
+	return res.Data, res.Err()
+}
+
+func FetchFstoreFileInfo(c common.ExecContext, fileId string) (FstoreFile, error) {
+	r := client.NewDynTClient(c, "/file/info", "fstore").
+		EnableTracing().
+		Get(map[string][]string{"fileId": {fileId}})
+	if r.Err != nil {
+		return FstoreFile{}, r.Err
+	}
+	defer r.Close()
+
+	var res common.GnResp[FstoreFile]
+	if e := r.ReadJson(&res); e != nil {
+		return FstoreFile{}, e
+	}
+	return res.Data, res.Err()
+}
+
+func DeleteFstoreFile(c common.ExecContext, fileId string) error {
+	r := client.NewDynTClient(c, "/file", "fstore").
+		EnableTracing().
+		EnableRequestLog().
+		Delete(map[string][]string{"fileId": {fileId}})
+	if r.Err != nil {
+		return r.Err
+	}
+	defer r.Close()
+
+	var res common.GnResp[any]
+	if e := r.ReadJson(&res); e != nil {
+		return e
+	}
+	if res.Error {
+		if res.ErrorCode == "FILE_DELETED" {
+			return nil
+		}
+		return res.Err()
+	}
+	return nil
 }

@@ -11,7 +11,8 @@ import (
 
 func preTest(t *testing.T) {
 	user := "root"
-	pw := "123456"
+	// pw := "123456"
+	pw := ""
 	db := "fileServer"
 	host := "localhost"
 	port := "3306"
@@ -29,7 +30,7 @@ func preTest(t *testing.T) {
 func TestListFilesInVFolder(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 	c.User.UserId = "1"
 	var folderNo string = "hfKh3QZSsWjKufZWflqu8jb0n"
 	r, e := listFilesInVFolder(c, ListFileReq{FolderNo: &folderNo})
@@ -42,7 +43,7 @@ func TestListFilesInVFolder(t *testing.T) {
 func TestListFilesSelective(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 	c.User.UserId = "1"
 
 	r, e := listFilesSelective(c, ListFileReq{})
@@ -64,7 +65,7 @@ func TestListFilesSelective(t *testing.T) {
 func TestListFilesForTags(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 	c.User.UserId = "1"
 	var tagName string = "test"
 
@@ -149,7 +150,7 @@ func TestMakeDir(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 
 	fileKey, e := MakeDir(c, MakeDirReq{Name: "mydir"})
 	if e != nil {
@@ -165,7 +166,7 @@ func TestCreateVFolder(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 
 	r, _ := common.ERand(5)
 	folderNo, e := CreateVFolder(c, CreateVFolderReq{"MyFolder_" + r})
@@ -183,7 +184,7 @@ func TestListDirs(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 	dirs, e := ListDirs(c)
 	if e != nil {
 		t.Fatal(e)
@@ -195,7 +196,7 @@ func TestGranteFileAccess(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 	c.User.Username = "zhuangyongj"
 
 	e := GranteFileAccess(c, 2, 3)
@@ -208,7 +209,7 @@ func TestRemoveGrantedFileAccess(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 	c.User.Username = "zhuangyongj"
 	e := RemoveGrantedFileAccess(c, RemoveGrantedAccessReq{FileId: 3, UserId: 2})
 	if e != nil {
@@ -220,7 +221,7 @@ func TestListGrantedFileAccess(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 	c.User.Username = "zhuangyongj"
 	l, e := ListGrantedFileAccess(c, ListGrantedAccessReq{FileId: 3})
 	if e != nil {
@@ -245,7 +246,7 @@ func TestRemoveVFolderAccess(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 	c.User.Username = "zhuangyongj"
 
 	req := RemoveGrantedFolderAccessReq{
@@ -261,7 +262,7 @@ func TestListVFolderBrief(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 
 	v, e := ListVFolderBrief(c)
 	if e != nil {
@@ -274,7 +275,7 @@ func TestAddFileToVFolder(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 
 	e := AddFileToVFolder(c, AddFileToVfolderReq{
 		FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
@@ -289,7 +290,7 @@ func TestRemoveFileFromVFolder(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 
 	e := RemoveFileFromVFolder(c, RemoveFileFromVfolderReq{
 		FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
@@ -304,7 +305,7 @@ func TestListVFolders(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
 	c.User.UserId = "1"
-	c.User.UserNo = "GyaYqTKsyGIxmAFaHgNYztA0y"
+	c.User.UserNo = "UE202205142310076187414"
 	l, e := ListVFolders(c, ListVFolderReq{})
 	if e != nil {
 		t.Fatal(e)
@@ -367,6 +368,34 @@ func TestUntagFile(t *testing.T) {
 	c.User.UserNo = "UE202205142310076187414"
 
 	e := UntagFile(c, UntagFileReq{FileId: 355, TagName: "mytag"})
+	if e != nil {
+		t.Fatal(e)
+	}
+}
+
+func TestCreateFile(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "UE202205142310076187414"
+
+	e := CreateFile(c, CreateFileReq{
+		Filename:     "myfile",
+		FstoreFileId: "file_688404712292352087399",
+		UserGroup:    USER_GROUP_PRIVATE,
+	})
+	if e != nil {
+		t.Fatal(e)
+	}
+}
+
+func TestDeleteFile(t *testing.T) {
+	preTest(t)
+	c := common.EmptyExecContext()
+	c.User.UserId = "1"
+	c.User.UserNo = "UE202205142310076187414"
+
+	e := DeleteFile(c, DeleteFileReq{Uuid: "ZZZ718078073798656022858"})
 	if e != nil {
 		t.Fatal(e)
 	}

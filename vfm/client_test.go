@@ -35,3 +35,18 @@ func TestFetchUsernames(t *testing.T) {
 	}
 	t.Logf("res: %+v", res)
 }
+
+func TestFetchFstoreFileInfo(t *testing.T) {
+	f, e := FetchFstoreFileInfo(common.EmptyExecContext(), "file_688404712292352087399")
+	if e != nil {
+		t.Fatal(e)
+	}
+	t.Logf("f: %+v", f)
+}
+
+func TestDeleteFstoreFile(t *testing.T) {
+	e := DeleteFstoreFile(common.EmptyExecContext(), "file_688400412377088926527")
+	if e != nil {
+		t.Fatal(e)
+	}
+}

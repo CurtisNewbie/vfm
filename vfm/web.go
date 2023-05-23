@@ -141,14 +141,12 @@ func listFilesEp(c *gin.Context, ec common.ExecContext, req ListFileReq) (any, e
 
 func deleteFileEp(c *gin.Context, ec common.ExecContext, req DeleteFileReq) (any, error) {
 	ec.Log.Debugf("req: %+v", req)
-	// TODO
-	return nil, nil
+	return nil, DeleteFile(ec, req)
 }
 
 func createFileEp(c *gin.Context, ec common.ExecContext, req CreateFileReq) (any, error) {
 	ec.Log.Debugf("req: %+v", req)
-	// TODO
-	return nil, nil
+	return nil, CreateFile(ec, req)
 }
 
 func PrepareServer() {

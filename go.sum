@@ -73,6 +73,8 @@ github.com/curtisnewbie/goauth/client/goauth-client-go v0.0.0-20230513042101-f41
 github.com/curtisnewbie/goauth/client/goauth-client-go v0.0.0-20230513042101-f41e4ca6eaba/go.mod h1:IMfIRgFJVM+yNA5WBk6o1ElwAjk3Vafy0W7ikZcd6Bo=
 github.com/curtisnewbie/gocommon v1.0.8 h1:eWTYAXLvypsUDUhxp6PW5ayD4J0Fd+oZ2ke0cVGCmWA=
 github.com/curtisnewbie/gocommon v1.0.8/go.mod h1:SQuNI+OQRLOnzUo6yDnIpLDMATmTiX+vNuvEkE40zH0=
+github.com/curtisnewbie/gocommon v1.0.9-0.20230520165640-5d8160e5a293 h1:kXEWAM8HBPdRrqlfjJsf4NNALkUpJgAbgO1rel3W8cI=
+github.com/curtisnewbie/gocommon v1.0.9-0.20230520165640-5d8160e5a293/go.mod h1:SQuNI+OQRLOnzUo6yDnIpLDMATmTiX+vNuvEkE40zH0=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
