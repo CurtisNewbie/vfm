@@ -2,7 +2,6 @@ package vfm
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/curtisnewbie/goauth/client/goauth-client-go/gclient"
 	"github.com/curtisnewbie/gocommon/common"
@@ -155,32 +154,16 @@ func generateTempTokenEp(c *gin.Context, ec common.ExecContext, req GenerateTemp
 	return GenTempToken(ec, req)
 }
 
-func listFilesInDirInternalEp(c *gin.Context, ec common.ExecContext) (any, error) {
-	fileKey := c.Query("fileKey")
-	limit, e := strconv.Atoi(c.Query("limit"))
-	if e != nil {
-		return nil, e
-	}
-	page, e := strconv.Atoi(c.Query("page"))
-	if e != nil {
-		return nil, e
-	}
-
-	if limit < 0 || limit > 100 {
-		limit = 100
-	}
-	if page < 1 {
-		page = 1
-	}
-	return ListFilesInDir(ec, fileKey, limit, page)
+func listFilesInDirInternalEp(c *gin.Context, ec common.ExecContext, q ListFilesInDirReq) (any, error) {
+	return ListFilesInDir(ec, q)
 }
 
 func fetchFileInfoInternalEp(c *gin.Context, ec common.ExecContext) (any, error) {
 	return FetchFileInfoInternal(ec, c.Query("fileKey"))
 }
 
-func validateFileOwnerEp(c *gin.Context, ec common.ExecContext) (any, error) {
-	return ValidateFileOwner(ec, c.Query("fileKey"), c.Query("userId"))
+func validateFileOwnerEp(c *gin.Context, ec common.ExecContext, q ValidateFileOwnerReq) (any, error) {
+	return ValidateFileOwner(ec, q)
 }
 
 func PrepareServer() {
@@ -205,77 +188,76 @@ func PrepareServer() {
 	server.Get("/open/api/file/parent", fetchParentFileInfoEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User fetch parent file info", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/move-to-dir", moveFileIntoDirEp,
+	server.IPost("/open/api/file/move-to-dir", moveFileIntoDirEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User move files into directory", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/make-dir", makeDirEp,
+	server.IPost("/open/api/file/make-dir", makeDirEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User make directory", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/grant-access", grantAccessEp,
+	server.IPost("/open/api/file/grant-access", grantAccessEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User grant file access", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/list-granted-access", listGrantedAccessEp,
+	server.IPost("/open/api/file/list-granted-access", listGrantedAccessEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list granted file access", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/remove-granted-access", removeGrantedAccessEp,
+	server.IPost("/open/api/file/remove-granted-access", removeGrantedAccessEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User remove granted file access", Code: MANAGE_FILE_CODE}))
 
 	server.Get("/open/api/file/dir/list", listDirsEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list directories", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/list", listFilesEp,
+	server.IPost("/open/api/file/list", listFilesEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list files", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/delete", deleteFileEp,
+	server.IPost("/open/api/file/delete", deleteFileEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User delete file", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/create", createFileEp,
+	server.IPost("/open/api/file/create", createFileEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User create file", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/info/update", updateFileEp,
+	server.IPost("/open/api/file/info/update", updateFileEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User update file", Code: MANAGE_FILE_CODE}))
 
 	server.Get("/open/api/file/tag/list/all", listAllTagsEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list all file tags", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/tag/list-for-file", listFileTagsEp,
+	server.IPost("/open/api/file/tag/list-for-file", listFileTagsEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list tags of file", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/tag", tagFileEp,
+	server.IPost("/open/api/file/tag", tagFileEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User tag file", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/untag", untagFileEp,
+	server.IPost("/open/api/file/untag", untagFileEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User untag file", Code: MANAGE_FILE_CODE}))
 
 	server.Get("/open/api/vfolder/brief/owned", listVfolderBriefEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list virtual folder briefs", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/list", listVfoldersEp,
+	server.IPost("/open/api/vfolder/list", listVfoldersEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User list virtual folders", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/create", createVFolderEp,
+	server.IPost("/open/api/vfolder/create", createVFolderEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User create virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/file/add", addFileToVFolderEp,
+	server.IPost("/open/api/vfolder/file/add", addFileToVFolderEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User add file to virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/file/remove", removeFileFromVfolderEp,
+	server.IPost("/open/api/vfolder/file/remove", removeFileFromVfolderEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User remove file from virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/share", shareVFolderEp,
+	server.IPost("/open/api/vfolder/share", shareVFolderEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "Share access to virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/access/remove", removeGrantedFolderAccessEp,
+	server.IPost("/open/api/vfolder/access/remove", removeGrantedFolderAccessEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "Remove granted access to virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/vfolder/granted/list", listGrantedFolderAccessEp,
+	server.IPost("/open/api/vfolder/granted/list", listGrantedFolderAccessEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "List granted access to virtual folder", Code: MANAGE_FILE_CODE}))
 
-	server.PostJ("/open/api/file/token/generate", generateTempTokenEp,
+	server.IPost("/open/api/file/token/generate", generateTempTokenEp,
 		gclient.PathDocExtra(gclient.PathDoc{Desc: "User generate temporary token", Code: MANAGE_FILE_CODE}))
 
-	server.Get("/remote/user/file/indir/list", listFilesInDirInternalEp)
+	server.IGet("/remote/user/file/indir/list", listFilesInDirInternalEp)
 	server.Get("/remote/user/file/info", fetchFileInfoInternalEp)
-	server.Get("/remote/user/file/owner/validation", validateFileOwnerEp)
-
+	server.IGet("/remote/user/file/owner/validation", validateFileOwnerEp)
 }

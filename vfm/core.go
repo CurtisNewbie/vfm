@@ -32,6 +32,17 @@ const (
 	VFOWNERSHIP_GRANTED = "GRANTED"
 )
 
+type ValidateFileOwnerReq struct {
+	FileKey string `form:"fileKey"`
+	UserId  int    `form:"userId"`
+}
+
+type ListFilesInDirReq struct {
+	FileKey string `form:"fileKey"`
+	Limit   int    `form:"limit"`
+	Page    int    `form:"page"`
+}
+
 type FileInfoResp struct {
 	Name         string `json:"name"`
 	Uuid         string `json:"uuid"`
@@ -1577,16 +1588,23 @@ func GenTempToken(c common.ExecContext, r GenerateTempTokenReq) (string, error) 
 	return t, nil
 }
 
-func ListFilesInDir(c common.ExecContext, fileKey string, limit int, page int) ([]string, error) {
+func ListFilesInDir(c common.ExecContext, q ListFilesInDirReq) ([]string, error) {
+	if q.Limit < 0 || q.Limit > 100 {
+		q.Limit = 100
+	}
+	if q.Page < 1 {
+		q.Page = 1
+	}
+
 	var fileKeys []string
 	e := mysql.GetConn().
 		Table("file_info").
 		Select("uuid").
-		Where("parent_file = ?", fileKey).
+		Where("parent_file = ?", q.FileKey).
 		Where("file_type = 'FILE'").
 		Where("is_del = 0").
-		Offset((page - 1) * limit).
-		Limit(limit).
+		Offset((q.Page - 1) * q.Limit).
+		Limit(q.Limit).
 		Scan(&fileKeys).Error
 	return fileKeys, e
 }
@@ -1614,13 +1632,13 @@ func FetchFileInfoInternal(c common.ExecContext, fileKey string) (FileInfoResp, 
 	return fir, nil
 }
 
-func ValidateFileOwner(c common.ExecContext, fileKey string, userId string) (bool, error) {
+func ValidateFileOwner(c common.ExecContext, q ValidateFileOwnerReq) (bool, error) {
 	var id int
 	e := mysql.GetConn().
 		Select("id").
 		Table("file_info").
-		Where("uuid = ?", fileKey).
-		Where("uploader_id = ?", userId).
+		Where("uuid = ?", q.FileKey).
+		Where("uploader_id = ?", q.UserId).
 		Where("is_logic_deleted = 0").
 		Limit(1).
 		Scan(&id).Error

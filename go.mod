@@ -3,8 +3,8 @@ module github.com/curtisnewbie/vfm
 go 1.18
 
 require (
-	github.com/curtisnewbie/goauth/client/goauth-client-go v0.0.0-20230513042101-f41e4ca6eaba
-	github.com/curtisnewbie/gocommon v1.0.9-0.20230520165640-5d8160e5a293
+	github.com/curtisnewbie/goauth/client/goauth-client-go v0.0.0-20230524100549-d311b8e77778
+	github.com/curtisnewbie/gocommon v0.0.0-20230524095233-0c55e136225f
 	github.com/gin-gonic/gin v1.8.1
 	github.com/sirupsen/logrus v1.9.0
 	gorm.io/gorm v1.23.8
