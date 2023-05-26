@@ -6,19 +6,18 @@ Unlike file-service, vfm doesn't manage the actual file storage. The file storag
 
 ## Requirements
 
-<!-- TODO upgrade file-service-front to v1.2.3, the v1.2.3 is not implemented yet -->
-
-- file-service-front (Angular frontend) >= [v1.2.2](https://github.com/CurtisNewbie/file-service-front/tree/v1.2.2)
-- auth-gateway >= [v1.1.1](https://github.com/CurtisNewbie/auth-gateway/tree/v1.1.1)
-- auth-service >= [v1.1.6](https://github.com/CurtisNewbie/auth-service/tree/v1.1.6)
-- goauth >= [v1.0.0](https://github.com/CurtisNewbie/goauth/tree/v1.0.0)
-- mini-fstore(https://github.com/CurtisNewbie/mini-fstore)
+- [bolobao (Angular Frontend)](https://github.com/curtisnewbie/bolobao)
+- [auth-gateway >= v1.1.1](https://github.com/CurtisNewbie/auth-gateway/tree/v1.1.1)
+- [auth-service >= v1.1.6](https://github.com/CurtisNewbie/auth-service/tree/v1.1.6)
+- [goauth >= v1.0.0](https://github.com/CurtisNewbie/goauth/tree/v1.0.0)
+- [mini-fstore >= v0.0.1](https://github.com/CurtisNewbie/mini-fstore)
 - MySQL 5.7 or 8
 - Consul
-- RabbitMQ
 - Redis
 
 ## Configuration
+
+Check [gocommon](https://github.com/curtisnewbie/gocommon) for more about configuration.
 
 | Property | Description | Default Value |
 |----------|-------------|---------------|
