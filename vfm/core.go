@@ -124,17 +124,19 @@ type ListedDir struct {
 }
 
 type ListedFile struct {
-	Id           int          `json:"id"`
-	Uuid         string       `json:"uuid"`
-	Name         string       `json:"name"`
-	UploadTime   common.ETime `json:"uploadTime"`
-	UploaderName string       `json:"uploaderName"`
-	SizeInBytes  int64        `json:"sizeInBytes"`
-	UserGroup    int          `json:"userGroup"`
-	IsOwner      bool         `json:"isOwner"`
-	FileType     string       `json:"fileType"`
-	UpdateTime   common.ETime `json:"updateTime"`
-	UploaderId   string       `json:"-"`
+	Id             int          `json:"id"`
+	Uuid           string       `json:"uuid"`
+	Name           string       `json:"name"`
+	UploadTime     common.ETime `json:"uploadTime"`
+	UploaderName   string       `json:"uploaderName"`
+	SizeInBytes    int64        `json:"sizeInBytes"`
+	UserGroup      int          `json:"userGroup"`
+	IsOwner        bool         `json:"isOwner"`
+	FileType       string       `json:"fileType"`
+	UpdateTime     common.ETime `json:"updateTime"`
+	ParentFileName string       `json:"parentFileName"`
+	ParentFile     string       `json:"-"`
+	UploaderId     string       `json:"-"`
 }
 
 type MoveIntoDirReq struct {
@@ -394,7 +396,7 @@ func listFilesInVFolder(c common.ExecContext, r ListFileReq) (ListFilesRes, erro
 	var files []ListedFile
 
 	t := newListFilesInVFolderQuery(c, r).
-		Select("fi.*").
+		Select("fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.user_group, fi.uploader_id, fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time").
 		Offset(offset).
 		Limit(limit).
 		Scan(&files)
@@ -420,25 +422,67 @@ func listFilesInVFolder(c common.ExecContext, r ListFileReq) (ListFilesRes, erro
 	return ListFilesRes{Payload: files, Page: common.RespPage(r.Page, total)}, nil
 }
 
+type FileKeyName struct {
+	Name string
+	Uuid string
+}
+
+func queryFilenames(fileKeys []string) (map[string]string, error) {
+	var rec []FileKeyName
+	e := mysql.GetConn().
+		Select("uuid, name").
+		Table("file_info").
+		Where("uuid in ?", fileKeys).
+		Scan(&rec).Error
+	if e != nil {
+		return nil, e
+	}
+	keyName := map[string]string{}
+	for _, r := range rec {
+		keyName[r.Uuid] = r.Name
+	}
+	return keyName, nil
+}
+
 func ListFiles(c common.ExecContext, r ListFileReq) (ListFilesRes, error) {
-	// query files in vfolder
+	var res ListFilesRes
+	var e error
 	if r.FolderNo != nil && *r.FolderNo != "" {
-		return listFilesInVFolder(c, r)
+		res, e = listFilesInVFolder(c, r)
+	} else if r.TagName != nil && *r.TagName != "" {
+		res, e = listFilesForTags(c, r)
+	} else {
+		res, e = listFilesSelective(c, r)
+	}
+	if e != nil {
+		return res, e
 	}
 
-	// based on whether tagName is present, we use different queries
-	if r.TagName != nil && *r.TagName != "" {
-		return listFilesForTags(c, r)
+	parentFileKeys := common.NewSet[string]()
+	for _, f := range res.Payload {
+		if f.ParentFile != "" {
+			parentFileKeys.Add(f.ParentFile)
+		}
 	}
 
-	// tagName is not present
-	return listFilesSelective(c, r)
+	if !parentFileKeys.IsEmpty() {
+		keyName, e := queryFilenames(parentFileKeys.CopyKeys())
+		if e != nil {
+			return res, e
+		}
+		for i, f := range res.Payload {
+			if name, ok := keyName[f.ParentFile]; ok {
+				res.Payload[i].ParentFileName = name
+			}
+		}
+	}
+	return res, e
 }
 
 func listFilesForTags(c common.ExecContext, r ListFileReq) (ListFilesRes, error) {
 	var files []ListedFile
 	t := newListFilesForTagsQuery(c, mysql.GetMySql(), r).
-		Select("fi.id, fi.name, fi.uuid, fi.size_in_bytes, fi.user_group, fi.uploader_id, fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time").
+		Select("fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.user_group, fi.uploader_id, fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time").
 		Order("fi.id desc").
 		Offset(r.Page.GetOffset()).
 		Limit(r.Page.GetLimit()).
@@ -478,7 +522,7 @@ func listFilesSelective(c common.ExecContext, r ListFileReq) (ListFilesRes, erro
 
 	var files []ListedFile
 	t := newListFilesSelectiveQuery(c, mysql.GetMySql(), r).
-		Select("fi.id, fi.name, fi.uuid, fi.size_in_bytes, fi.user_group, fi.uploader_id, fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time").
+		Select("fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.user_group, fi.uploader_id, fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time").
 		Order("fi.file_type asc, fi.id desc").
 		Offset(r.Page.GetOffset()).
 		Limit(r.Page.GetLimit()).
