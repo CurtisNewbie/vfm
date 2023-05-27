@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-	common.DefaultReadConfig(os.Args)
-	server.ConfigureLogging()
-	vfm.PrepareServer()
-	server.BootstrapServer()
+	server.DefaultBootstrapServer(os.Args, common.EmptyExecContext(), func() error {
+		vfm.PrepareServer()
+		return nil
+	})
 }
