@@ -37,7 +37,7 @@ func TestFetchUsernames(t *testing.T) {
 }
 
 func TestFetchFstoreFileInfo(t *testing.T) {
-	f, e := FetchFstoreFileInfo(common.EmptyExecContext(), "file_688404712292352087399")
+	f, e := FetchFstoreFileInfo(common.EmptyExecContext(), "file_688404712292352087399", "")
 	if e != nil {
 		t.Fatal(e)
 	}

@@ -187,11 +187,11 @@ type ListFileReq struct {
 }
 
 type CreateFileReq struct {
-	Filename     string   `json:"filename"`
-	FstoreFileId string   `json:"fstoreFileId"`
-	UserGroup    int      `json:"userGroup"`
-	Tags         []string `json:"tags"`
-	ParentFile   string   `json:"parentFile"`
+	Filename         string   `json:"filename"`
+	FakeFstoreFileId string   `json:"fstoreFileId"`
+	UserGroup        int      `json:"userGroup"`
+	Tags             []string `json:"tags"`
+	ParentFile       string   `json:"parentFile"`
 }
 
 type DeleteFileReq struct {
@@ -1447,7 +1447,7 @@ func _lockFileTagExec(c common.ExecContext, userId int, tagName string, run redi
 }
 
 func CreateFile(c common.ExecContext, r CreateFileReq) error {
-	fsf, e := FetchFstoreFileInfo(c, r.FstoreFileId)
+	fsf, e := FetchFstoreFileInfo(c, "", r.FakeFstoreFileId)
 	if e != nil {
 		return fmt.Errorf("failed to fetch file info from fstore, %v", e)
 	}

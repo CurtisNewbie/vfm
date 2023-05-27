@@ -380,9 +380,9 @@ func TestCreateFile(t *testing.T) {
 	c.User.UserNo = "UE202205142310076187414"
 
 	e := CreateFile(c, CreateFileReq{
-		Filename:     "myfile",
-		FstoreFileId: "file_688404712292352087399",
-		UserGroup:    USER_GROUP_PRIVATE,
+		Filename:         "myfile",
+		FakeFstoreFileId: "4zvSKxBePz+bAsZTiUc7zbzGF/H5aG9SfLnjEbHv",
+		UserGroup:        USER_GROUP_PRIVATE,
 	})
 	if e != nil {
 		t.Fatal(e)

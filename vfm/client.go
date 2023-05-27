@@ -102,10 +102,10 @@ func FetchUsernames(c common.ExecContext, req FetchUsernamesReq) (FetchUsernames
 	return res.Data, res.Err()
 }
 
-func FetchFstoreFileInfo(c common.ExecContext, fileId string) (FstoreFile, error) {
+func FetchFstoreFileInfo(c common.ExecContext, fileId string, uploadFileId string) (FstoreFile, error) {
 	r := client.NewDynTClient(c, "/file/info", "fstore").
 		EnableTracing().
-		Get(map[string][]string{"fileId": {fileId}})
+		Get(map[string][]string{"fileId": {fileId}, "uploadFileId": {url.QueryEscape(uploadFileId)}})
 	if r.Err != nil {
 		return FstoreFile{}, r.Err
 	}
