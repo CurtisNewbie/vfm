@@ -10,7 +10,7 @@ Unlike file-service, vfm doesn't manage the actual file storage. The file storag
 - [auth-gateway >= v1.1.1](https://github.com/CurtisNewbie/auth-gateway/tree/v1.1.1)
 - [auth-service >= v1.1.6](https://github.com/CurtisNewbie/auth-service/tree/v1.1.6)
 - [goauth >= v1.0.0](https://github.com/CurtisNewbie/goauth/tree/v1.0.0)
-- [mini-fstore >= v0.0.1](https://github.com/CurtisNewbie/mini-fstore)
+- [mini-fstore >= v0.0.2](https://github.com/CurtisNewbie/mini-fstore/tree/v0.0.2)
 - MySQL 5.7 or 8
 - Consul
 - Redis
