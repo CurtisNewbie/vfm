@@ -5,8 +5,8 @@ app.name: "vfm"
 mysql:
   enabled: true
   user: root
-  password: 123456
-  database: "fileServer"
+  # password: 123456
+  database: "fileserver"
   host: localhost
   port: 3306
 
@@ -37,5 +37,6 @@ tracing.propagation.keys:
   - userno
   - username
   - role
+  - roleno
 
 goauth.client.enabled: false
