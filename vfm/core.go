@@ -71,6 +71,7 @@ type FileInfoResp struct {
 	ParentFile   string `json:"parentFile"`
 	LocalPath    string `json:"localPath"`
 	FstoreFileId string `json:"fstoreFileId"`
+	Thumbnail    string `json:"thumbnail"`
 }
 
 type GenerateTempTokenReq struct {
@@ -1716,6 +1717,7 @@ func FetchFileInfoInternal(c common.ExecContext, fileKey string) (FileInfoResp, 
 	fir.ParentFile = f.ParentFile
 	fir.LocalPath = "" // files are managed by the mini-fstore, this field will no longer contain any value in it
 	fir.FstoreFileId = f.FstoreFileId
+	fir.Thumbnail = f.Thumbnail
 	return fir, nil
 }
 
