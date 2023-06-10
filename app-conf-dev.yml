@@ -32,6 +32,12 @@ consul:
   healthCheckTimeout: 120s
   healthCheckFailedDeregisterAfter: 120s
 
+rabbitmq:
+  enabled: true
+  username: guest
+  password: guest
+  vhost: "/"
+
 tracing.propagation.keys:
   - id
   - userno

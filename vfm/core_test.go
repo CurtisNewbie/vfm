@@ -415,3 +415,15 @@ func TestGenTempToken(t *testing.T) {
 	}
 	t.Logf("tkn: %v", tkn)
 }
+
+func TestIsImage(t *testing.T) {
+	n := "abc.jpg"
+	if !isImage(n) {
+		t.Fatal(n)
+	}
+
+	n = "abc.txt"
+	if isImage(n) {
+		t.Fatal(n)
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/curtisnewbie/gocommon/bus"
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/mysql"
 	"github.com/curtisnewbie/gocommon/redis"
@@ -13,6 +14,9 @@ import (
 )
 
 const (
+	comprImgProcBus   = "hammer.image.compress.processing"
+	comprImgNotifyBus = "hammer.image.compress.notification"
+
 	USER_GROUP_PUBLIC  = 0
 	USER_GROUP_PRIVATE = 1
 
@@ -31,6 +35,19 @@ const (
 	VFOWNERSHIP_OWNER   = "OWNER"
 	VFOWNERSHIP_GRANTED = "GRANTED"
 )
+
+var (
+	_imageSuffix = common.NewSet[string]()
+)
+
+func init() {
+	_imageSuffix.AddAll([]string{"jpeg", "jpg", "gif", "png", "svg", "bmp", "webp", "apng", "avif"})
+}
+
+type CompressImageEvent struct {
+	FileKey string // file key from vfm
+	FileId  string // file id from mini-fstore
+}
 
 type ValidateFileOwnerReq struct {
 	FileKey string `form:"fileKey"`
@@ -321,6 +338,7 @@ type FileInfo struct {
 	Name             string
 	Uuid             string
 	FstoreFileId     string
+	Thumbnail        string // thumbnail is also a fstore's file_id
 	IsLogicDeleted   int
 	IsPhysicDeleted  int
 	SizeInBytes      int64
@@ -1516,7 +1534,24 @@ func CreateFile(c common.ExecContext, r CreateFileReq) error {
 			return e
 		}
 	}
+
+	if isImage(f.Name) {
+		if e := bus.SendToEventBus(CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
+			c.Log.Errorf("Failed to send CompressImageEvent, uuid: %v, %v", f.Uuid, e)
+		}
+	}
+
 	return nil
+}
+
+func isImage(name string) bool {
+	i := strings.LastIndex(name, ".")
+	if i < 0 || i == len([]rune(name))-1 {
+		return false
+	}
+
+	suf := string([]rune(name)[i+1:])
+	return _imageSuffix.Has(suf)
 }
 
 func DeleteFile(c common.ExecContext, r DeleteFileReq) error {
@@ -1560,7 +1595,15 @@ func DeleteFile(c common.ExecContext, r DeleteFileReq) error {
 			}
 		}
 
-		return mysql.GetConn().Exec("UPDATE file_info SET is_logic_deleted = 1, logic_delete_time = NOW() WHERE id = ? AND is_logic_deleted = 0", f.Id).Error
+		if f.Thumbnail != "" {
+			if e := DeleteFstoreFile(c, f.Thumbnail); e != nil {
+				return fmt.Errorf("failed to delete fstore file (thumbnail), fileId: %v, %v", f.Thumbnail, e)
+			}
+		}
+
+		return mysql.GetConn().
+			Exec("UPDATE file_info SET is_logic_deleted = 1, logic_delete_time = NOW() WHERE id = ? AND is_logic_deleted = 0", f.Id).
+			Error
 	})
 }
 
@@ -1671,7 +1714,7 @@ func FetchFileInfoInternal(c common.ExecContext, fileKey string) (FileInfoResp, 
 	fir.IsDeleted = f.IsLogicDeleted == FILE_LDEL_Y
 	fir.FileType = f.FileType
 	fir.ParentFile = f.ParentFile
-	fir.LocalPath = "" // files are managed mini-fstore
+	fir.LocalPath = "" // files are managed by the mini-fstore, this field will no longer contain any value in it
 	fir.FstoreFileId = f.FstoreFileId
 	return fir, nil
 }
@@ -1687,4 +1730,22 @@ func ValidateFileOwner(c common.ExecContext, q ValidateFileOwnerReq) (bool, erro
 		Limit(1).
 		Scan(&id).Error
 	return id > 0, e
+}
+
+func ReactOnImageCompressed(c common.ExecContext, evt CompressImageEvent) error {
+	return _lockFileExec(c, evt.FileKey, func() error {
+		f, e := findFile(c, evt.FileKey)
+		if e != nil {
+			c.Log.Errorf("unable to find file, uuid: %v, %v", evt.FileKey, e)
+			return nil
+		}
+		if f.IsZero() {
+			c.Log.Errorf("File not found, uuid: %v", evt.FileKey)
+			return nil
+		}
+
+		return mysql.GetConn().
+			Exec("update file_info set thumbnail = ? where uuid = ?", evt.FileId, evt.FileKey).
+			Error
+	})
 }

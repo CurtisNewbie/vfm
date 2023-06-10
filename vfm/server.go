@@ -3,6 +3,7 @@ package vfm
 import (
 	"context"
 
+	"github.com/curtisnewbie/gocommon/bus"
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/goauth"
 	"github.com/curtisnewbie/gocommon/server"
@@ -166,9 +167,9 @@ func validateFileOwnerEp(c *gin.Context, ec common.ExecContext, q ValidateFileOw
 	return ValidateFileOwner(ec, q)
 }
 
-func PrepareServer() {
+func PrepareServer(c common.ExecContext) {
 	if goauth.IsEnabled() {
-		server.OnServerBootstrapped(func() {
+		server.OnServerBootstrapped(func(sc common.ExecContext) error {
 			c := common.EmptyExecContext()
 			if e := goauth.AddResource(context.Background(), goauth.AddResourceReq{Name: MANAGE_FILE_NAME, Code: MANAGE_FILE_CODE}); e != nil {
 				c.Log.Errorf("Failed to create goauth resource, %v", e)
@@ -177,10 +178,24 @@ func PrepareServer() {
 			if e := goauth.AddResource(context.Background(), goauth.AddResourceReq{Name: ADMIN_FS_NAME, Code: ADMIN_FS_CODE}); e != nil {
 				c.Log.Errorf("Failed to create goauth resource, %v", e)
 			}
+			return nil
 		})
-
 		goauth.ReportPathsOnBootstrapped()
 	}
+
+	if e := bus.DeclareEventBus(comprImgNotifyBus); e != nil {
+		c.Log.Fatalf("failed to declare event bus, %v", e)
+	}
+
+	if e := bus.DeclareEventBus(comprImgProcBus); e != nil {
+		c.Log.Fatalf("failed to declare event bus, %v", e)
+	}
+
+	bus.SubscribeEventBus(comprImgNotifyBus, 2, func(evt CompressImageEvent) error {
+		cc := common.EmptyExecContext()
+		cc.Log.Infof("Received CompressedImageEvent, %+v", evt)
+		return ReactOnImageCompressed(cc, evt)
+	})
 
 	server.Get("/open/api/file/upload/duplication/preflight", uploadPreflightCheckEp,
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User - preflight check for duplicate file uploads", Code: MANAGE_FILE_CODE}))
