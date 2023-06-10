@@ -1551,8 +1551,8 @@ func isImage(name string) bool {
 		return false
 	}
 
-	suf := string([]rune(name)[i+1:])
-	return _imageSuffix.Has(suf)
+	suf := string(name[i+1:])
+	return _imageSuffix.Has(strings.ToLower(suf))
 }
 
 func DeleteFile(c common.ExecContext, r DeleteFileReq) error {
@@ -1750,4 +1750,48 @@ func ReactOnImageCompressed(c common.ExecContext, evt CompressImageEvent) error 
 			Exec("update file_info set thumbnail = ? where uuid = ?", evt.FileId, evt.FileKey).
 			Error
 	})
+}
+
+type FileCompressInfo struct {
+	Id           int
+	Name         string
+	Uuid         string
+	FstoreFileId string
+}
+
+func CompensateImageCompression(c common.ExecContext) error {
+
+	limit := 500
+	minId := 0
+
+	for {
+		var files []FileCompressInfo
+		t := mysql.GetConn().
+			Raw(`select id, name, uuid, fstore_file_id
+			from file_info
+			where id > ?
+			and file_type = 'file'
+			and is_logic_deleted = 0
+			and thumbnail = ''
+			order by id asc
+			limit ?`, minId, limit).
+			Scan(&files)
+		if t.Error != nil {
+			return t.Error
+		}
+		if t.RowsAffected < 1 || len(files) < 1 {
+			return nil // the end
+		}
+
+		for _, f := range files {
+			if isImage(f.Name) {
+				if e := bus.SendToEventBus(CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
+					c.Log.Errorf("Failed to send CompressImageEvent, uuid: %v, %v", f.Uuid, e)
+				}
+			}
+		}
+
+		minId = files[len(files)-1].Id
+		c.Log.Infof("CompensateImageCompression, minId: %v", minId)
+	}
 }

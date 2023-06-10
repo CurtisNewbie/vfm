@@ -11,6 +11,7 @@ Unlike file-service, vfm doesn't manage the actual file storage. The file storag
 - [auth-service >= v1.1.6](https://github.com/CurtisNewbie/auth-service/tree/v1.1.6)
 - [goauth >= v1.0.0](https://github.com/CurtisNewbie/goauth/tree/v1.0.0)
 - [mini-fstore >= v0.0.2](https://github.com/CurtisNewbie/mini-fstore/tree/v0.0.2)
+- [hammer >= v0.0.1](https://github.com/CurtisNewbie/hammer)
 - MySQL 5.7 or 8
 - Consul
 - Redis
@@ -61,3 +62,13 @@ fstore:
 ```
 
 For more information, please read mini-fstore's [README](https://github.com/CurtisNewbie/mini-fstore).
+
+## Thumbnail Generation
+
+Whenever a file is uploaded to `mini-fstore`, and a file record is created on `vfm`, `vfm` checks whether it's potentially an image (by the file name). If so, it sends a MQ message to `hammer` (via RabbitMQ) for image compression. The generated thumbnail is uploaded to `mini-fstore` by `hammer`, and a MQ message replied by `hammer` tells what the file_id (on mini-fstore) of the thumbnail is.
+
+To compensate the thumbnail generation for historical records, uses following curl command to trigger the compensation process.
+
+```sh
+curl -X POST "http://localhost:8086/compensate/image/compression"
+```

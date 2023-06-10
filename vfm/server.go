@@ -10,6 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func compensateImageCompressionEp(c *gin.Context, ec common.ExecContext) (any, error) {
+	return nil, CompensateImageCompression(ec)
+}
+
 func listGrantedFolderAccessEp(c *gin.Context, ec common.ExecContext, req ListGrantedFolderAccessReq) (any, error) {
 	ec.Log.Debugf("req: %+v", req)
 	return ListGrantedFolderAccess(ec, req)
@@ -272,7 +276,13 @@ func PrepareServer(c common.ExecContext) {
 	server.IPost("/open/api/file/token/generate", generateTempTokenEp,
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User generate temporary token", Code: MANAGE_FILE_CODE}))
 
+	// ---------------------------------------------- internal endpoints ------------------------------------------
+
 	server.IGet("/remote/user/file/indir/list", listFilesInDirInternalEp)
 	server.Get("/remote/user/file/info", fetchFileInfoInternalEp)
 	server.IGet("/remote/user/file/owner/validation", validateFileOwnerEp)
+
+	// ---------------------------------- endpoints used to compensate --------------------------------------
+
+	server.Post("/compensate/image/compression", compensateImageCompressionEp)
 }
