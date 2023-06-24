@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS vfolder (
 CREATE TABLE IF NOT EXISTS user_vfolder (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_no` varchar(64) NOT NULL COMMENT 'user no',
+  `username` varchar(50) DEFAULT '' COMMENT 'username',
   `folder_no` varchar(64) NOT NULL COMMENT 'folder no',
   `ownership` varchar(15) NOT NULL DEFAULT 'OWNER' COMMENT 'ownership',
   `granted_by` varchar(64) NOT NULL COMMENT 'granted by (user_no)',

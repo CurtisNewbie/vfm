@@ -391,6 +391,7 @@ type VFolder struct {
 type UserVFolder struct {
 	Id         int
 	UserNo     string
+	Username   string
 	FolderNo   string
 	Ownership  string
 	GrantedBy  string // grantedBy (user_no)
@@ -868,6 +869,7 @@ func CreateVFolder(c common.ExecContext, r CreateVFolderReq) (string, error) {
 			uv := UserVFolder{
 				FolderNo:   folderNo,
 				UserNo:     userNo,
+				Username:   c.Username(),
 				Ownership:  VFOWNERSHIP_OWNER,
 				GrantedBy:  userNo,
 				CreateTime: ctime,
@@ -1054,6 +1056,7 @@ func ShareVFolder(c common.ExecContext, sharedTo UserInfo, folderNo string) erro
 		uv := UserVFolder{
 			FolderNo:   folderNo,
 			UserNo:     sharedTo.UserNo,
+			Username:   sharedTo.Username,
 			Ownership:  VFOWNERSHIP_GRANTED,
 			GrantedBy:  c.Username(),
 			CreateTime: common.ETime(time.Now()),
@@ -1283,10 +1286,9 @@ func ListGrantedFolderAccess(c common.ExecContext, r ListGrantedFolderAccessReq)
 		return ListGrantedFolderAccessRes{}, common.NewWebErr("Operation not permitted")
 	}
 
-	// TODO user_vfolder should have the username saved
 	var l []ListedFolderAccess
 	e = newListGrantedFolderAccessQuery(c, r).
-		Select("user_no", "create_time").
+		Select("user_no", "create_time", "username").
 		Offset(r.Page.GetOffset()).
 		Limit(r.Page.GetLimit()).
 		Scan(&l).Error
@@ -1302,13 +1304,14 @@ func ListGrantedFolderAccess(c common.ExecContext, r ListGrantedFolderAccessReq)
 		return ListGrantedFolderAccessRes{}, fmt.Errorf("failed to count granted folder access, req: %+v, %v", r, e)
 	}
 
-	// TODO save usernames locally
 	userNos := []string{}
 	for _, p := range l {
-		userNos = append(userNos, p.UserNo)
+		if p.Username == "" {
+			userNos = append(userNos, p.UserNo)
+		}
 	}
 
-	if len(userNos) > 0 {
+	if len(userNos) > 0 { // since v0.0.4 this is not needed anymore, but we keep it here for backward compatibility
 		unr, e := FetchUsernames(c, FetchUsernamesReq{UserNos: userNos})
 		if e != nil {
 			c.Log.Errorf("Failed to fetch usernames, %v", e)
