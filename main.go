@@ -9,9 +9,9 @@ import (
 )
 
 func main() {
-	c := common.EmptyExecContext()
-	server.DefaultBootstrapServer(os.Args, c, func() error {
+	server.PreServerBootstrap(func(c common.ExecContext) error {
 		vfm.PrepareServer(c)
 		return nil
 	})
+	server.BootstrapServer(os.Args)
 }

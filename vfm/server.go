@@ -171,9 +171,9 @@ func validateFileOwnerEp(c *gin.Context, ec common.ExecContext, q ValidateFileOw
 	return ValidateFileOwner(ec, q)
 }
 
-func PrepareServer(c common.ExecContext) {
+func PrepareServer(c common.ExecContext) error {
 	if goauth.IsEnabled() {
-		server.OnServerBootstrapped(func(sc common.ExecContext) error {
+		server.PostServerBootstrapped(func(sc common.ExecContext) error {
 			c := common.EmptyExecContext()
 			if e := goauth.AddResource(context.Background(), goauth.AddResourceReq{Name: MANAGE_FILE_NAME, Code: MANAGE_FILE_CODE}); e != nil {
 				c.Log.Errorf("Failed to create goauth resource, %v", e)
@@ -188,18 +188,20 @@ func PrepareServer(c common.ExecContext) {
 	}
 
 	if e := bus.DeclareEventBus(comprImgNotifyBus); e != nil {
-		c.Log.Fatalf("failed to declare event bus, %v", e)
+		return e
 	}
 
 	if e := bus.DeclareEventBus(comprImgProcBus); e != nil {
-		c.Log.Fatalf("failed to declare event bus, %v", e)
+		return e
 	}
 
-	bus.SubscribeEventBus(comprImgNotifyBus, 2, func(evt CompressImageEvent) error {
+	if err := bus.SubscribeEventBus(comprImgNotifyBus, 2, func(evt CompressImageEvent) error {
 		cc := common.EmptyExecContext()
 		cc.Log.Infof("Received CompressedImageEvent, %+v", evt)
 		return ReactOnImageCompressed(cc, evt)
-	})
+	}); err != nil {
+		return err
+	}
 
 	server.Get("/open/api/file/upload/duplication/preflight", uploadPreflightCheckEp,
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User - preflight check for duplicate file uploads", Code: MANAGE_FILE_CODE}))
@@ -285,4 +287,6 @@ func PrepareServer(c common.ExecContext) {
 	// ---------------------------------- endpoints used to compensate --------------------------------------
 
 	server.Post("/compensate/image/compression", compensateImageCompressionEp)
+
+	return nil
 }
