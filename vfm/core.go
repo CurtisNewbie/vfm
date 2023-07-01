@@ -704,6 +704,17 @@ func findFile(c common.ExecContext, fileKey string) (FileInfo, error) {
 	return f, nil
 }
 
+func findFileKey(c common.ExecContext, id int) (string, error) {
+	var fk string
+	t := mysql.GetConn().
+		Raw("select uuid from file_info where id = ?", id).
+		Scan(&fk)
+	if t.Error != nil {
+		return fk, t.Error
+	}
+	return fk, nil
+}
+
 func findFileById(c common.ExecContext, id int) (FileInfo, error) {
 	var f FileInfo
 
@@ -1539,11 +1550,12 @@ func CreateFile(c common.ExecContext, r CreateFileReq) error {
 		}
 	}
 
-	if isImage(f.Name) {
-		if e := bus.SendToEventBus(CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
-			c.Log.Errorf("Failed to send CompressImageEvent, uuid: %v, %v", f.Uuid, e)
-		}
-	}
+	// TODO: Since v0.0.4, this is based on event-pump binlog event
+	// if isImage(f.Name) {
+	// 	if e := bus.SendToEventBus(CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
+	// 		c.Log.Errorf("Failed to send CompressImageEvent, uuid: %v, %v", f.Uuid, e)
+	// 	}
+	// }
 
 	return nil
 }

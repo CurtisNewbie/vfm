@@ -32,3 +32,7 @@ To compensate the thumbnail generation for historical records, uses following cu
 ```sh
 curl -X POST "http://localhost:8086/compensate/image/compression"
 ```
+
+## Updates
+
+- Since v0.0.4, `vfm` relies on `evnet-pump` to listen to the binlog events. Whenever a new `file_info` record is inserted, the `event-pump` sends MQ to `vfm`, which triggers the image compression workflow if the file is an image.

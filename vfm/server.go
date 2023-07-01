@@ -195,11 +195,15 @@ func PrepareServer(c common.ExecContext) error {
 		return e
 	}
 
-	if err := bus.SubscribeEventBus(comprImgNotifyBus, 2, func(evt CompressImageEvent) error {
-		cc := common.EmptyExecContext()
-		cc.Log.Infof("Received CompressedImageEvent, %+v", evt)
-		return ReactOnImageCompressed(cc, evt)
-	}); err != nil {
+	if e := bus.DeclareEventBus(fileSavedEventBus); e != nil {
+		return e
+	}
+
+	if err := bus.SubscribeEventBus(fileSavedEventBus, 2, OnFileSaved); err != nil {
+		return err
+	}
+
+	if err := bus.SubscribeEventBus(comprImgNotifyBus, 2, OnImageCompressed); err != nil {
 		return err
 	}
 
