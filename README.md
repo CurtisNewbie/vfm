@@ -4,6 +4,8 @@ Virtual File Manager - A lightweight replacement for [file-service v1.2.7](https
 
 Unlike file-service, vfm doesn't manage the actual file storage. The file storage is managed by [mini-fstore](https://github.com/CurtisNewbie/mini-fstore), a light-weight and simple solution designed for general usage.
 
+See [CurtisNewbie/system-overview](https://github.com/CurtisNewbie/system-overview) for the big picture.
+
 ## Requirements
 
 - [auth-service >= v1.1.6](https://github.com/CurtisNewbie/auth-service)
