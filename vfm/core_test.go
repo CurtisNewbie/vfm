@@ -1,8 +1,11 @@
 package vfm
 
 import (
+	"bytes"
+	"os"
 	"testing"
 
+	"github.com/curtisnewbie/gocommon/client"
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/mysql"
 	"github.com/curtisnewbie/gocommon/redis"
@@ -376,12 +379,34 @@ func TestUntagFile(t *testing.T) {
 func TestCreateFile(t *testing.T) {
 	preTest(t)
 	c := common.EmptyExecContext()
+
+	file, err := os.ReadFile("../README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	buf := bytes.NewBuffer(file)
+
+	r := client.NewDynTClient(c, "/file", "fstore").
+		AddHeader("filename", "README.md").
+		Put(buf)
+	if r.Err != nil {
+		t.Fatal(r.Err)
+	}
+
+	resp, err := client.ReadGnResp[string](r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fakeFileId := resp.Data
+	c.Log.Infof("fake fileId: %v", fakeFileId)
+
 	c.User.UserId = "1"
 	c.User.UserNo = "UE202205142310076187414"
 
 	e := CreateFile(c, CreateFileReq{
 		Filename:         "myfile",
-		FakeFstoreFileId: "4zvSKxBePz+bAsZTiUc7zbzGF/H5aG9SfLnjEbHv",
+		FakeFstoreFileId: fakeFileId,
 		UserGroup:        USER_GROUP_PRIVATE,
 	})
 	if e != nil {
