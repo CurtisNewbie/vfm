@@ -1,8 +1,6 @@
 package vfm
 
 import (
-	"strconv"
-
 	"github.com/curtisnewbie/gocommon/bus"
 	"github.com/curtisnewbie/gocommon/common"
 )
@@ -29,66 +27,54 @@ type StreamEventColumn struct {
 //
 // e.g., on event-pump
 //
-//  pipeline:
-//    - schema: 'fileserver'
-//      table: 'file_info'
-//      type: '^(INS)$'
-//      stream: 'vfm.file.saved'
-//      enabled: true
+//	pipeline:
+//	  - schema: 'fileserver'
+//	    table: 'file_info'
+//	    type: '^(INS)$'
+//	    stream: 'vfm.file.saved'
+//	    enabled: true
 func OnFileSaved(evt StreamEvent) error {
 	c := common.EmptyExecContext()
 	if evt.Type != "INS" {
 		return nil
 	}
 
-	c.Log.Infof("OnFileSaved received event: %+v", evt)
-	idStr, ok := evt.Columns["id"]
+	var uuid string
+	uuidCol, ok := evt.Columns["uuid"]
 	if !ok {
-		c.Log.Errorf("Event doesn't contain id, %+v", evt)
-		return nil
+		c.Log.Errorf("Event doesn't contain uuid, %+v", evt)
 	}
-	id, err := strconv.Atoi(idStr.After)
-	if err != nil {
-		c.Log.Errorf("Event's id column is not int, %v", idStr)
-		return nil
-	}
-
-	// locks are based on uuid, we have to get the uuid first
-	fk, err := findFileKey(c, id)
-	if err != nil {
-		return err
-	}
+	uuid = uuidCol.After
 
 	// lock before we do anything about it
-	return _lockFileExec(c, fk, func() error {
-		f, err := findFileById(c, id)
+	return _lockFileExec(c, uuid, func() error {
+		f, err := findFile(c, uuid)
 		if err != nil {
 			return err
 		}
 		if f.IsZero() {
-			c.Log.Infof("file is deleted, %v", fk)
+			c.Log.Infof("file is deleted, %v", uuid)
 			return nil // file already deleted
 		}
 
 		if f.FileType != FILE_TYPE_FILE {
-			c.Log.Infof("file is dir, %v", fk)
+			c.Log.Infof("file is dir, %v", uuid)
 			return nil // a directory
 		}
 
 		if f.Thumbnail != "" {
-			c.Log.Infof("file has thumbnail aleady, %v", fk)
+			c.Log.Infof("file has thumbnail aleady, %v", uuid)
 			return nil // already has a thumbnail
 		}
 
 		if !isImage(f.Name) {
-			c.Log.Infof("file is not image, %v, %v", fk, f.Name)
+			c.Log.Infof("file is not image, %v, %v", uuid, f.Name)
 			return nil // not an image
 		}
 
 		if e := bus.SendToEventBus(c, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
 			return common.TraceErrf(e, "Failed to send CompressImageEvent, uuid: %v", f.Uuid)
 		}
-		c.Log.Infof("Triggered %s compression, %v", f.Name, f.Uuid)
 		return nil
 	})
 }
