@@ -1800,7 +1800,7 @@ func CompensateImageCompression(c common.ExecContext) error {
 
 		for _, f := range files {
 			if isImage(f.Name) {
-				if e := bus.SendToEventBus(CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
+				if e := bus.SendToEventBus(c, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
 					c.Log.Errorf("Failed to send CompressImageEvent, uuid: %v, %v", f.Uuid, e)
 				}
 			}

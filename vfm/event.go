@@ -85,7 +85,7 @@ func OnFileSaved(evt StreamEvent) error {
 			return nil // not an image
 		}
 
-		if e := bus.SendToEventBus(CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
+		if e := bus.SendToEventBus(c, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
 			return common.TraceErrf(e, "Failed to send CompressImageEvent, uuid: %v", f.Uuid)
 		}
 		c.Log.Infof("Triggered %s compression, %v", f.Name, f.Uuid)
