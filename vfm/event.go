@@ -6,7 +6,11 @@ import (
 )
 
 const (
-	fileSavedEventBus = "vfm.file.saved"
+	comprImgProcEventBus       = "hammer.image.compress.processing"
+	comprImgNotifyEventBus     = "hammer.image.compress.notification"
+	fileSavedEventBus          = "vfm.file.saved"
+	thumbnailUpdatedEventBus   = "vfm.file.thumbnail.updated"
+	createFantahseaImgEventBus = "fantahsea.gallery.image.create"
 )
 
 type StreamEvent struct {
@@ -23,16 +27,18 @@ type StreamEventColumn struct {
 	After    string `json:"after"`
 }
 
-// event-pump send binlog event when a file_info record is saved
-//
-// e.g., on event-pump
-//
-//	pipeline:
-//	  - schema: 'fileserver'
-//	    table: 'file_info'
-//	    type: '^(INS)$'
-//	    stream: 'vfm.file.saved'
-//	    enabled: true
+type CreateFantahseaImgEvt struct {
+	Username     string `json:"username"`
+	UserNo       string `json:"userNo"`
+	DirFileKey   string `json:"dirFileKey"`
+	DirName      string `json:"dirName"`
+	ImageName    string `json:"imageName"`
+	ImageFileKey string `json:"imageFileKey"`
+}
+
+// event-pump send binlog event when a file_info record is saved.
+// vfm guesses if the file is an image by file name,
+// if so, vfm sends events to hammer to compress the image as a thumbnail
 func OnFileSaved(evt StreamEvent) error {
 	c := common.EmptyExecContext()
 	if evt.Type != "INS" {
@@ -43,6 +49,7 @@ func OnFileSaved(evt StreamEvent) error {
 	uuidCol, ok := evt.Columns["uuid"]
 	if !ok {
 		c.Log.Errorf("Event doesn't contain uuid, %+v", evt)
+		return nil
 	}
 	uuid = uuidCol.After
 
@@ -72,7 +79,7 @@ func OnFileSaved(evt StreamEvent) error {
 			return nil // not an image
 		}
 
-		if e := bus.SendToEventBus(c, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
+		if e := bus.SendToEventBus(c, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
 			return common.TraceErrf(e, "Failed to send CompressImageEvent, uuid: %v", f.Uuid)
 		}
 		return nil
@@ -84,4 +91,67 @@ func OnImageCompressed(evt CompressImageEvent) error {
 	cc := common.EmptyExecContext()
 	cc.Log.Infof("Received CompressedImageEvent, %+v", evt)
 	return ReactOnImageCompressed(cc, evt)
+}
+
+// event-pump send binlog event when a file_info's thumbnail is updated.
+// vfm receives the event and check if the file has a thumbnail,
+// if so, sends events to fantahsea to create a gallery image,
+// adding current image to the gallery for its directory
+func OnThumbnailUpdated(evt StreamEvent) error {
+	if evt.Type != "UPD" {
+		return nil
+	}
+
+	c := common.EmptyExecContext()
+	var uuid string
+	uuidCol, ok := evt.Columns["uuid"]
+	if !ok {
+		c.Log.Errorf("Event doesn't contain uuid column, %+v", evt)
+		return nil
+	}
+	uuid = uuidCol.After
+
+	thumbnailCol, ok := evt.Columns["thumbnail"]
+	if !ok || thumbnailCol.After == "" {
+		return nil
+	}
+
+	// lock before we do anything about it
+	return _lockFileExec(c, uuid, func() error {
+		f, err := findFile(c, uuid)
+		if err != nil {
+			return err
+		}
+		if f.IsZero() || f.FileType != FILE_TYPE_FILE {
+			return nil
+		}
+
+		if f.Thumbnail == "" || f.ParentFile == "" {
+			return nil
+		}
+
+		pf, err := findFile(c, f.ParentFile)
+		if err != nil {
+			return err
+		}
+		if pf.IsZero() {
+			c.Log.Infof("parent file not found, %v", pf)
+			return nil
+		}
+
+		user, err := CachedFindUser(c, f.UploaderId)
+		if err != nil {
+			return err
+		}
+
+		evt := CreateFantahseaImgEvt{
+			Username:     user.Username,
+			UserNo:       user.UserNo,
+			DirFileKey:   pf.Uuid,
+			DirName:      pf.Name,
+			ImageName:    f.Name,
+			ImageFileKey: f.Uuid,
+		}
+		return bus.SendToEventBus(c, evt, createFantahseaImgEventBus)
+	})
 }

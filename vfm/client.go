@@ -3,13 +3,19 @@ package vfm
 import (
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/curtisnewbie/gocommon/client"
 	"github.com/curtisnewbie/gocommon/common"
+	"github.com/curtisnewbie/gocommon/redis"
 )
 
 const (
 	FS_STATUS_NORMAL = "NORMAL" // file.status - normal
+)
+
+var (
+	userIdInfoCache = redis.NewLazyObjectRCache[UserInfo](5 * time.Minute)
 )
 
 type FstoreFile struct {
@@ -84,6 +90,17 @@ func FindUser(c common.ExecContext, req FindUserReq) (UserInfo, error) {
 		return UserInfo{}, fmt.Errorf("failed to findUser, req: %+v, code: %v, msg: %v", req, res.ErrorCode, res.Msg)
 	}
 	return res.Data, nil
+}
+
+func CachedFindUser(c common.ExecContext, userId int) (UserInfo, error) {
+	ui, _, err := userIdInfoCache.GetElse(c, fmt.Sprintf("vfm:user:cache:%d", userId),
+		func() (UserInfo, bool, error) {
+			fui, errFind := FindUser(c, FindUserReq{
+				UserId: &userId,
+			})
+			return fui, true, errFind
+		})
+	return ui, err
 }
 
 func FetchUsernames(c common.ExecContext, req FetchUsernamesReq) (FetchUsernamesRes, error) {

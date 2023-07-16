@@ -14,9 +14,6 @@ import (
 )
 
 const (
-	comprImgProcBus   = "hammer.image.compress.processing"
-	comprImgNotifyBus = "hammer.image.compress.notification"
-
 	USER_GROUP_PUBLIC  = 0
 	USER_GROUP_PRIVATE = 1
 
@@ -838,7 +835,7 @@ func _lockFileExec(c common.ExecContext, fileKey string, r redis.Runnable) error
 	return redis.RLockExec(c, "file:uuid:"+fileKey, r)
 }
 
-func _lockFileGet(c common.ExecContext, fileKey string, r redis.LRunnable) (any, error) {
+func _lockFileGet[T any](c common.ExecContext, fileKey string, r redis.LRunnable[T]) (any, error) {
 	return redis.RLockRun(c, "file:uuid:"+fileKey, r)
 }
 
@@ -1030,7 +1027,7 @@ func _lockFolderExec(c common.ExecContext, folderNo string, r redis.Runnable) er
 	return redis.RLockExec(c, "vfolder:"+folderNo, r)
 }
 
-func _lockFolderGet(c common.ExecContext, folderNo string, r redis.LRunnable) (any, error) {
+func _lockFolderGet[T any](c common.ExecContext, folderNo string, r redis.LRunnable[T]) (any, error) {
 	return redis.RLockRun(c, "vfolder:"+folderNo, r)
 }
 
@@ -1800,7 +1797,7 @@ func CompensateImageCompression(c common.ExecContext) error {
 
 		for _, f := range files {
 			if isImage(f.Name) {
-				if e := bus.SendToEventBus(c, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
+				if e := bus.SendToEventBus(c, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
 					c.Log.Errorf("Failed to send CompressImageEvent, uuid: %v, %v", f.Uuid, e)
 				}
 			}
