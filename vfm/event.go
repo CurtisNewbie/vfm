@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	comprImgProcEventBus       = "hammer.image.compress.processing"
-	comprImgNotifyEventBus     = "hammer.image.compress.notification"
-	fileSavedEventBus          = "vfm.file.saved"
-	thumbnailUpdatedEventBus   = "vfm.file.thumbnail.updated"
-	createFantahseaImgEventBus = "fantahsea.gallery.image.create"
+	comprImgProcEventBus              = "hammer.image.compress.processing"
+	comprImgNotifyEventBus            = "hammer.image.compress.notification"
+	fileSavedEventBus                 = "vfm.file.saved"
+	thumbnailUpdatedEventBus          = "vfm.file.thumbnail.updated"
+	addFantahseaDirGalleryImgEventBus = "fantahsea.dir.gallery.image.add"
 )
 
 type StreamEvent struct {
@@ -152,6 +152,6 @@ func OnThumbnailUpdated(evt StreamEvent) error {
 			ImageName:    f.Name,
 			ImageFileKey: f.Uuid,
 		}
-		return bus.SendToEventBus(c, evt, createFantahseaImgEventBus)
+		return bus.SendToEventBus(c, evt, addFantahseaDirGalleryImgEventBus)
 	})
 }
