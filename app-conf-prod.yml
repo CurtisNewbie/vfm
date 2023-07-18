@@ -46,5 +46,7 @@ tracing.propagation.keys:
   - username
   - roleno
 
-logging.rolling.file: "/usr/src/logs/vfm.log"
+logging:
+  rolling.file: "/usr/src/logs/vfm.log"
+  level: info
 
