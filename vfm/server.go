@@ -32,6 +32,7 @@ func PrepareServer(c common.ExecContext) error {
 	bus.DeclareEventBus(comprImgProcEventBus)
 	bus.DeclareEventBus(addFantahseaDirGalleryImgEventBus)
 	bus.DeclareEventBus(fileLDeletedEventBus)
+	bus.DeclareEventBus(notifyFantahseaFileDeletedEventBus)
 
 	bus.SubscribeEventBus(comprImgNotifyEventBus, 2, OnImageCompressed)
 	bus.SubscribeEventBus(fileSavedEventBus, 2, OnFileSaved)
