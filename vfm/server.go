@@ -31,10 +31,12 @@ func PrepareServer(c common.ExecContext) error {
 	bus.DeclareEventBus(thumbnailUpdatedEventBus)
 	bus.DeclareEventBus(comprImgProcEventBus)
 	bus.DeclareEventBus(addFantahseaDirGalleryImgEventBus)
+	bus.DeclareEventBus(fileLDeletedEventBus)
 
 	bus.SubscribeEventBus(comprImgNotifyEventBus, 2, OnImageCompressed)
 	bus.SubscribeEventBus(fileSavedEventBus, 2, OnFileSaved)
 	bus.SubscribeEventBus(thumbnailUpdatedEventBus, 2, OnThumbnailUpdated)
+	bus.SubscribeEventBus(fileLDeletedEventBus, 2, OnFileDeleted)
 
 	server.Get("/open/api/file/upload/duplication/preflight",
 		func(c *gin.Context, ec common.ExecContext) (any, error) {

@@ -138,7 +138,6 @@ func FetchFstoreFileInfo(c common.ExecContext, fileId string, uploadFileId strin
 func DeleteFstoreFile(c common.ExecContext, fileId string) error {
 	r := client.NewDynTClient(c, "/file", "fstore").
 		EnableTracing().
-		EnableRequestLog().
 		Delete(map[string][]string{"fileId": {fileId}})
 	if r.Err != nil {
 		return r.Err
@@ -161,7 +160,6 @@ func DeleteFstoreFile(c common.ExecContext, fileId string) error {
 func GetFstoreTmpToken(c common.ExecContext, fileId string, filename string) (string, error) {
 	r := client.NewDynTClient(c, "/file/key", "fstore").
 		EnableTracing().
-		EnableRequestLog().
 		Get(map[string][]string{"fileId": {fileId}, "filename": {url.QueryEscape(filename)}})
 	if r.Err != nil {
 		return "", r.Err

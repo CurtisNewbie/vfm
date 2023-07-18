@@ -6,12 +6,18 @@ import (
 )
 
 const (
-	comprImgProcEventBus              = "hammer.image.compress.processing"
-	comprImgNotifyEventBus            = "hammer.image.compress.notification"
-	fileSavedEventBus                 = "vfm.file.saved"
-	thumbnailUpdatedEventBus          = "vfm.file.thumbnail.updated"
-	addFantahseaDirGalleryImgEventBus = "fantahsea.dir.gallery.image.add"
+	comprImgProcEventBus               = "hammer.image.compress.processing"
+	comprImgNotifyEventBus             = "hammer.image.compress.notification"
+	fileSavedEventBus                  = "vfm.file.saved"
+	thumbnailUpdatedEventBus           = "vfm.file.thumbnail.updated"
+	fileLDeletedEventBus               = "vfm.file.logic.deleted"
+	addFantahseaDirGalleryImgEventBus  = "fantahsea.dir.gallery.image.add"
+	notifyFantahseaFileDeletedEventBus = "fantahsea.notify.file.deleted"
 )
+
+type NotifyFileDeletedEvent struct {
+	FileKey string `json:"fileKey"`
+}
 
 type StreamEvent struct {
 	Timestamp uint32                       `json:"timestamp"` // epoch time second
@@ -154,4 +160,38 @@ func OnThumbnailUpdated(evt StreamEvent) error {
 		}
 		return bus.SendToEventBus(c, evt, addFantahseaDirGalleryImgEventBus)
 	})
+}
+
+// event-pump send binlog event when a file_info is deleted (is_logic_deleted changed)
+// vfm notifies fantahsea about the delete
+func OnFileDeleted(evt StreamEvent) error {
+	c := common.EmptyExecContext()
+	if evt.Type != "UPD" {
+		return nil
+	}
+
+	var uuid string
+	uuidCol, ok := evt.Columns["uuid"]
+	if !ok {
+		c.Log.Errorf("Event doesn't contain uuid, %+v", evt)
+		return nil
+	}
+	uuid = uuidCol.After
+
+	isLogicDeletedCol, ok := evt.Columns["is_logic_deleted"]
+	if !ok {
+		c.Log.Errorf("Event doesn't contain is_logic_deleted, %+v", evt)
+		return nil
+	}
+
+	if isLogicDeletedCol.After != "1" { // FILE_LDEL_Y
+		return nil
+	}
+
+	c.Log.Infof("File logically deleted, %v", uuid)
+
+	if e := bus.SendToEventBus(c, NotifyFileDeletedEvent{FileKey: uuid}, notifyFantahseaFileDeletedEventBus); e != nil {
+		return common.TraceErrf(e, "Failed to send NotifyFileDeletedEvent, uuid: %v", uuid)
+	}
+	return nil
 }
