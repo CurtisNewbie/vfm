@@ -26,12 +26,8 @@ func PrepareServer(c common.ExecContext) error {
 		goauth.ReportPathsOnBootstrapped()
 	}
 
-	bus.DeclareEventBus(comprImgNotifyEventBus)
-	bus.DeclareEventBus(fileSavedEventBus)
-	bus.DeclareEventBus(thumbnailUpdatedEventBus)
 	bus.DeclareEventBus(comprImgProcEventBus)
 	bus.DeclareEventBus(addFantahseaDirGalleryImgEventBus)
-	bus.DeclareEventBus(fileLDeletedEventBus)
 	bus.DeclareEventBus(notifyFantahseaFileDeletedEventBus)
 
 	bus.SubscribeEventBus(comprImgNotifyEventBus, 2, OnImageCompressed)
