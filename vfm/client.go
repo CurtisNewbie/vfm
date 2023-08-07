@@ -57,7 +57,8 @@ type FetchUsernamesRes struct {
 func FindUserId(c common.ExecContext, username string) (int, error) {
 	r := client.NewDynTClient(c, "/remote/user/id", "auth-service").
 		EnableTracing().
-		Get(map[string][]string{"username": {username}})
+		AddQueryParams("username", username).
+		Get()
 	if r.Err != nil {
 		return 0, fmt.Errorf("failed to request auth-service, %v", r.Err)
 	}
@@ -122,7 +123,9 @@ func FetchUsernames(c common.ExecContext, req FetchUsernamesReq) (FetchUsernames
 func FetchFstoreFileInfo(c common.ExecContext, fileId string, uploadFileId string) (FstoreFile, error) {
 	r := client.NewDynTClient(c, "/file/info", "fstore").
 		EnableTracing().
-		Get(map[string][]string{"fileId": {fileId}, "uploadFileId": {url.QueryEscape(uploadFileId)}})
+		AddQueryParams("fileId", fileId).
+		AddQueryParams("uploadFileId", uploadFileId).
+		Get()
 	if r.Err != nil {
 		return FstoreFile{}, r.Err
 	}
@@ -138,7 +141,8 @@ func FetchFstoreFileInfo(c common.ExecContext, fileId string, uploadFileId strin
 func DeleteFstoreFile(c common.ExecContext, fileId string) error {
 	r := client.NewDynTClient(c, "/file", "fstore").
 		EnableTracing().
-		Delete(map[string][]string{"fileId": {fileId}})
+		AddQueryParams("fileId", fileId).
+		Delete()
 	if r.Err != nil {
 		return r.Err
 	}
@@ -160,7 +164,9 @@ func DeleteFstoreFile(c common.ExecContext, fileId string) error {
 func GetFstoreTmpToken(c common.ExecContext, fileId string, filename string) (string, error) {
 	r := client.NewDynTClient(c, "/file/key", "fstore").
 		EnableTracing().
-		Get(map[string][]string{"fileId": {fileId}, "filename": {url.QueryEscape(filename)}})
+		AddQueryParams("fileId", fileId).
+		AddQueryParams("filename", url.QueryEscape(filename)).
+		Get()
 	if r.Err != nil {
 		return "", r.Err
 	}
