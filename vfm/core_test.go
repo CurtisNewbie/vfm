@@ -12,6 +12,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+func testUser() common.User {
+	return common.User{
+		UserId:   1,
+		UserNo:   "UE202205142310076187414",
+		Username: "zhuangyongj",
+	}
+}
+
 func preTest(t *testing.T) {
 	user := "root"
 	// pw := "123456"
@@ -32,11 +40,9 @@ func preTest(t *testing.T) {
 
 func TestListFilesInVFolder(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserNo = "UE202205142310076187414"
-	c.User.UserId = "1"
+	c := common.EmptyRail()
 	var folderNo string = "hfKh3QZSsWjKufZWflqu8jb0n"
-	r, e := listFilesInVFolder(c, ListFileReq{FolderNo: &folderNo})
+	r, e := listFilesInVFolder(c, ListFileReq{FolderNo: &folderNo}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -45,11 +51,8 @@ func TestListFilesInVFolder(t *testing.T) {
 
 func TestListFilesSelective(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserNo = "UE202205142310076187414"
-	c.User.UserId = "1"
-
-	r, e := listFilesSelective(c, ListFileReq{})
+	c := common.EmptyRail()
+	r, e := listFilesSelective(c, ListFileReq{}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -58,7 +61,7 @@ func TestListFilesSelective(t *testing.T) {
 	var filename = "myfile"
 	r, e = listFilesSelective(c, ListFileReq{
 		Filename: &filename,
-	})
+	}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -67,14 +70,10 @@ func TestListFilesSelective(t *testing.T) {
 
 func TestListFilesForTags(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserNo = "UE202205142310076187414"
-	c.User.UserId = "1"
+	c := common.EmptyRail()
 	var tagName string = "test"
 
-	r, e := listFilesForTags(c, ListFileReq{
-		TagName: &tagName,
-	})
+	r, e := listFilesForTags(c, ListFileReq{TagName: &tagName}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -84,7 +83,7 @@ func TestListFilesForTags(t *testing.T) {
 	r, e = listFilesForTags(c, ListFileReq{
 		Filename: &filename,
 		TagName:  &tagName,
-	})
+	}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -93,11 +92,9 @@ func TestListFilesForTags(t *testing.T) {
 
 func TestFileExists(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-
+	c := common.EmptyRail()
 	fname := "test-files.zip"
-	b, e := FileExists(c, fname, "")
+	b, e := FileExists(c, fname, "", testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -110,10 +107,8 @@ func TestFileExists(t *testing.T) {
 
 func TestListFileTags(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "3"
-
-	r, e := ListFileTags(c, ListFileTagReq{FileId: 1892})
+	c := common.EmptyRail()
+	r, e := ListFileTags(c, ListFileTagReq{FileId: 1892}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -122,10 +117,8 @@ func TestListFileTags(t *testing.T) {
 
 func TestFindParentFile(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-
-	pf, e := FindParentFile(c, "ZZZ687250496077824971813")
+	c := common.EmptyRail()
+	pf, e := FindParentFile(c, "ZZZ687250496077824971813", testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -137,13 +130,11 @@ func TestFindParentFile(t *testing.T) {
 
 func TestMoveFileToDir(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-
+	c := common.EmptyRail()
 	e := MoveFileToDir(c, MoveIntoDirReq{
 		Uuid:           "ZZZ687238965264384971813",
 		ParentFileUuid: "ZZZ687238965264384925123",
-	})
+	}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -151,11 +142,8 @@ func TestMoveFileToDir(t *testing.T) {
 
 func TestMakeDir(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-
-	fileKey, e := MakeDir(c, MakeDirReq{Name: "mydir"})
+	c := common.EmptyRail()
+	fileKey, e := MakeDir(c, MakeDirReq{Name: "mydir"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -167,12 +155,9 @@ func TestMakeDir(t *testing.T) {
 
 func TestCreateVFolder(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-
+	c := common.EmptyRail()
 	r, _ := common.ERand(5)
-	folderNo, e := CreateVFolder(c, CreateVFolderReq{"MyFolder_" + r})
+	folderNo, e := CreateVFolder(c, CreateVFolderReq{"MyFolder_" + r}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -185,10 +170,8 @@ func TestCreateVFolder(t *testing.T) {
 
 func TestListDirs(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-	dirs, e := ListDirs(c)
+	c := common.EmptyRail()
+	dirs, e := ListDirs(c, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -197,12 +180,7 @@ func TestListDirs(t *testing.T) {
 
 func TestGranteFileAccess(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-	c.User.Username = "zhuangyongj"
-
-	e := GranteFileAccess(c, 2, 3)
+	e := GranteFileAccess(common.EmptyRail(), 2, 3, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -210,11 +188,7 @@ func TestGranteFileAccess(t *testing.T) {
 
 func TestRemoveGrantedFileAccess(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-	c.User.Username = "zhuangyongj"
-	e := RemoveGrantedFileAccess(c, RemoveGrantedAccessReq{FileId: 3, UserId: 2})
+	e := RemoveGrantedFileAccess(common.EmptyRail(), RemoveGrantedAccessReq{FileId: 3, UserId: 2}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -222,11 +196,7 @@ func TestRemoveGrantedFileAccess(t *testing.T) {
 
 func TestListGrantedFileAccess(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-	c.User.Username = "zhuangyongj"
-	l, e := ListGrantedFileAccess(c, ListGrantedAccessReq{FileId: 3})
+	l, e := ListGrantedFileAccess(common.EmptyRail(), ListGrantedAccessReq{FileId: 3})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -235,39 +205,26 @@ func TestListGrantedFileAccess(t *testing.T) {
 
 func TestShareVFolder(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-	c.User.Username = "zhuangyongj"
-
-	if e := ShareVFolder(c, UserInfo{Id: 30, Username: "sharon", UserNo: "UE202205142310074386952"}, "VFLD20221001211317631020565809652"); e != nil {
+	if e := ShareVFolder(common.EmptyRail(),
+		UserInfo{Id: 30, Username: "sharon", UserNo: "UE202205142310074386952"}, "VFLD20221001211317631020565809652", testUser()); e != nil {
 		t.Fatal(e)
 	}
 }
 
 func TestRemoveVFolderAccess(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-	c.User.Username = "zhuangyongj"
-
 	req := RemoveGrantedFolderAccessReq{
 		UserNo:   "UE202303190019399941339",
 		FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
 	}
-	if e := RemoveVFolderAccess(c, req); e != nil {
+	if e := RemoveVFolderAccess(common.EmptyRail(), req, testUser()); e != nil {
 		t.Fatal(e)
 	}
 }
 
 func TestListVFolderBrief(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-
-	v, e := ListVFolderBrief(c)
+	v, e := ListVFolderBrief(common.EmptyRail(), testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -276,14 +233,11 @@ func TestListVFolderBrief(t *testing.T) {
 
 func TestAddFileToVFolder(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-
-	e := AddFileToVFolder(c, AddFileToVfolderReq{
-		FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
-		FileKeys: []string{"ZZZ687250481528832971813"},
-	})
+	e := AddFileToVFolder(common.EmptyRail(),
+		AddFileToVfolderReq{
+			FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
+			FileKeys: []string{"ZZZ687250481528832971813"},
+		}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -291,14 +245,11 @@ func TestAddFileToVFolder(t *testing.T) {
 
 func TestRemoveFileFromVFolder(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-
-	e := RemoveFileFromVFolder(c, RemoveFileFromVfolderReq{
-		FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
-		FileKeys: []string{"ZZZ687250481528832971813"},
-	})
+	e := RemoveFileFromVFolder(common.EmptyRail(),
+		RemoveFileFromVfolderReq{
+			FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
+			FileKeys: []string{"ZZZ687250481528832971813"},
+		}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -306,10 +257,7 @@ func TestRemoveFileFromVFolder(t *testing.T) {
 
 func TestListVFolders(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-	l, e := ListVFolders(c, ListVFolderReq{})
+	l, e := ListVFolders(common.EmptyRail(), ListVFolderReq{}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -318,11 +266,8 @@ func TestListVFolders(t *testing.T) {
 
 func TestListGrantedFolderAccess(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-
-	l, e := ListGrantedFolderAccess(c, ListGrantedFolderAccessReq{FolderNo: "VFLD20221001211317631020565809652"})
+	l, e := ListGrantedFolderAccess(common.EmptyRail(),
+		ListGrantedFolderAccessReq{FolderNo: "VFLD20221001211317631020565809652"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -331,11 +276,7 @@ func TestListGrantedFolderAccess(t *testing.T) {
 
 func TestUpdateFile(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-
-	e := UpdateFile(c, UpdateFileReq{Id: 301, UserGroup: USER_GROUP_PRIVATE, Name: "test-files-222.zip"})
+	e := UpdateFile(common.EmptyRail(), UpdateFileReq{Id: 301, UserGroup: USER_GROUP_PRIVATE, Name: "test-files-222.zip"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -343,9 +284,7 @@ func TestUpdateFile(t *testing.T) {
 
 func TestListAllTags(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "3"
-	tags, e := ListAllTags(c)
+	tags, e := ListAllTags(common.EmptyRail(), testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -354,11 +293,9 @@ func TestListAllTags(t *testing.T) {
 
 func TestTagFile(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
+	c := common.EmptyRail()
 
-	e := TagFile(c, TagFileReq{FileId: 355, TagName: "mytag"})
+	e := TagFile(c, TagFileReq{FileId: 355, TagName: "mytag"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -366,11 +303,9 @@ func TestTagFile(t *testing.T) {
 
 func TestUntagFile(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
+	c := common.EmptyRail()
 
-	e := UntagFile(c, UntagFileReq{FileId: 355, TagName: "mytag"})
+	e := UntagFile(c, UntagFileReq{FileId: 355, TagName: "mytag"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -378,7 +313,7 @@ func TestUntagFile(t *testing.T) {
 
 func TestCreateFile(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
+	c := common.EmptyRail()
 
 	file, err := os.ReadFile("../README.md")
 	if err != nil {
@@ -399,16 +334,13 @@ func TestCreateFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	fakeFileId := resp.Data
-	c.Log.Infof("fake fileId: %v", fakeFileId)
-
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
+	c.Infof("fake fileId: %v", fakeFileId)
 
 	e := CreateFile(c, CreateFileReq{
 		Filename:         "myfile",
 		FakeFstoreFileId: fakeFileId,
 		UserGroup:        USER_GROUP_PRIVATE,
-	})
+	}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -416,11 +348,8 @@ func TestCreateFile(t *testing.T) {
 
 func TestDeleteFile(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-
-	e := DeleteFile(c, DeleteFileReq{Uuid: "ZZZ718078073798656022858"})
+	c := common.EmptyRail()
+	e := DeleteFile(c, DeleteFileReq{Uuid: "ZZZ718078073798656022858"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -428,10 +357,8 @@ func TestDeleteFile(t *testing.T) {
 
 func TestGenTempToken(t *testing.T) {
 	preTest(t)
-	c := common.EmptyExecContext()
-	c.User.UserId = "1"
-	c.User.UserNo = "UE202205142310076187414"
-	tkn, e := GenTempToken(c, GenerateTempTokenReq{"ZZZ687250496077824971813"})
+	c := common.EmptyRail()
+	tkn, e := GenTempToken(c, GenerateTempTokenReq{"ZZZ687250496077824971813"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}

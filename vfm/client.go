@@ -54,7 +54,7 @@ type FetchUsernamesRes struct {
 	UserNoToUsername map[string]string `json:"userNoToUsername"`
 }
 
-func FindUserId(c common.ExecContext, username string) (int, error) {
+func FindUserId(c common.Rail, username string) (int, error) {
 	r := client.NewDynTClient(c, "/remote/user/id", "auth-service").
 		EnableTracing().
 		AddQueryParams("username", username).
@@ -76,7 +76,7 @@ func FindUserId(c common.ExecContext, username string) (int, error) {
 	return res.Data, nil
 }
 
-func FindUser(c common.ExecContext, req FindUserReq) (UserInfo, error) {
+func FindUser(c common.Rail, req FindUserReq) (UserInfo, error) {
 	r := client.NewDynTClient(c, "/remote/user/info", "auth-service").
 		EnableTracing().
 		PostJson(req)
@@ -93,7 +93,7 @@ func FindUser(c common.ExecContext, req FindUserReq) (UserInfo, error) {
 	return res.Data, nil
 }
 
-func CachedFindUser(c common.ExecContext, userId int) (UserInfo, error) {
+func CachedFindUser(c common.Rail, userId int) (UserInfo, error) {
 	ui, _, err := userIdInfoCache.GetElse(c, fmt.Sprintf("vfm:user:cache:%d", userId),
 		func() (UserInfo, bool, error) {
 			fui, errFind := FindUser(c, FindUserReq{
@@ -104,7 +104,7 @@ func CachedFindUser(c common.ExecContext, userId int) (UserInfo, error) {
 	return ui, err
 }
 
-func FetchUsernames(c common.ExecContext, req FetchUsernamesReq) (FetchUsernamesRes, error) {
+func FetchUsernames(c common.Rail, req FetchUsernamesReq) (FetchUsernamesRes, error) {
 	r := client.NewDynTClient(c, "/remote/user/userno/username", "auth-service").
 		EnableTracing().
 		PostJson(&req)
@@ -120,7 +120,7 @@ func FetchUsernames(c common.ExecContext, req FetchUsernamesReq) (FetchUsernames
 	return res.Data, res.Err()
 }
 
-func FetchFstoreFileInfo(c common.ExecContext, fileId string, uploadFileId string) (FstoreFile, error) {
+func FetchFstoreFileInfo(c common.Rail, fileId string, uploadFileId string) (FstoreFile, error) {
 	r := client.NewDynTClient(c, "/file/info", "fstore").
 		EnableTracing().
 		AddQueryParams("fileId", fileId).
@@ -138,7 +138,7 @@ func FetchFstoreFileInfo(c common.ExecContext, fileId string, uploadFileId strin
 	return res.Data, res.Err()
 }
 
-func DeleteFstoreFile(c common.ExecContext, fileId string) error {
+func DeleteFstoreFile(c common.Rail, fileId string) error {
 	r := client.NewDynTClient(c, "/file", "fstore").
 		EnableTracing().
 		AddQueryParams("fileId", fileId).
@@ -161,7 +161,7 @@ func DeleteFstoreFile(c common.ExecContext, fileId string) error {
 	return nil
 }
 
-func GetFstoreTmpToken(c common.ExecContext, fileId string, filename string) (string, error) {
+func GetFstoreTmpToken(c common.Rail, fileId string, filename string) (string, error) {
 	r := client.NewDynTClient(c, "/file/key", "fstore").
 		EnableTracing().
 		AddQueryParams("fileId", fileId).

@@ -45,8 +45,7 @@ type CreateFantahseaImgEvt struct {
 // event-pump send binlog event when a file_info record is saved.
 // vfm guesses if the file is an image by file name,
 // if so, vfm sends events to hammer to compress the image as a thumbnail
-func OnFileSaved(evt StreamEvent) error {
-	c := common.EmptyExecContext()
+func OnFileSaved(c common.Rail, evt StreamEvent) error {
 	if evt.Type != "INS" {
 		return nil
 	}
@@ -54,7 +53,7 @@ func OnFileSaved(evt StreamEvent) error {
 	var uuid string
 	uuidCol, ok := evt.Columns["uuid"]
 	if !ok {
-		c.Log.Errorf("Event doesn't contain uuid, %+v", evt)
+		c.Errorf("Event doesn't contain uuid, %+v", evt)
 		return nil
 	}
 	uuid = uuidCol.After
@@ -66,22 +65,22 @@ func OnFileSaved(evt StreamEvent) error {
 			return err
 		}
 		if f.IsZero() {
-			c.Log.Infof("file is deleted, %v", uuid)
+			c.Infof("file is deleted, %v", uuid)
 			return nil // file already deleted
 		}
 
 		if f.FileType != FILE_TYPE_FILE {
-			c.Log.Infof("file is dir, %v", uuid)
+			c.Infof("file is dir, %v", uuid)
 			return nil // a directory
 		}
 
 		if f.Thumbnail != "" {
-			c.Log.Infof("file has thumbnail aleady, %v", uuid)
+			c.Infof("file has thumbnail aleady, %v", uuid)
 			return nil // already has a thumbnail
 		}
 
 		if !isImage(f.Name) {
-			c.Log.Infof("file is not image, %v, %v", uuid, f.Name)
+			c.Infof("file is not image, %v, %v", uuid, f.Name)
 			return nil // not an image
 		}
 
@@ -93,26 +92,24 @@ func OnFileSaved(evt StreamEvent) error {
 }
 
 // hammer sends event message when the thumbnail image is compressed and saved on mini-fstore
-func OnImageCompressed(evt CompressImageEvent) error {
-	cc := common.EmptyExecContext()
-	cc.Log.Infof("Received CompressedImageEvent, %+v", evt)
-	return ReactOnImageCompressed(cc, evt)
+func OnImageCompressed(r common.Rail, evt CompressImageEvent) error {
+	r.Infof("Received CompressedImageEvent, %+v", evt)
+	return ReactOnImageCompressed(r, evt)
 }
 
 // event-pump send binlog event when a file_info's thumbnail is updated.
 // vfm receives the event and check if the file has a thumbnail,
 // if so, sends events to fantahsea to create a gallery image,
 // adding current image to the gallery for its directory
-func OnThumbnailUpdated(evt StreamEvent) error {
+func OnThumbnailUpdated(c common.Rail, evt StreamEvent) error {
 	if evt.Type != "UPD" {
 		return nil
 	}
 
-	c := common.EmptyExecContext()
 	var uuid string
 	uuidCol, ok := evt.Columns["uuid"]
 	if !ok {
-		c.Log.Errorf("Event doesn't contain uuid column, %+v", evt)
+		c.Errorf("Event doesn't contain uuid column, %+v", evt)
 		return nil
 	}
 	uuid = uuidCol.After
@@ -141,7 +138,7 @@ func OnThumbnailUpdated(evt StreamEvent) error {
 			return err
 		}
 		if pf.IsZero() {
-			c.Log.Infof("parent file not found, %v", pf)
+			c.Infof("parent file not found, %v", pf)
 			return nil
 		}
 
@@ -164,8 +161,7 @@ func OnThumbnailUpdated(evt StreamEvent) error {
 
 // event-pump send binlog event when a file_info is deleted (is_logic_deleted changed)
 // vfm notifies fantahsea about the delete
-func OnFileDeleted(evt StreamEvent) error {
-	c := common.EmptyExecContext()
+func OnFileDeleted(c common.Rail, evt StreamEvent) error {
 	if evt.Type != "UPD" {
 		return nil
 	}
@@ -173,14 +169,14 @@ func OnFileDeleted(evt StreamEvent) error {
 	var uuid string
 	uuidCol, ok := evt.Columns["uuid"]
 	if !ok {
-		c.Log.Errorf("Event doesn't contain uuid, %+v", evt)
+		c.Errorf("Event doesn't contain uuid, %+v", evt)
 		return nil
 	}
 	uuid = uuidCol.After
 
 	isLogicDeletedCol, ok := evt.Columns["is_logic_deleted"]
 	if !ok {
-		c.Log.Errorf("Event doesn't contain is_logic_deleted, %+v", evt)
+		c.Errorf("Event doesn't contain is_logic_deleted, %+v", evt)
 		return nil
 	}
 
@@ -188,7 +184,7 @@ func OnFileDeleted(evt StreamEvent) error {
 		return nil
 	}
 
-	c.Log.Infof("File logically deleted, %v", uuid)
+	c.Infof("File logically deleted, %v", uuid)
 
 	if e := bus.SendToEventBus(c, NotifyFileDeletedEvent{FileKey: uuid}, notifyFantahseaFileDeletedEventBus); e != nil {
 		return common.TraceErrf(e, "Failed to send NotifyFileDeletedEvent, uuid: %v", uuid)

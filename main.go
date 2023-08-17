@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	server.PreServerBootstrap(func(c common.ExecContext) error {
+	server.PreServerBootstrap(func(c common.Rail) error {
 		vfm.PrepareServer(c)
 		return nil
 	})
