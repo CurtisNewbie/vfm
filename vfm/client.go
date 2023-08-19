@@ -54,8 +54,8 @@ type FetchUsernamesRes struct {
 	UserNoToUsername map[string]string `json:"userNoToUsername"`
 }
 
-func FindUserId(c common.Rail, username string) (int, error) {
-	r := client.NewDynTClient(c, "/remote/user/id", "auth-service").
+func FindUserId(rail common.Rail, username string) (int, error) {
+	r := client.NewDynTClient(rail, "/remote/user/id", "auth-service").
 		EnableTracing().
 		AddQueryParams("username", username).
 		Get()
@@ -76,8 +76,8 @@ func FindUserId(c common.Rail, username string) (int, error) {
 	return res.Data, nil
 }
 
-func FindUser(c common.Rail, req FindUserReq) (UserInfo, error) {
-	r := client.NewDynTClient(c, "/remote/user/info", "auth-service").
+func FindUser(rail common.Rail, req FindUserReq) (UserInfo, error) {
+	r := client.NewDynTClient(rail, "/remote/user/info", "auth-service").
 		EnableTracing().
 		PostJson(req)
 	if r.Err != nil {
@@ -93,10 +93,10 @@ func FindUser(c common.Rail, req FindUserReq) (UserInfo, error) {
 	return res.Data, nil
 }
 
-func CachedFindUser(c common.Rail, userId int) (UserInfo, error) {
-	ui, _, err := userIdInfoCache.GetElse(c, fmt.Sprintf("vfm:user:cache:%d", userId),
+func CachedFindUser(rail common.Rail, userId int) (UserInfo, error) {
+	ui, _, err := userIdInfoCache.GetElse(rail, fmt.Sprintf("vfm:user:cache:%d", userId),
 		func() (UserInfo, bool, error) {
-			fui, errFind := FindUser(c, FindUserReq{
+			fui, errFind := FindUser(rail, FindUserReq{
 				UserId: &userId,
 			})
 			return fui, true, errFind
@@ -104,8 +104,8 @@ func CachedFindUser(c common.Rail, userId int) (UserInfo, error) {
 	return ui, err
 }
 
-func FetchUsernames(c common.Rail, req FetchUsernamesReq) (FetchUsernamesRes, error) {
-	r := client.NewDynTClient(c, "/remote/user/userno/username", "auth-service").
+func FetchUsernames(rail common.Rail, req FetchUsernamesReq) (FetchUsernamesRes, error) {
+	r := client.NewDynTClient(rail, "/remote/user/userno/username", "auth-service").
 		EnableTracing().
 		PostJson(&req)
 	if r.Err != nil {
@@ -120,8 +120,8 @@ func FetchUsernames(c common.Rail, req FetchUsernamesReq) (FetchUsernamesRes, er
 	return res.Data, res.Err()
 }
 
-func FetchFstoreFileInfo(c common.Rail, fileId string, uploadFileId string) (FstoreFile, error) {
-	r := client.NewDynTClient(c, "/file/info", "fstore").
+func FetchFstoreFileInfo(rail common.Rail, fileId string, uploadFileId string) (FstoreFile, error) {
+	r := client.NewDynTClient(rail, "/file/info", "fstore").
 		EnableTracing().
 		AddQueryParams("fileId", fileId).
 		AddQueryParams("uploadFileId", uploadFileId).
@@ -138,8 +138,8 @@ func FetchFstoreFileInfo(c common.Rail, fileId string, uploadFileId string) (Fst
 	return res.Data, res.Err()
 }
 
-func DeleteFstoreFile(c common.Rail, fileId string) error {
-	r := client.NewDynTClient(c, "/file", "fstore").
+func DeleteFstoreFile(rail common.Rail, fileId string) error {
+	r := client.NewDynTClient(rail, "/file", "fstore").
 		EnableTracing().
 		AddQueryParams("fileId", fileId).
 		Delete()
@@ -161,8 +161,8 @@ func DeleteFstoreFile(c common.Rail, fileId string) error {
 	return nil
 }
 
-func GetFstoreTmpToken(c common.Rail, fileId string, filename string) (string, error) {
-	r := client.NewDynTClient(c, "/file/key", "fstore").
+func GetFstoreTmpToken(rail common.Rail, fileId string, filename string) (string, error) {
+	r := client.NewDynTClient(rail, "/file/key", "fstore").
 		EnableTracing().
 		AddQueryParams("fileId", fileId).
 		AddQueryParams("filename", url.QueryEscape(filename)).

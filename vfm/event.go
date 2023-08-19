@@ -45,7 +45,7 @@ type CreateFantahseaImgEvt struct {
 // event-pump send binlog event when a file_info record is saved.
 // vfm guesses if the file is an image by file name,
 // if so, vfm sends events to hammer to compress the image as a thumbnail
-func OnFileSaved(c common.Rail, evt StreamEvent) error {
+func OnFileSaved(rail common.Rail, evt StreamEvent) error {
 	if evt.Type != "INS" {
 		return nil
 	}
@@ -53,38 +53,38 @@ func OnFileSaved(c common.Rail, evt StreamEvent) error {
 	var uuid string
 	uuidCol, ok := evt.Columns["uuid"]
 	if !ok {
-		c.Errorf("Event doesn't contain uuid, %+v", evt)
+		rail.Errorf("Event doesn't contain uuid, %+v", evt)
 		return nil
 	}
 	uuid = uuidCol.After
 
 	// lock before we do anything about it
-	return _lockFileExec(c, uuid, func() error {
-		f, err := findFile(c, uuid)
+	return _lockFileExec(rail, uuid, func() error {
+		f, err := findFile(rail, uuid)
 		if err != nil {
 			return err
 		}
 		if f.IsZero() {
-			c.Infof("file is deleted, %v", uuid)
+			rail.Infof("file is deleted, %v", uuid)
 			return nil // file already deleted
 		}
 
 		if f.FileType != FILE_TYPE_FILE {
-			c.Infof("file is dir, %v", uuid)
+			rail.Infof("file is dir, %v", uuid)
 			return nil // a directory
 		}
 
 		if f.Thumbnail != "" {
-			c.Infof("file has thumbnail aleady, %v", uuid)
+			rail.Infof("file has thumbnail aleady, %v", uuid)
 			return nil // already has a thumbnail
 		}
 
 		if !isImage(f.Name) {
-			c.Infof("file is not image, %v, %v", uuid, f.Name)
+			rail.Infof("file is not image, %v, %v", uuid, f.Name)
 			return nil // not an image
 		}
 
-		if e := bus.SendToEventBus(c, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
+		if e := bus.SendToEventBus(rail, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
 			return common.TraceErrf(e, "Failed to send CompressImageEvent, uuid: %v", f.Uuid)
 		}
 		return nil
@@ -92,16 +92,16 @@ func OnFileSaved(c common.Rail, evt StreamEvent) error {
 }
 
 // hammer sends event message when the thumbnail image is compressed and saved on mini-fstore
-func OnImageCompressed(r common.Rail, evt CompressImageEvent) error {
-	r.Infof("Received CompressedImageEvent, %+v", evt)
-	return ReactOnImageCompressed(r, evt)
+func OnImageCompressed(rail common.Rail, evt CompressImageEvent) error {
+	rail.Infof("Received CompressedImageEvent, %+v", evt)
+	return ReactOnImageCompressed(rail, evt)
 }
 
 // event-pump send binlog event when a file_info's thumbnail is updated.
 // vfm receives the event and check if the file has a thumbnail,
 // if so, sends events to fantahsea to create a gallery image,
 // adding current image to the gallery for its directory
-func OnThumbnailUpdated(c common.Rail, evt StreamEvent) error {
+func OnThumbnailUpdated(rail common.Rail, evt StreamEvent) error {
 	if evt.Type != "UPD" {
 		return nil
 	}
@@ -109,7 +109,7 @@ func OnThumbnailUpdated(c common.Rail, evt StreamEvent) error {
 	var uuid string
 	uuidCol, ok := evt.Columns["uuid"]
 	if !ok {
-		c.Errorf("Event doesn't contain uuid column, %+v", evt)
+		rail.Errorf("Event doesn't contain uuid column, %+v", evt)
 		return nil
 	}
 	uuid = uuidCol.After
@@ -120,8 +120,8 @@ func OnThumbnailUpdated(c common.Rail, evt StreamEvent) error {
 	}
 
 	// lock before we do anything about it
-	return _lockFileExec(c, uuid, func() error {
-		f, err := findFile(c, uuid)
+	return _lockFileExec(rail, uuid, func() error {
+		f, err := findFile(rail, uuid)
 		if err != nil {
 			return err
 		}
@@ -133,16 +133,16 @@ func OnThumbnailUpdated(c common.Rail, evt StreamEvent) error {
 			return nil
 		}
 
-		pf, err := findFile(c, f.ParentFile)
+		pf, err := findFile(rail, f.ParentFile)
 		if err != nil {
 			return err
 		}
 		if pf.IsZero() {
-			c.Infof("parent file not found, %v", pf)
+			rail.Infof("parent file not found, %v", pf)
 			return nil
 		}
 
-		user, err := CachedFindUser(c, f.UploaderId)
+		user, err := CachedFindUser(rail, f.UploaderId)
 		if err != nil {
 			return err
 		}
@@ -155,13 +155,13 @@ func OnThumbnailUpdated(c common.Rail, evt StreamEvent) error {
 			ImageName:    f.Name,
 			ImageFileKey: f.Uuid,
 		}
-		return bus.SendToEventBus(c, evt, addFantahseaDirGalleryImgEventBus)
+		return bus.SendToEventBus(rail, evt, addFantahseaDirGalleryImgEventBus)
 	})
 }
 
 // event-pump send binlog event when a file_info is deleted (is_logic_deleted changed)
 // vfm notifies fantahsea about the delete
-func OnFileDeleted(c common.Rail, evt StreamEvent) error {
+func OnFileDeleted(rail common.Rail, evt StreamEvent) error {
 	if evt.Type != "UPD" {
 		return nil
 	}
@@ -169,14 +169,14 @@ func OnFileDeleted(c common.Rail, evt StreamEvent) error {
 	var uuid string
 	uuidCol, ok := evt.Columns["uuid"]
 	if !ok {
-		c.Errorf("Event doesn't contain uuid, %+v", evt)
+		rail.Errorf("Event doesn't contain uuid, %+v", evt)
 		return nil
 	}
 	uuid = uuidCol.After
 
 	isLogicDeletedCol, ok := evt.Columns["is_logic_deleted"]
 	if !ok {
-		c.Errorf("Event doesn't contain is_logic_deleted, %+v", evt)
+		rail.Errorf("Event doesn't contain is_logic_deleted, %+v", evt)
 		return nil
 	}
 
@@ -184,9 +184,9 @@ func OnFileDeleted(c common.Rail, evt StreamEvent) error {
 		return nil
 	}
 
-	c.Infof("File logically deleted, %v", uuid)
+	rail.Infof("File logically deleted, %v", uuid)
 
-	if e := bus.SendToEventBus(c, NotifyFileDeletedEvent{FileKey: uuid}, notifyFantahseaFileDeletedEventBus); e != nil {
+	if e := bus.SendToEventBus(rail, NotifyFileDeletedEvent{FileKey: uuid}, notifyFantahseaFileDeletedEventBus); e != nil {
 		return common.TraceErrf(e, "Failed to send NotifyFileDeletedEvent, uuid: %v", uuid)
 	}
 	return nil
