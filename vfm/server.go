@@ -1,8 +1,6 @@
 package vfm
 
 import (
-	"context"
-
 	"github.com/curtisnewbie/gocommon/bus"
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/goauth"
@@ -14,11 +12,11 @@ func PrepareServer(rail common.Rail) error {
 	if goauth.IsEnabled() {
 		server.PostServerBootstrapped(func(sc common.Rail) error {
 			c := common.EmptyRail()
-			if e := goauth.AddResource(context.Background(), goauth.AddResourceReq{Name: MANAGE_FILE_NAME, Code: MANAGE_FILE_CODE}); e != nil {
+			if e := goauth.AddResourceAsync(rail, goauth.AddResourceReq{Name: MANAGE_FILE_NAME, Code: MANAGE_FILE_CODE}); e != nil {
 				c.Errorf("Failed to create goauth resource, %v", e)
 			}
 
-			if e := goauth.AddResource(context.Background(), goauth.AddResourceReq{Name: ADMIN_FS_NAME, Code: ADMIN_FS_CODE}); e != nil {
+			if e := goauth.AddResourceAsync(rail, goauth.AddResourceReq{Name: ADMIN_FS_NAME, Code: ADMIN_FS_CODE}); e != nil {
 				c.Errorf("Failed to create goauth resource, %v", e)
 			}
 			return nil
