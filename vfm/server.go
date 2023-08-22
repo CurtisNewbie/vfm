@@ -4,53 +4,40 @@ import (
 	"github.com/curtisnewbie/gocommon/bus"
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/goauth"
+	"github.com/curtisnewbie/gocommon/mysql"
 	"github.com/curtisnewbie/gocommon/server"
 	"github.com/gin-gonic/gin"
 )
 
 func PrepareServer(rail common.Rail) error {
-	if goauth.IsEnabled() {
-		server.PostServerBootstrapped(func(sc common.Rail) error {
-			c := common.EmptyRail()
-			if e := goauth.AddResourceAsync(rail, goauth.AddResourceReq{Name: MANAGE_FILE_NAME, Code: MANAGE_FILE_CODE}); e != nil {
-				c.Errorf("Failed to create goauth resource, %v", e)
-			}
-
-			if e := goauth.AddResourceAsync(rail, goauth.AddResourceReq{Name: ADMIN_FS_NAME, Code: ADMIN_FS_CODE}); e != nil {
-				c.Errorf("Failed to create goauth resource, %v", e)
-			}
-			return nil
-		})
-		goauth.ReportPathsOnBootstrapped()
+	if err := PrepareGoAuthReport(rail); err != nil {
+		return err
 	}
 
-	bus.DeclareEventBus(comprImgProcEventBus)
-	bus.DeclareEventBus(addFantahseaDirGalleryImgEventBus)
-	bus.DeclareEventBus(notifyFantahseaFileDeletedEventBus)
+	if err := PrepareEventBus(rail); err != nil {
+		return err
+	}
 
-	bus.SubscribeEventBus(comprImgNotifyEventBus, 2, OnImageCompressed)
-	bus.SubscribeEventBus(fileSavedEventBus, 2, OnFileSaved)
-	bus.SubscribeEventBus(thumbnailUpdatedEventBus, 2, OnThumbnailUpdated)
-	bus.SubscribeEventBus(fileLDeletedEventBus, 2, OnFileDeleted)
+	if err := RegisterHttpRoutes(rail); err != nil {
+		return err
+	}
+	return nil
+}
 
-	server.Get("/open/api/file/upload/duplication/preflight",
-		func(c *gin.Context, ec common.Rail) (any, error) {
-			filename := c.Query("fileName")
-			parentFileKey := c.Query("parentFileKey")
-			ec.Debugf("filename: %v, parentFileKey: %v", filename, parentFileKey)
-			return FileExists(ec, filename, parentFileKey, server.ExtractUser(c))
+func RegisterHttpRoutes(rail common.Rail) error {
+	server.IGet("/open/api/file/upload/duplication/preflight",
+		func(c *gin.Context, rail common.Rail, req PreflightCheckReq) (any, error) {
+			return FileExists(rail, mysql.GetConn(), req, server.ExtractUser(c))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User - preflight check for duplicate file uploads", Code: MANAGE_FILE_CODE}),
 	)
 
-	server.Get("/open/api/file/parent",
-		func(c *gin.Context, rail common.Rail) (any, error) {
-			fk := c.Query("fileKey")
-			if fk == "" {
+	server.IGet("/open/api/file/parent",
+		func(c *gin.Context, rail common.Rail, req FetchParentFileReq) (any, error) {
+			if req.FileKey == "" {
 				return nil, common.NewWebErr("fileKey is required")
 			}
-			rail.Debugf("fileKey: %v", fk)
-			pf, e := FindParentFile(rail, fk, server.ExtractUser(c))
+			pf, e := FindParentFile(rail, req, server.ExtractUser(c))
 			if e != nil {
 				return nil, e
 			}
@@ -64,7 +51,7 @@ func PrepareServer(rail common.Rail) error {
 
 	server.IPost("/open/api/file/move-to-dir",
 		func(c *gin.Context, rail common.Rail, req MoveIntoDirReq) (any, error) {
-			return nil, MoveFileToDir(rail, req, server.ExtractUser(c))
+			return nil, MoveFileToDir(rail, mysql.GetConn(), req, server.ExtractUser(c))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User move files into directory", Code: MANAGE_FILE_CODE}),
 	)
@@ -103,8 +90,8 @@ func PrepareServer(rail common.Rail) error {
 	)
 
 	server.Get("/open/api/file/dir/list",
-		func(c *gin.Context, ec common.Rail) (any, error) {
-			return ListDirs(ec, server.ExtractUser(c))
+		func(c *gin.Context, rail common.Rail) (any, error) {
+			return ListDirs(rail, server.ExtractUser(c))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User list directories", Code: MANAGE_FILE_CODE}),
 	)
@@ -239,21 +226,54 @@ func PrepareServer(rail common.Rail) error {
 
 	// ---------------------------------------------- internal endpoints ------------------------------------------
 
-	server.IGet("/remote/user/file/indir/list", func(c *gin.Context, rail common.Rail, q ListFilesInDirReq) (any, error) {
-		return ListFilesInDir(rail, q)
-	})
-	server.Get("/remote/user/file/info", func(c *gin.Context, rail common.Rail) (any, error) {
-		return FetchFileInfoInternal(rail, c.Query("fileKey"))
-	})
-	server.IGet("/remote/user/file/owner/validation", func(c *gin.Context, rail common.Rail, q ValidateFileOwnerReq) (any, error) {
-		return ValidateFileOwner(rail, q)
-	})
+	server.IGet("/remote/user/file/indir/list",
+		func(c *gin.Context, rail common.Rail, req ListFilesInDirReq) (any, error) {
+			return ListFilesInDir(rail, req)
+		})
+	server.IGet("/remote/user/file/info",
+		func(c *gin.Context, rail common.Rail, req FetchFileInfoReq) (any, error) {
+			return FetchFileInfoInternal(rail, req)
+		})
+	server.IGet("/remote/user/file/owner/validation",
+		func(c *gin.Context, rail common.Rail, req ValidateFileOwnerReq) (any, error) {
+			return ValidateFileOwner(rail, req)
+		})
 
 	// ---------------------------------- endpoints used to compensate --------------------------------------
 
-	server.Post("/compensate/image/compression", func(c *gin.Context, rail common.Rail) (any, error) {
-		return nil, CompensateImageCompression(rail)
-	})
+	server.Post("/compensate/image/compression",
+		func(c *gin.Context, rail common.Rail) (any, error) {
+			return nil, CompensateImageCompression(rail)
+		})
+	return nil
+}
 
+func PrepareEventBus(rail common.Rail) error {
+	// declare event bus
+	if err := bus.DeclareEventBus(comprImgProcEventBus); err != nil {
+		return err
+	}
+	if err := bus.DeclareEventBus(addFantahseaDirGalleryImgEventBus); err != nil {
+		return err
+	}
+	if err := bus.DeclareEventBus(notifyFantahseaFileDeletedEventBus); err != nil {
+		return err
+	}
+
+	// subscribe to event bus
+	bus.SubscribeEventBus(comprImgNotifyEventBus, 2, OnImageCompressed)
+	bus.SubscribeEventBus(fileSavedEventBus, 2, OnFileSaved)
+	bus.SubscribeEventBus(thumbnailUpdatedEventBus, 2, OnThumbnailUpdated)
+	bus.SubscribeEventBus(fileLDeletedEventBus, 2, OnFileDeleted)
+	return nil
+}
+
+func PrepareGoAuthReport(rail common.Rail) error {
+	// report goauth resources and paths
+	goauth.ReportResourcesOnBootstrapped(rail, []goauth.AddResourceReq{
+		{Name: MANAGE_FILE_NAME, Code: MANAGE_FILE_CODE},
+		{Name: ADMIN_FS_NAME, Code: ADMIN_FS_CODE},
+	})
+	goauth.ReportPathsOnBootstrapped(rail)
 	return nil
 }

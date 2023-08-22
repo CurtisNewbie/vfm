@@ -3,6 +3,7 @@ package vfm
 import (
 	"github.com/curtisnewbie/gocommon/bus"
 	"github.com/curtisnewbie/gocommon/common"
+	"github.com/curtisnewbie/gocommon/mysql"
 )
 
 const (
@@ -60,7 +61,7 @@ func OnFileSaved(rail common.Rail, evt StreamEvent) error {
 
 	// lock before we do anything about it
 	return _lockFileExec(rail, uuid, func() error {
-		f, err := findFile(rail, uuid)
+		f, err := findFile(rail, mysql.GetConn(), uuid)
 		if err != nil {
 			return err
 		}
@@ -121,7 +122,7 @@ func OnThumbnailUpdated(rail common.Rail, evt StreamEvent) error {
 
 	// lock before we do anything about it
 	return _lockFileExec(rail, uuid, func() error {
-		f, err := findFile(rail, uuid)
+		f, err := findFile(rail, mysql.GetConn(), uuid)
 		if err != nil {
 			return err
 		}
@@ -133,7 +134,7 @@ func OnThumbnailUpdated(rail common.Rail, evt StreamEvent) error {
 			return nil
 		}
 
-		pf, err := findFile(rail, f.ParentFile)
+		pf, err := findFile(rail, mysql.GetConn(), f.ParentFile)
 		if err != nil {
 			return err
 		}

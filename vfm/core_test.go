@@ -42,7 +42,7 @@ func TestListFilesInVFolder(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
 	var folderNo string = "hfKh3QZSsWjKufZWflqu8jb0n"
-	r, e := listFilesInVFolder(c, ListFileReq{FolderNo: &folderNo}, testUser())
+	r, e := listFilesInVFolder(c, mysql.GetConn(), ListFileReq{FolderNo: &folderNo}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -52,14 +52,14 @@ func TestListFilesInVFolder(t *testing.T) {
 func TestListFilesSelective(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
-	r, e := listFilesSelective(c, ListFileReq{}, testUser())
+	r, e := listFilesSelective(c, mysql.GetConn(), ListFileReq{}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
 	t.Logf("%+v", r)
 
 	var filename = "myfile"
-	r, e = listFilesSelective(c, ListFileReq{
+	r, e = listFilesSelective(c, mysql.GetConn(), ListFileReq{
 		Filename: &filename,
 	}, testUser())
 	if e != nil {
@@ -73,14 +73,14 @@ func TestListFilesForTags(t *testing.T) {
 	c := common.EmptyRail()
 	var tagName string = "test"
 
-	r, e := listFilesForTags(c, ListFileReq{TagName: &tagName}, testUser())
+	r, e := listFilesForTags(c, mysql.GetConn(), ListFileReq{TagName: &tagName}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
 	t.Logf("%+v", r)
 
 	var filename = "myfile"
-	r, e = listFilesForTags(c, ListFileReq{
+	r, e = listFilesForTags(c, mysql.GetConn(), ListFileReq{
 		Filename: &filename,
 		TagName:  &tagName,
 	}, testUser())
@@ -94,7 +94,7 @@ func TestFileExists(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
 	fname := "test-files.zip"
-	b, e := FileExists(c, fname, "", testUser())
+	b, e := FileExists(c, mysql.GetConn(), PreflightCheckReq{Filename: fname}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -118,7 +118,7 @@ func TestListFileTags(t *testing.T) {
 func TestFindParentFile(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
-	pf, e := FindParentFile(c, "ZZZ687250496077824971813", testUser())
+	pf, e := FindParentFile(c, FetchParentFileReq{FileKey: "ZZZ687250496077824971813"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -131,10 +131,11 @@ func TestFindParentFile(t *testing.T) {
 func TestMoveFileToDir(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
-	e := MoveFileToDir(c, MoveIntoDirReq{
+	req := MoveIntoDirReq{
 		Uuid:           "ZZZ687238965264384971813",
 		ParentFileUuid: "ZZZ687238965264384925123",
-	}, testUser())
+	}
+	e := MoveFileToDir(c, mysql.GetConn(), req, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
