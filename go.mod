@@ -3,7 +3,7 @@ module github.com/curtisnewbie/vfm
 go 1.18
 
 require (
-	github.com/curtisnewbie/gocommon v0.0.0-20230822075243-f6ecaad874d4
+	github.com/curtisnewbie/gocommon v0.0.0-20230822133953-a10982554d31
 	github.com/gin-gonic/gin v1.8.1
 	github.com/sirupsen/logrus v1.9.0
 	gorm.io/gorm v1.23.8
