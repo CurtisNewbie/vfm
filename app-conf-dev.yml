@@ -44,4 +44,4 @@ tracing.propagation.keys:
   - username
   - roleno
 
-goauth.client.enabled: true
+goauth.client.enabled: false
