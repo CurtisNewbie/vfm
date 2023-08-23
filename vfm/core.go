@@ -15,20 +15,20 @@ const (
 	USER_GROUP_PUBLIC  = 0 // public user group
 	USER_GROUP_PRIVATE = 1 // private user group
 
-	FILE_TYPE_FILE = "FILE"
-	FILE_TYPE_DIR  = "DIR"
+	FILE_TYPE_FILE = "FILE" // file
+	FILE_TYPE_DIR  = "DIR"  // directory
 
 	FOWNERSHIP_ALL   = 0
 	FOWNERSHIP_OWNER = 1
 
-	FILE_LDEL_N = 0
-	FILE_LDEL_Y = 1
+	FILE_LDEL_N = 0 // normal file
+	FILE_LDEL_Y = 1 // file marked deleted
 
-	FILE_PDEL_N = 0
-	FILE_PDEL_Y = 1
+	FILE_PDEL_N = 0 // file marked deleted, the actual deletion is not yet processed
+	FILE_PDEL_Y = 1 // file finally deleted, may be removed from disk or move to somewhere else
 
-	VFOWNERSHIP_OWNER   = "OWNER"
-	VFOWNERSHIP_GRANTED = "GRANTED"
+	VFOWNERSHIP_OWNER   = "OWNER"   // owner of the vfolder
+	VFOWNERSHIP_GRANTED = "GRANTED" // granted access to the vfolder
 )
 
 var (
