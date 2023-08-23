@@ -569,13 +569,9 @@ func newListFileTagsQuery(c common.Rail, tx *gorm.DB, r ListFileTagReq, userId i
 
 func findFile(c common.Rail, tx *gorm.DB, fileKey string) (FileInfo, error) {
 	var f FileInfo
-
 	t := tx.Raw("select * from file_info where uuid = ? and is_del = 0", fileKey).
 		Scan(&f)
-	if t.Error != nil {
-		return f, t.Error
-	}
-	return f, nil
+	return f, t.Error
 }
 
 func findFileKey(rail common.Rail, tx *gorm.DB, id int) (string, error) {
@@ -627,6 +623,9 @@ func FindParentFile(c common.Rail, tx *gorm.DB, req FetchParentFileReq, user com
 	pf, e := findFile(c, tx, f.ParentFile)
 	if e != nil {
 		return ParentFileInfo{}, e
+	}
+	if pf.IsZero() {
+		return ParentFileInfo{}, common.NewWebErr("File not found", fmt.Sprintf("ParentFile %v not found", f.ParentFile))
 	}
 
 	return ParentFileInfo{FileKey: pf.Uuid, Filename: pf.Name, Zero: false}, nil
