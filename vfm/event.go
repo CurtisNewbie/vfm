@@ -95,7 +95,7 @@ func OnFileSaved(rail common.Rail, evt StreamEvent) error {
 // hammer sends event message when the thumbnail image is compressed and saved on mini-fstore
 func OnImageCompressed(rail common.Rail, evt CompressImageEvent) error {
 	rail.Infof("Received CompressedImageEvent, %+v", evt)
-	return ReactOnImageCompressed(rail, evt)
+	return ReactOnImageCompressed(rail, mysql.GetConn(), evt)
 }
 
 // event-pump send binlog event when a file_info's thumbnail is updated.

@@ -108,7 +108,7 @@ func TestFileExists(t *testing.T) {
 func TestListFileTags(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
-	r, e := ListFileTags(c, ListFileTagReq{FileId: 1892}, testUser())
+	r, e := ListFileTags(c, mysql.GetConn(), ListFileTagReq{FileId: 1892}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -118,7 +118,7 @@ func TestListFileTags(t *testing.T) {
 func TestFindParentFile(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
-	pf, e := FindParentFile(c, FetchParentFileReq{FileKey: "ZZZ687250496077824971813"}, testUser())
+	pf, e := FindParentFile(c, mysql.GetConn(), FetchParentFileReq{FileKey: "ZZZ687250496077824971813"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -144,7 +144,7 @@ func TestMoveFileToDir(t *testing.T) {
 func TestMakeDir(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
-	fileKey, e := MakeDir(c, MakeDirReq{Name: "mydir"}, testUser())
+	fileKey, e := MakeDir(c, mysql.GetConn(), MakeDirReq{Name: "mydir"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -158,7 +158,7 @@ func TestCreateVFolder(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
 	r, _ := common.ERand(5)
-	folderNo, e := CreateVFolder(c, CreateVFolderReq{"MyFolder_" + r}, testUser())
+	folderNo, e := CreateVFolder(c, mysql.GetConn(), CreateVFolderReq{"MyFolder_" + r}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -172,7 +172,7 @@ func TestCreateVFolder(t *testing.T) {
 func TestListDirs(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
-	dirs, e := ListDirs(c, testUser())
+	dirs, e := ListDirs(c, mysql.GetConn(), testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -181,7 +181,7 @@ func TestListDirs(t *testing.T) {
 
 func TestGranteFileAccess(t *testing.T) {
 	preTest(t)
-	e := GranteFileAccess(common.EmptyRail(), 2, 3, testUser())
+	e := GranteFileAccess(common.EmptyRail(), mysql.GetConn(), 2, 3, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -189,7 +189,7 @@ func TestGranteFileAccess(t *testing.T) {
 
 func TestRemoveGrantedFileAccess(t *testing.T) {
 	preTest(t)
-	e := RemoveGrantedFileAccess(common.EmptyRail(), RemoveGrantedAccessReq{FileId: 3, UserId: 2}, testUser())
+	e := RemoveGrantedFileAccess(common.EmptyRail(), mysql.GetConn(), RemoveGrantedAccessReq{FileId: 3, UserId: 2}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -197,7 +197,7 @@ func TestRemoveGrantedFileAccess(t *testing.T) {
 
 func TestListGrantedFileAccess(t *testing.T) {
 	preTest(t)
-	l, e := ListGrantedFileAccess(common.EmptyRail(), ListGrantedAccessReq{FileId: 3})
+	l, e := ListGrantedFileAccess(common.EmptyRail(), mysql.GetConn(), ListGrantedAccessReq{FileId: 3})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -206,7 +206,7 @@ func TestListGrantedFileAccess(t *testing.T) {
 
 func TestShareVFolder(t *testing.T) {
 	preTest(t)
-	if e := ShareVFolder(common.EmptyRail(),
+	if e := ShareVFolder(common.EmptyRail(), mysql.GetConn(),
 		UserInfo{Id: 30, Username: "sharon", UserNo: "UE202205142310074386952"}, "VFLD20221001211317631020565809652", testUser()); e != nil {
 		t.Fatal(e)
 	}
@@ -218,14 +218,14 @@ func TestRemoveVFolderAccess(t *testing.T) {
 		UserNo:   "UE202303190019399941339",
 		FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
 	}
-	if e := RemoveVFolderAccess(common.EmptyRail(), req, testUser()); e != nil {
+	if e := RemoveVFolderAccess(common.EmptyRail(), mysql.GetConn(), req, testUser()); e != nil {
 		t.Fatal(e)
 	}
 }
 
 func TestListVFolderBrief(t *testing.T) {
 	preTest(t)
-	v, e := ListVFolderBrief(common.EmptyRail(), testUser())
+	v, e := ListVFolderBrief(common.EmptyRail(), mysql.GetConn(), testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -234,7 +234,7 @@ func TestListVFolderBrief(t *testing.T) {
 
 func TestAddFileToVFolder(t *testing.T) {
 	preTest(t)
-	e := AddFileToVFolder(common.EmptyRail(),
+	e := AddFileToVFolder(common.EmptyRail(), mysql.GetConn(),
 		AddFileToVfolderReq{
 			FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
 			FileKeys: []string{"ZZZ687250481528832971813"},
@@ -246,7 +246,7 @@ func TestAddFileToVFolder(t *testing.T) {
 
 func TestRemoveFileFromVFolder(t *testing.T) {
 	preTest(t)
-	e := RemoveFileFromVFolder(common.EmptyRail(),
+	e := RemoveFileFromVFolder(common.EmptyRail(), mysql.GetConn(),
 		RemoveFileFromVfolderReq{
 			FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
 			FileKeys: []string{"ZZZ687250481528832971813"},
@@ -258,7 +258,7 @@ func TestRemoveFileFromVFolder(t *testing.T) {
 
 func TestListVFolders(t *testing.T) {
 	preTest(t)
-	l, e := ListVFolders(common.EmptyRail(), ListVFolderReq{}, testUser())
+	l, e := ListVFolders(common.EmptyRail(), mysql.GetConn(), ListVFolderReq{}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -267,7 +267,7 @@ func TestListVFolders(t *testing.T) {
 
 func TestListGrantedFolderAccess(t *testing.T) {
 	preTest(t)
-	l, e := ListGrantedFolderAccess(common.EmptyRail(),
+	l, e := ListGrantedFolderAccess(common.EmptyRail(), mysql.GetConn(),
 		ListGrantedFolderAccessReq{FolderNo: "VFLD20221001211317631020565809652"}, testUser())
 	if e != nil {
 		t.Fatal(e)
@@ -277,7 +277,7 @@ func TestListGrantedFolderAccess(t *testing.T) {
 
 func TestUpdateFile(t *testing.T) {
 	preTest(t)
-	e := UpdateFile(common.EmptyRail(), UpdateFileReq{Id: 301, UserGroup: USER_GROUP_PRIVATE, Name: "test-files-222.zip"}, testUser())
+	e := UpdateFile(common.EmptyRail(), mysql.GetConn(), UpdateFileReq{Id: 301, UserGroup: USER_GROUP_PRIVATE, Name: "test-files-222.zip"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -285,7 +285,7 @@ func TestUpdateFile(t *testing.T) {
 
 func TestListAllTags(t *testing.T) {
 	preTest(t)
-	tags, e := ListAllTags(common.EmptyRail(), testUser())
+	tags, e := ListAllTags(common.EmptyRail(), mysql.GetConn(), testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -296,7 +296,7 @@ func TestTagFile(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
 
-	e := TagFile(c, TagFileReq{FileId: 355, TagName: "mytag"}, testUser())
+	e := TagFile(c, mysql.GetConn(), TagFileReq{FileId: 355, TagName: "mytag"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -306,7 +306,7 @@ func TestUntagFile(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
 
-	e := UntagFile(c, UntagFileReq{FileId: 355, TagName: "mytag"}, testUser())
+	e := UntagFile(c, mysql.GetConn(), UntagFileReq{FileId: 355, TagName: "mytag"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -337,7 +337,7 @@ func TestCreateFile(t *testing.T) {
 	fakeFileId := resp.Data
 	c.Infof("fake fileId: %v", fakeFileId)
 
-	e := CreateFile(c, CreateFileReq{
+	e := CreateFile(c, mysql.GetConn(), CreateFileReq{
 		Filename:         "myfile",
 		FakeFstoreFileId: fakeFileId,
 		UserGroup:        USER_GROUP_PRIVATE,
@@ -350,7 +350,7 @@ func TestCreateFile(t *testing.T) {
 func TestDeleteFile(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
-	e := DeleteFile(c, DeleteFileReq{Uuid: "ZZZ718078073798656022858"}, testUser())
+	e := DeleteFile(c, mysql.GetConn(), DeleteFileReq{Uuid: "ZZZ718078073798656022858"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -359,7 +359,7 @@ func TestDeleteFile(t *testing.T) {
 func TestGenTempToken(t *testing.T) {
 	preTest(t)
 	c := common.EmptyRail()
-	tkn, e := GenTempToken(c, GenerateTempTokenReq{"ZZZ687250496077824971813"}, testUser())
+	tkn, e := GenTempToken(c, mysql.GetConn(), GenerateTempTokenReq{"ZZZ687250496077824971813"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
