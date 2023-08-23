@@ -19,7 +19,7 @@ See [CurtisNewbie/system-overview](https://github.com/CurtisNewbie/system-overvi
 
 ## Configuration
 
-Check [gocommon](https://github.com/curtisnewbie/gocommon) for more about configuration.
+Check [miso](https://github.com/curtisnewbie/miso) for more about configuration.
 
 | Property | Description | Default Value |
 |----------|-------------|---------------|

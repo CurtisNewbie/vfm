@@ -5,9 +5,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/curtisnewbie/gocommon/client"
-	"github.com/curtisnewbie/gocommon/common"
-	"github.com/curtisnewbie/gocommon/redis"
+	"github.com/curtisnewbie/miso/client"
+	"github.com/curtisnewbie/miso/core"
+	"github.com/curtisnewbie/miso/redis"
 )
 
 const (
@@ -25,9 +25,9 @@ type FstoreFile struct {
 	Status     string        `json:"status"`
 	Size       int64         `json:"size"`
 	Md5        string        `json:"md5"`
-	UplTime    common.ETime  `json:"uplTime"`
-	LogDelTime *common.ETime `json:"logDelTime"`
-	PhyDelTime *common.ETime `json:"phyDelTime"`
+	UplTime    core.ETime  `json:"uplTime"`
+	LogDelTime *core.ETime `json:"logDelTime"`
+	PhyDelTime *core.ETime `json:"phyDelTime"`
 }
 
 func (f FstoreFile) IsZero() bool {
@@ -54,7 +54,7 @@ type FetchUsernamesRes struct {
 	UserNoToUsername map[string]string `json:"userNoToUsername"`
 }
 
-func FindUserId(rail common.Rail, username string) (int, error) {
+func FindUserId(rail core.Rail, username string) (int, error) {
 	r := client.NewDynTClient(rail, "/remote/user/id", "auth-service").
 		EnableTracing().
 		AddQueryParams("username", username).
@@ -64,7 +64,7 @@ func FindUserId(rail common.Rail, username string) (int, error) {
 	}
 	defer r.Close()
 
-	var res common.GnResp[int]
+	var res core.GnResp[int]
 	if e := r.ReadJson(&res); e != nil {
 		return 0, e
 	}
@@ -76,7 +76,7 @@ func FindUserId(rail common.Rail, username string) (int, error) {
 	return res.Data, nil
 }
 
-func FindUser(rail common.Rail, req FindUserReq) (UserInfo, error) {
+func FindUser(rail core.Rail, req FindUserReq) (UserInfo, error) {
 	r := client.NewDynTClient(rail, "/remote/user/info", "auth-service").
 		EnableTracing().
 		PostJson(req)
@@ -85,7 +85,7 @@ func FindUser(rail common.Rail, req FindUserReq) (UserInfo, error) {
 	}
 	defer r.Close()
 
-	var res common.GnResp[UserInfo]
+	var res core.GnResp[UserInfo]
 	r.ReadJson(&res)
 	if res.Error {
 		return UserInfo{}, fmt.Errorf("failed to findUser, req: %+v, code: %v, msg: %v", req, res.ErrorCode, res.Msg)
@@ -93,7 +93,7 @@ func FindUser(rail common.Rail, req FindUserReq) (UserInfo, error) {
 	return res.Data, nil
 }
 
-func CachedFindUser(rail common.Rail, userId int) (UserInfo, error) {
+func CachedFindUser(rail core.Rail, userId int) (UserInfo, error) {
 	ui, _, err := userIdInfoCache.GetElse(rail, fmt.Sprintf("vfm:user:cache:%d", userId),
 		func() (UserInfo, bool, error) {
 			fui, errFind := FindUser(rail, FindUserReq{
@@ -104,7 +104,7 @@ func CachedFindUser(rail common.Rail, userId int) (UserInfo, error) {
 	return ui, err
 }
 
-func FetchUsernames(rail common.Rail, req FetchUsernamesReq) (FetchUsernamesRes, error) {
+func FetchUsernames(rail core.Rail, req FetchUsernamesReq) (FetchUsernamesRes, error) {
 	r := client.NewDynTClient(rail, "/remote/user/userno/username", "auth-service").
 		EnableTracing().
 		PostJson(&req)
@@ -113,14 +113,14 @@ func FetchUsernames(rail common.Rail, req FetchUsernamesReq) (FetchUsernamesRes,
 	}
 	defer r.Close()
 
-	var res common.GnResp[FetchUsernamesRes]
+	var res core.GnResp[FetchUsernamesRes]
 	if e := r.ReadJson(&res); e != nil {
 		return FetchUsernamesRes{}, e
 	}
 	return res.Data, res.Err()
 }
 
-func FetchFstoreFileInfo(rail common.Rail, fileId string, uploadFileId string) (FstoreFile, error) {
+func FetchFstoreFileInfo(rail core.Rail, fileId string, uploadFileId string) (FstoreFile, error) {
 	r := client.NewDynTClient(rail, "/file/info", "fstore").
 		EnableTracing().
 		AddQueryParams("fileId", fileId).
@@ -131,14 +131,14 @@ func FetchFstoreFileInfo(rail common.Rail, fileId string, uploadFileId string) (
 	}
 	defer r.Close()
 
-	var res common.GnResp[FstoreFile]
+	var res core.GnResp[FstoreFile]
 	if e := r.ReadJson(&res); e != nil {
 		return FstoreFile{}, e
 	}
 	return res.Data, res.Err()
 }
 
-func DeleteFstoreFile(rail common.Rail, fileId string) error {
+func DeleteFstoreFile(rail core.Rail, fileId string) error {
 	r := client.NewDynTClient(rail, "/file", "fstore").
 		EnableTracing().
 		AddQueryParams("fileId", fileId).
@@ -148,7 +148,7 @@ func DeleteFstoreFile(rail common.Rail, fileId string) error {
 	}
 	defer r.Close()
 
-	var res common.GnResp[any]
+	var res core.GnResp[any]
 	if e := r.ReadJson(&res); e != nil {
 		return e
 	}
@@ -161,7 +161,7 @@ func DeleteFstoreFile(rail common.Rail, fileId string) error {
 	return nil
 }
 
-func GetFstoreTmpToken(rail common.Rail, fileId string, filename string) (string, error) {
+func GetFstoreTmpToken(rail core.Rail, fileId string, filename string) (string, error) {
 	r := client.NewDynTClient(rail, "/file/key", "fstore").
 		EnableTracing().
 		AddQueryParams("fileId", fileId).
@@ -172,7 +172,7 @@ func GetFstoreTmpToken(rail common.Rail, fileId string, filename string) (string
 	}
 	defer r.Close()
 
-	var res common.GnResp[string]
+	var res core.GnResp[string]
 	if e := r.ReadJson(&res); e != nil {
 		return "", e
 	}

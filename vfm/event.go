@@ -1,9 +1,9 @@
 package vfm
 
 import (
-	"github.com/curtisnewbie/gocommon/bus"
-	"github.com/curtisnewbie/gocommon/common"
-	"github.com/curtisnewbie/gocommon/mysql"
+	"github.com/curtisnewbie/miso/bus"
+	"github.com/curtisnewbie/miso/core"
+	"github.com/curtisnewbie/miso/mysql"
 )
 
 const (
@@ -46,7 +46,7 @@ type CreateFantahseaImgEvt struct {
 // event-pump send binlog event when a file_info record is saved.
 // vfm guesses if the file is an image by file name,
 // if so, vfm sends events to hammer to compress the image as a thumbnail
-func OnFileSaved(rail common.Rail, evt StreamEvent) error {
+func OnFileSaved(rail core.Rail, evt StreamEvent) error {
 	if evt.Type != "INS" {
 		return nil
 	}
@@ -86,14 +86,14 @@ func OnFileSaved(rail common.Rail, evt StreamEvent) error {
 		}
 
 		if e := bus.SendToEventBus(rail, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
-			return common.TraceErrf(e, "Failed to send CompressImageEvent, uuid: %v", f.Uuid)
+			return core.TraceErrf(e, "Failed to send CompressImageEvent, uuid: %v", f.Uuid)
 		}
 		return nil
 	})
 }
 
 // hammer sends event message when the thumbnail image is compressed and saved on mini-fstore
-func OnImageCompressed(rail common.Rail, evt CompressImageEvent) error {
+func OnImageCompressed(rail core.Rail, evt CompressImageEvent) error {
 	rail.Infof("Received CompressedImageEvent, %+v", evt)
 	return ReactOnImageCompressed(rail, mysql.GetConn(), evt)
 }
@@ -102,7 +102,7 @@ func OnImageCompressed(rail common.Rail, evt CompressImageEvent) error {
 // vfm receives the event and check if the file has a thumbnail,
 // if so, sends events to fantahsea to create a gallery image,
 // adding current image to the gallery for its directory
-func OnThumbnailUpdated(rail common.Rail, evt StreamEvent) error {
+func OnThumbnailUpdated(rail core.Rail, evt StreamEvent) error {
 	if evt.Type != "UPD" {
 		return nil
 	}
@@ -162,7 +162,7 @@ func OnThumbnailUpdated(rail common.Rail, evt StreamEvent) error {
 
 // event-pump send binlog event when a file_info is deleted (is_logic_deleted changed)
 // vfm notifies fantahsea about the delete
-func OnFileDeleted(rail common.Rail, evt StreamEvent) error {
+func OnFileDeleted(rail core.Rail, evt StreamEvent) error {
 	if evt.Type != "UPD" {
 		return nil
 	}
@@ -188,7 +188,7 @@ func OnFileDeleted(rail common.Rail, evt StreamEvent) error {
 	rail.Infof("File logically deleted, %v", uuid)
 
 	if e := bus.SendToEventBus(rail, NotifyFileDeletedEvent{FileKey: uuid}, notifyFantahseaFileDeletedEventBus); e != nil {
-		return common.TraceErrf(e, "Failed to send NotifyFileDeletedEvent, uuid: %v", uuid)
+		return core.TraceErrf(e, "Failed to send NotifyFileDeletedEvent, uuid: %v", uuid)
 	}
 	return nil
 }
