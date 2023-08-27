@@ -40,11 +40,8 @@ rabbitmq:
   password: "${rabbitmqpassword}"
   vhost: "/"
 
-tracing.propagation.keys:
-  - id
-  - userno
-  - username
-  - roleno
+# tracing.propagation.keys:
+#  -
 
 logging:
   rolling.file: "/usr/src/logs/vfm.log"

@@ -1,9 +1,10 @@
 package vfm
 
 import (
+	"github.com/curtisnewbie/gocommon/common"
+	"github.com/curtisnewbie/gocommon/goauth"
 	"github.com/curtisnewbie/miso/bus"
 	"github.com/curtisnewbie/miso/core"
-	"github.com/curtisnewbie/miso/goauth"
 	"github.com/curtisnewbie/miso/mysql"
 	"github.com/curtisnewbie/miso/server"
 	"github.com/gin-gonic/gin"
@@ -27,7 +28,7 @@ func PrepareServer(rail core.Rail) error {
 func RegisterHttpRoutes(rail core.Rail) error {
 	server.IGet("/open/api/file/upload/duplication/preflight",
 		func(c *gin.Context, rail core.Rail, req PreflightCheckReq) (any, error) {
-			return FileExists(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return FileExists(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User - preflight check for duplicate file uploads", Code: MANAGE_FILE_CODE}),
 	)
@@ -37,7 +38,7 @@ func RegisterHttpRoutes(rail core.Rail) error {
 			if req.FileKey == "" {
 				return nil, core.NewWebErr("fileKey is required")
 			}
-			pf, e := FindParentFile(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			pf, e := FindParentFile(rail, mysql.GetConn(), req, common.GetUser(rail))
 			if e != nil {
 				return nil, e
 			}
@@ -51,14 +52,14 @@ func RegisterHttpRoutes(rail core.Rail) error {
 
 	server.IPost("/open/api/file/move-to-dir",
 		func(c *gin.Context, rail core.Rail, req MoveIntoDirReq) (any, error) {
-			return nil, MoveFileToDir(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return nil, MoveFileToDir(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User move files into directory", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/file/make-dir",
 		func(c *gin.Context, rail core.Rail, req MakeDirReq) (any, error) {
-			return MakeDir(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return MakeDir(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User make directory", Code: MANAGE_FILE_CODE}),
 	)
@@ -70,7 +71,7 @@ func RegisterHttpRoutes(rail core.Rail) error {
 				rail.Warnf("Unable to find user id, grantedTo: %s, %v", req.GrantedTo, e)
 				return nil, core.NewWebErr("Failed to find user")
 			}
-			return nil, GranteFileAccess(rail, mysql.GetConn(), uid, req.FileId, server.ExtractUser(c))
+			return nil, GranteFileAccess(rail, mysql.GetConn(), uid, req.FileId, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User grant file access", Code: MANAGE_FILE_CODE}),
 	)
@@ -84,63 +85,63 @@ func RegisterHttpRoutes(rail core.Rail) error {
 
 	server.IPost("/open/api/file/remove-granted-access",
 		func(c *gin.Context, rail core.Rail, req RemoveGrantedAccessReq) (any, error) {
-			return nil, RemoveGrantedFileAccess(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return nil, RemoveGrantedFileAccess(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User remove granted file access", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.Get("/open/api/file/dir/list",
 		func(c *gin.Context, rail core.Rail) (any, error) {
-			return ListDirs(rail, mysql.GetConn(), server.ExtractUser(c))
+			return ListDirs(rail, mysql.GetConn(), common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User list directories", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/file/list",
 		func(c *gin.Context, rail core.Rail, req ListFileReq) (any, error) {
-			return ListFiles(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return ListFiles(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User list files", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/file/delete",
 		func(c *gin.Context, rail core.Rail, req DeleteFileReq) (any, error) {
-			return nil, DeleteFile(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return nil, DeleteFile(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User delete file", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/file/create",
 		func(c *gin.Context, rail core.Rail, req CreateFileReq) (any, error) {
-			return nil, CreateFile(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return nil, CreateFile(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User create file", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/file/info/update",
 		func(c *gin.Context, rail core.Rail, req UpdateFileReq) (any, error) {
-			return nil, UpdateFile(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return nil, UpdateFile(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User update file", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.Get("/open/api/file/tag/list/all",
 		func(c *gin.Context, rail core.Rail) (any, error) {
-			return ListAllTags(rail, mysql.GetConn(), server.ExtractUser(c))
+			return ListAllTags(rail, mysql.GetConn(), common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User list all file tags", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/file/tag/list-for-file",
 		func(c *gin.Context, rail core.Rail, req ListFileTagReq) (any, error) {
-			return ListFileTags(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return ListFileTags(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User list tags of file", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/file/tag",
 		func(c *gin.Context, rail core.Rail, req TagFileReq) (any, error) {
-			user := server.ExtractUser(c)
+			user := common.GetUser(rail)
 			return nil, TagFile(rail, mysql.GetConn(), req, user)
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User tag file", Code: MANAGE_FILE_CODE}),
@@ -148,7 +149,7 @@ func RegisterHttpRoutes(rail core.Rail) error {
 
 	server.IPost("/open/api/file/untag",
 		func(c *gin.Context, rail core.Rail, req UntagFileReq) (any, error) {
-			user := server.ExtractUser(c)
+			user := common.GetUser(rail)
 			return nil, UntagFile(rail, mysql.GetConn(), req, user)
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User untag file", Code: MANAGE_FILE_CODE}),
@@ -156,35 +157,35 @@ func RegisterHttpRoutes(rail core.Rail) error {
 
 	server.Get("/open/api/vfolder/brief/owned",
 		func(c *gin.Context, rail core.Rail) (any, error) {
-			return ListVFolderBrief(rail, mysql.GetConn(), server.ExtractUser(c))
+			return ListVFolderBrief(rail, mysql.GetConn(), common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User list virtual folder briefs", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/vfolder/list",
 		func(c *gin.Context, rail core.Rail, req ListVFolderReq) (any, error) {
-			return ListVFolders(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return ListVFolders(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User list virtual folders", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/vfolder/create",
 		func(c *gin.Context, rail core.Rail, req CreateVFolderReq) (any, error) {
-			return CreateVFolder(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return CreateVFolder(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User create virtual folder", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/vfolder/file/add",
 		func(c *gin.Context, rail core.Rail, req AddFileToVfolderReq) (any, error) {
-			return nil, AddFileToVFolder(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return nil, AddFileToVFolder(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User add file to virtual folder", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/vfolder/file/remove",
 		func(c *gin.Context, rail core.Rail, req RemoveFileFromVfolderReq) (any, error) {
-			return nil, RemoveFileFromVFolder(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return nil, RemoveFileFromVFolder(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User remove file from virtual folder", Code: MANAGE_FILE_CODE}),
 	)
@@ -196,30 +197,28 @@ func RegisterHttpRoutes(rail core.Rail) error {
 				rail.Warnf("Unable to find user, sharedTo: %s, %v", req.Username, e)
 				return nil, core.NewWebErr("Failed to find user")
 			}
-			return nil, ShareVFolder(rail, mysql.GetConn(), sharedTo, req.FolderNo, server.ExtractUser(c))
+			return nil, ShareVFolder(rail, mysql.GetConn(), sharedTo, req.FolderNo, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "Share access to virtual folder", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/vfolder/access/remove",
 		func(c *gin.Context, rail core.Rail, req RemoveGrantedFolderAccessReq) (any, error) {
-			return nil, RemoveVFolderAccess(rail, mysql.GetConn(), req, server.ExtractUser(c))
+			return nil, RemoveVFolderAccess(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "Remove granted access to virtual folder", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/vfolder/granted/list",
 		func(c *gin.Context, rail core.Rail, req ListGrantedFolderAccessReq) (any, error) {
-			user := server.ExtractUser(c)
-			return ListGrantedFolderAccess(rail, mysql.GetConn(), req, user)
+			return ListGrantedFolderAccess(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "List granted access to virtual folder", Code: MANAGE_FILE_CODE}),
 	)
 
 	server.IPost("/open/api/file/token/generate",
 		func(c *gin.Context, rail core.Rail, req GenerateTempTokenReq) (any, error) {
-			user := server.ExtractUser(c)
-			return GenTempToken(rail, mysql.GetConn(), req, user)
+			return GenTempToken(rail, mysql.GetConn(), req, common.GetUser(rail))
 		},
 		goauth.PathDocExtra(goauth.PathDoc{Desc: "User generate temporary token", Code: MANAGE_FILE_CODE}),
 	)

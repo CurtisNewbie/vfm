@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/miso/bus"
 	"github.com/curtisnewbie/miso/core"
 	"github.com/curtisnewbie/miso/redis"
@@ -108,19 +109,19 @@ type ListedDir struct {
 }
 
 type ListedFile struct {
-	Id             int          `json:"id"`
-	Uuid           string       `json:"uuid"`
-	Name           string       `json:"name"`
+	Id             int        `json:"id"`
+	Uuid           string     `json:"uuid"`
+	Name           string     `json:"name"`
 	UploadTime     core.ETime `json:"uploadTime"`
-	UploaderName   string       `json:"uploaderName"`
-	SizeInBytes    int64        `json:"sizeInBytes"`
-	UserGroup      int          `json:"userGroup"`
-	IsOwner        bool         `json:"isOwner"`
-	FileType       string       `json:"fileType"`
+	UploaderName   string     `json:"uploaderName"`
+	SizeInBytes    int64      `json:"sizeInBytes"`
+	UserGroup      int        `json:"userGroup"`
+	IsOwner        bool       `json:"isOwner"`
+	FileType       string     `json:"fileType"`
 	UpdateTime     core.ETime `json:"updateTime"`
-	ParentFileName string       `json:"parentFileName"`
-	ParentFile     string       `json:"-"`
-	UploaderId     int          `json:"-"`
+	ParentFileName string     `json:"parentFileName"`
+	ParentFile     string     `json:"-"`
+	UploaderId     int        `json:"-"`
 }
 
 type GrantAccessReq struct {
@@ -129,33 +130,33 @@ type GrantAccessReq struct {
 }
 
 type ListedFileSharing struct {
-	Id         int          `json:"id"`
-	UserId     int          `json:"userId"`
-	Username   string       `json:"username"`
+	Id         int        `json:"id"`
+	UserId     int        `json:"userId"`
+	Username   string     `json:"username"`
 	CreateDate core.ETime `json:"CreateDate"`
-	CreateBy   string       `json:"createBy"`
+	CreateBy   string     `json:"createBy"`
 }
 
 type ListedFileTag struct {
-	Id         int          `json:"id"`
-	Name       string       `json:"name"`
+	Id         int        `json:"id"`
+	Name       string     `json:"name"`
 	CreateTime core.ETime `json:"createTime"`
-	CreateBy   string       `json:"createBy"`
+	CreateBy   string     `json:"createBy"`
 }
 
 type ListedVFolder struct {
-	Id         int          `json:"id"`
-	FolderNo   string       `json:"folderNo"`
-	Name       string       `json:"name"`
+	Id         int        `json:"id"`
+	FolderNo   string     `json:"folderNo"`
+	Name       string     `json:"name"`
 	CreateTime core.ETime `json:"createTime"`
-	CreateBy   string       `json:"createBy"`
+	CreateBy   string     `json:"createBy"`
 	UpdateTime core.ETime `json:"updateTime"`
-	UpdateBy   string       `json:"updateBy"`
-	Ownership  string       `json:"ownership"`
+	UpdateBy   string     `json:"updateBy"`
+	Ownership  string     `json:"ownership"`
 }
 
 type ListVFolderRes struct {
-	Page    core.Paging   `json:"pagingVo"`
+	Page    core.Paging     `json:"pagingVo"`
 	Payload []ListedVFolder `json:"payload"`
 }
 
@@ -165,8 +166,8 @@ type ShareVfolderReq struct {
 }
 
 type ListFilesRes struct {
-	Page    core.Paging `json:"pagingVo"`
-	Payload []ListedFile  `json:"payload"`
+	Page    core.Paging  `json:"pagingVo"`
+	Payload []ListedFile `json:"payload"`
 }
 
 type ParentFileInfo struct {
@@ -260,7 +261,7 @@ func newListFilesInVFolderQuery(rail core.Rail, tx *gorm.DB, req ListFileReq, us
 		Where("uv.user_no = ? and uv.folder_no = ?", userNo, req.FolderNo)
 }
 
-func listFilesInVFolder(rail core.Rail, tx *gorm.DB, req ListFileReq, user core.User) (ListFilesRes, error) {
+func listFilesInVFolder(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
 	offset := req.Page.GetOffset()
 	limit := req.Page.GetLimit()
 
@@ -317,16 +318,16 @@ func queryFilenames(tx *gorm.DB, fileKeys []string) (map[string]string, error) {
 
 type ListFileReq struct {
 	Page       core.Paging `json:"pagingVo"`
-	UserGroup  *int          `json:"userGroup"`
-	Filename   *string       `json:"filename"`
-	Ownership  *int          `json:"ownership"`
-	TagName    *string       `json:"tagName"`
-	FolderNo   *string       `json:"folderNo"`
-	FileType   *string       `json:"fileType"`
-	ParentFile *string       `json:"parentFile"`
+	UserGroup  *int        `json:"userGroup"`
+	Filename   *string     `json:"filename"`
+	Ownership  *int        `json:"ownership"`
+	TagName    *string     `json:"tagName"`
+	FolderNo   *string     `json:"folderNo"`
+	FileType   *string     `json:"fileType"`
+	ParentFile *string     `json:"parentFile"`
 }
 
-func ListFiles(rail core.Rail, tx *gorm.DB, req ListFileReq, user core.User) (ListFilesRes, error) {
+func ListFiles(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
 	var res ListFilesRes
 	var e error
 
@@ -362,7 +363,7 @@ func ListFiles(rail core.Rail, tx *gorm.DB, req ListFileReq, user core.User) (Li
 	return res, e
 }
 
-func listFilesForTags(rail core.Rail, tx *gorm.DB, req ListFileReq, user core.User) (ListFilesRes, error) {
+func listFilesForTags(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
 	var files []ListedFile
 	t := newListFilesForTagsQuery(rail, tx, req, user.UserId).
 		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.user_group, fi.uploader_id,
@@ -393,7 +394,7 @@ func listFilesForTags(rail core.Rail, tx *gorm.DB, req ListFileReq, user core.Us
 	return ListFilesRes{Payload: files, Page: core.RespPage(req.Page, total)}, nil
 }
 
-func listFilesSelective(rail core.Rail, tx *gorm.DB, req ListFileReq, user core.User) (ListFilesRes, error) {
+func listFilesSelective(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
 	/*
 	   If parentFile is empty, and filename/userGroup are not searched, then we only return the top level file or dir.
 	   The query for tags will ignore parent_file param, so it's working fine
@@ -510,7 +511,7 @@ type PreflightCheckReq struct {
 	ParentFileKey string `form:"parentFileKey"`
 }
 
-func FileExists(c core.Rail, tx *gorm.DB, req PreflightCheckReq, user core.User) (any, error) {
+func FileExists(c core.Rail, tx *gorm.DB, req PreflightCheckReq, user common.User) (any, error) {
 	var id int
 	t := tx.Table("file_info").
 		Select("id").
@@ -532,15 +533,15 @@ func FileExists(c core.Rail, tx *gorm.DB, req PreflightCheckReq, user core.User)
 
 type ListFileTagReq struct {
 	Page   core.Paging `json:"pagingVo"`
-	FileId int           `json:"fileId" validation:"positive"`
+	FileId int         `json:"fileId" validation:"positive"`
 }
 
 type ListFileTagRes struct {
-	Page    core.Paging   `json:"pagingVo"`
+	Page    core.Paging     `json:"pagingVo"`
 	Payload []ListedFileTag `json:"payload"`
 }
 
-func ListFileTags(rail core.Rail, tx *gorm.DB, req ListFileTagReq, user core.User) (ListFileTagRes, error) {
+func ListFileTags(rail core.Rail, tx *gorm.DB, req ListFileTagReq, user common.User) (ListFileTagRes, error) {
 	var ftags []ListedFileTag
 
 	t := newListFileTagsQuery(rail, tx, req, user.UserId).
@@ -599,7 +600,7 @@ type FetchParentFileReq struct {
 	FileKey string `form:"fileKey"`
 }
 
-func FindParentFile(c core.Rail, tx *gorm.DB, req FetchParentFileReq, user core.User) (ParentFileInfo, error) {
+func FindParentFile(c core.Rail, tx *gorm.DB, req FetchParentFileReq, user common.User) (ParentFileInfo, error) {
 	userId := user.UserId
 
 	var f FileInfo
@@ -636,7 +637,7 @@ type MakeDirReq struct {
 	Name       string `json:"name" validation:"notEmpty"` // name of the directory
 }
 
-func MakeDir(rail core.Rail, tx *gorm.DB, req MakeDirReq, user core.User) (string, error) {
+func MakeDir(rail core.Rail, tx *gorm.DB, req MakeDirReq, user common.User) (string, error) {
 
 	var dir FileInfo
 	dir.Name = req.Name
@@ -663,7 +664,7 @@ type MoveIntoDirReq struct {
 	ParentFileUuid string `json:"parentFileUuid"`
 }
 
-func MoveFileToDir(rail core.Rail, tx *gorm.DB, req MoveIntoDirReq, user core.User) error {
+func MoveFileToDir(rail core.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.User) error {
 	if req.Uuid == "" || req.ParentFileUuid == "" || req.Uuid == req.ParentFileUuid {
 		return nil
 	}
@@ -703,7 +704,7 @@ func MoveFileToDir(rail core.Rail, tx *gorm.DB, req MoveIntoDirReq, user core.Us
 	})
 }
 
-func _saveFile(rail core.Rail, tx *gorm.DB, f FileInfo, user core.User) error {
+func _saveFile(rail core.Rail, tx *gorm.DB, f FileInfo, user common.User) error {
 	userId := user.UserId
 	uname := user.Username
 	now := core.ETime(time.Now())
@@ -733,7 +734,7 @@ type CreateVFolderReq struct {
 	Name string `json:"name"`
 }
 
-func CreateVFolder(rail core.Rail, tx *gorm.DB, r CreateVFolderReq, user core.User) (string, error) {
+func CreateVFolder(rail core.Rail, tx *gorm.DB, r CreateVFolderReq, user common.User) (string, error) {
 	userNo := user.UserNo
 
 	v, e := redis.RLockRun(rail, "vfolder:user:"+userNo, func() (any, error) {
@@ -792,7 +793,7 @@ func CreateVFolder(rail core.Rail, tx *gorm.DB, r CreateVFolderReq, user core.Us
 	return v.(string), e
 }
 
-func ListDirs(c core.Rail, tx *gorm.DB, user core.User) ([]ListedDir, error) {
+func ListDirs(c core.Rail, tx *gorm.DB, user common.User) ([]ListedDir, error) {
 	var dirs []ListedDir
 	e := tx.Table("file_info").
 		Select("id, uuid, name").
@@ -804,7 +805,7 @@ func ListDirs(c core.Rail, tx *gorm.DB, user core.User) ([]ListedDir, error) {
 	return dirs, e
 }
 
-func GranteFileAccess(rail core.Rail, tx *gorm.DB, grantedToUserId int, fileId int, user core.User) error {
+func GranteFileAccess(rail core.Rail, tx *gorm.DB, grantedToUserId int, fileId int, user common.User) error {
 	userId := user.UserId
 	if grantedToUserId == userId {
 		return core.NewWebErr("You can't grant file access to yourself")
@@ -866,11 +867,11 @@ func GranteFileAccess(rail core.Rail, tx *gorm.DB, grantedToUserId int, fileId i
 
 type ListGrantedAccessReq struct {
 	Page   core.Paging `json:"pagingVo"`
-	FileId int           `json:"fileId" validation:"positive"`
+	FileId int         `json:"fileId" validation:"positive"`
 }
 
 type ListGrantedAccessRes struct {
-	Page    core.Paging       `json:"pagingVo"`
+	Page    core.Paging         `json:"pagingVo"`
 	Payload []ListedFileSharing `json:"payload"`
 }
 
@@ -927,7 +928,7 @@ func _lockFolderGet[T any](c core.Rail, folderNo string, r redis.LRunnable[T]) (
 	return redis.RLockRun(c, "vfolder:"+folderNo, r)
 }
 
-func ShareVFolder(rail core.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo string, user core.User) error {
+func ShareVFolder(rail core.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo string, user common.User) error {
 	if user.UserNo == sharedTo.UserNo {
 		return nil
 	}
@@ -963,7 +964,8 @@ func ShareVFolder(rail core.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo strin
 			Ownership:  VFOWNERSHIP_GRANTED,
 			GrantedBy:  user.Username,
 			CreateTime: core.ETime(time.Now()),
-			CreateBy:   user.Username}
+			CreateBy:   user.Username,
+		}
 		if e := tx.Omit("id", "update_by", "update_time").Table("user_vfolder").Create(&uv).Error; e != nil {
 			return fmt.Errorf("failed to save UserVFolder, %v", e)
 		}
@@ -977,7 +979,7 @@ type RemoveGrantedFolderAccessReq struct {
 	UserNo   string `json:"userNo"`
 }
 
-func RemoveVFolderAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedFolderAccessReq, user core.User) error {
+func RemoveVFolderAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedFolderAccessReq, user common.User) error {
 	if user.UserNo == req.UserNo {
 		return nil
 	}
@@ -995,7 +997,7 @@ func RemoveVFolderAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedFolderAcc
 	})
 }
 
-func ListVFolderBrief(rail core.Rail, tx *gorm.DB, user core.User) ([]VFolderBrief, error) {
+func ListVFolderBrief(rail core.Rail, tx *gorm.DB, user common.User) ([]VFolderBrief, error) {
 	var vfb []VFolderBrief
 	e := tx.Select("f.folder_no, f.name").
 		Table("vfolder f").
@@ -1010,7 +1012,8 @@ type AddFileToVfolderReq struct {
 	FileKeys []string `json:"fileKeys"`
 }
 
-func AddFileToVFolder(rail core.Rail, tx *gorm.DB, req AddFileToVfolderReq, user core.User) error {
+func AddFileToVFolder(rail core.Rail, tx *gorm.DB, req AddFileToVfolderReq, user common.User) error {
+
 	if len(req.FileKeys) < 1 {
 		return nil
 	}
@@ -1081,7 +1084,7 @@ type RemoveFileFromVfolderReq struct {
 	FileKeys []string `json:"fileKeys"`
 }
 
-func RemoveFileFromVFolder(rail core.Rail, tx *gorm.DB, req RemoveFileFromVfolderReq, user core.User) error {
+func RemoveFileFromVFolder(rail core.Rail, tx *gorm.DB, req RemoveFileFromVfolderReq, user common.User) error {
 	if len(req.FileKeys) < 1 {
 		return nil
 	}
@@ -1113,6 +1116,7 @@ func RemoveFileFromVFolder(rail core.Rail, tx *gorm.DB, req RemoveFileFromVfolde
 			if f.IsZero() {
 				continue // file not found
 			}
+			// TODO: get rid of the userId
 			if f.UploaderId != user.UserId {
 				continue // not the uploader of the file
 			}
@@ -1132,10 +1136,10 @@ func RemoveFileFromVFolder(rail core.Rail, tx *gorm.DB, req RemoveFileFromVfolde
 
 type ListVFolderReq struct {
 	Page core.Paging `json:"pagingVo"`
-	Name string        `json:"name"`
+	Name string      `json:"name"`
 }
 
-func ListVFolders(rail core.Rail, tx *gorm.DB, req ListVFolderReq, user core.User) (ListVFolderRes, error) {
+func ListVFolders(rail core.Rail, tx *gorm.DB, req ListVFolderReq, user common.User) (ListVFolderRes, error) {
 	t := newListVFoldersQuery(rail, tx, req, user.UserNo).
 		Select("f.id, f.create_time, f.create_by, f.update_time, f.update_by, f.folder_no, f.name, uv.ownership").
 		Order("f.id desc")
@@ -1172,7 +1176,7 @@ type RemoveGrantedAccessReq struct {
 	UserId int `json:"userId" validation:"positive"`
 }
 
-func RemoveGrantedFileAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedAccessReq, user core.User) error {
+func RemoveGrantedFileAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedAccessReq, user common.User) error {
 	f, e := findFileById(rail, tx, req.FileId)
 	if e != nil {
 		return fmt.Errorf("failed to find file, %v", e)
@@ -1200,21 +1204,21 @@ func RemoveGrantedFileAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedAcces
 
 type ListGrantedFolderAccessReq struct {
 	Page     core.Paging `json:"pagingVo"`
-	FolderNo string        `json:"folderNo"`
+	FolderNo string      `json:"folderNo"`
 }
 
 type ListGrantedFolderAccessRes struct {
-	Page    core.Paging        `json:"pagingVo"`
+	Page    core.Paging          `json:"pagingVo"`
 	Payload []ListedFolderAccess `json:"payload"`
 }
 
 type ListedFolderAccess struct {
-	UserNo     string       `json:"userNo"`
-	Username   string       `json:"username"`
+	UserNo     string     `json:"userNo"`
+	Username   string     `json:"username"`
 	CreateTime core.ETime `json:"createTime"`
 }
 
-func ListGrantedFolderAccess(rail core.Rail, tx *gorm.DB, req ListGrantedFolderAccessReq, user core.User) (ListGrantedFolderAccessRes, error) {
+func ListGrantedFolderAccess(rail core.Rail, tx *gorm.DB, req ListGrantedFolderAccessReq, user common.User) (ListGrantedFolderAccessRes, error) {
 	folderNo := req.FolderNo
 	vfo, e := findVFolder(rail, tx, folderNo, user.UserNo)
 	if e != nil {
@@ -1277,7 +1281,7 @@ type UpdateFileReq struct {
 	Name      string `json:"name"`
 }
 
-func UpdateFile(rail core.Rail, tx *gorm.DB, r UpdateFileReq, user core.User) error {
+func UpdateFile(rail core.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) error {
 	f, e := findFileById(rail, tx, r.Id)
 	if e != nil {
 		return e
@@ -1306,7 +1310,7 @@ func UpdateFile(rail core.Rail, tx *gorm.DB, r UpdateFileReq, user core.User) er
 		Error
 }
 
-func ListAllTags(rail core.Rail, tx *gorm.DB, user core.User) ([]string, error) {
+func ListAllTags(rail core.Rail, tx *gorm.DB, user common.User) ([]string, error) {
 	var l []string
 	e := tx.Raw("select t.name from tag t where t.user_id = ? and t.is_del = 0", user.UserId).
 		Scan(&l).
@@ -1320,7 +1324,7 @@ type TagFileReq struct {
 	TagName string `json:"tagName" validation:"notEmpty"`
 }
 
-func TagFile(rail core.Rail, tx *gorm.DB, req TagFileReq, user core.User) error {
+func TagFile(rail core.Rail, tx *gorm.DB, req TagFileReq, user common.User) error {
 	req.TagName = strings.TrimSpace(req.TagName)
 	return _lockFileTagExec(rail, user.UserId, req.TagName, func() error {
 
@@ -1404,7 +1408,7 @@ type UntagFileReq struct {
 	TagName string `json:"tagName" validation:"notEmpty"`
 }
 
-func UntagFile(rail core.Rail, tx *gorm.DB, req UntagFileReq, user core.User) error {
+func UntagFile(rail core.Rail, tx *gorm.DB, req UntagFileReq, user common.User) error {
 	req.TagName = strings.TrimSpace(req.TagName)
 	return _lockFileTagExec(rail, user.UserId, req.TagName, func() error {
 		// each tag is bound to a specific user
@@ -1472,7 +1476,7 @@ type CreateFileReq struct {
 	ParentFile       string   `json:"parentFile"`
 }
 
-func CreateFile(rail core.Rail, tx *gorm.DB, r CreateFileReq, user core.User) error {
+func CreateFile(rail core.Rail, tx *gorm.DB, r CreateFileReq, user common.User) error {
 	fsf, e := FetchFstoreFileInfo(rail, "", r.FakeFstoreFileId)
 	if e != nil {
 		return fmt.Errorf("failed to fetch file info from fstore, %v", e)
@@ -1523,7 +1527,7 @@ type DeleteFileReq struct {
 	Uuid string `json:"uuid"`
 }
 
-func DeleteFile(rail core.Rail, tx *gorm.DB, req DeleteFileReq, user core.User) error {
+func DeleteFile(rail core.Rail, tx *gorm.DB, req DeleteFileReq, user common.User) error {
 	return _lockFileExec(rail, req.Uuid, func() error {
 		f, e := findFile(rail, tx, req.Uuid)
 		if e != nil {
@@ -1574,12 +1578,12 @@ func DeleteFile(rail core.Rail, tx *gorm.DB, req DeleteFileReq, user core.User) 
 	})
 }
 
-func validateFileAccess(rail core.Rail, tx *gorm.DB, fileKey string, user core.User) (bool, FileDownloadInfo, error) {
+func validateFileAccess(rail core.Rail, tx *gorm.DB, fileKey string, userId int, userNo string) (bool, FileDownloadInfo, error) {
 	var f FileDownloadInfo
 	e := tx.
 		Select("fi.id 'file_id', fi.fstore_file_id, fi.name, fi.user_group, fi.uploader_id, fi.is_logic_deleted, fi.file_type, fs.id 'file_sharing_id'").
 		Table("file_info fi").
-		Joins("left join file_sharing fs on (fi.id = fs.file_id and fs.user_id = ?)", user.UserId).
+		Joins("left join file_sharing fs on (fi.id = fs.file_id and fs.user_id = ?)", userId).
 		Where("fi.uuid = ? and fi.is_del = 0", fileKey).
 		Limit(1).
 		Scan(&f).Error
@@ -1599,7 +1603,7 @@ func validateFileAccess(rail core.Rail, tx *gorm.DB, fileKey string, user core.U
 
 	var permitted bool = f.UserGroup == USER_GROUP_PUBLIC // publicly accessible
 	if !permitted {
-		permitted = f.UploaderId == user.UserId // owner of the file
+		permitted = f.UploaderId == userId // owner of the file
 	}
 	if !permitted {
 		permitted = f.FileSharingId > 0 // granted access to the file
@@ -1610,7 +1614,7 @@ func validateFileAccess(rail core.Rail, tx *gorm.DB, fileKey string, user core.U
 			Select("uv.id").
 			Table("file_info fi").
 			Joins("left join file_vfolder fv on (fi.uuid = fv.uuid and fv.is_del = 0)").
-			Joins("left join user_vfolder uv on (uv.user_no = ? and uv.folder_no = fv.folder_no and uv.is_del = 0)", user.UserNo).
+			Joins("left join user_vfolder uv on (uv.user_no = ? and uv.folder_no = fv.folder_no and uv.is_del = 0)", userNo).
 			Where("fi.id = ?", f.FileId).
 			Limit(1).
 			Scan(&uvid).Error
@@ -1626,8 +1630,9 @@ type GenerateTempTokenReq struct {
 	FileKey string `json:"fileKey"`
 }
 
-func GenTempToken(rail core.Rail, tx *gorm.DB, r GenerateTempTokenReq, user core.User) (string, error) {
-	ok, f, e := validateFileAccess(rail, tx, r.FileKey, user)
+func GenTempToken(rail core.Rail, tx *gorm.DB, r GenerateTempTokenReq, user common.User) (string, error) {
+	// TODO: get rid of userId
+	ok, f, e := validateFileAccess(rail, tx, r.FileKey, user.UserId, user.UserNo)
 	if e != nil {
 		return "", e
 	}

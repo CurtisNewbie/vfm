@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/miso/client"
 	"github.com/curtisnewbie/miso/core"
 	"github.com/curtisnewbie/miso/mysql"
@@ -12,8 +13,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func testUser() core.User {
-	return core.User{
+func testUser() common.User {
+	return common.User{
 		UserId:   1,
 		UserNo:   "UE202205142310076187414",
 		Username: "zhuangyongj",

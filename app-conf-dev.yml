@@ -38,10 +38,7 @@ rabbitmq:
   password: guest
   vhost: "/"
 
-tracing.propagation.keys:
-  - id
-  - userno
-  - username
-  - roleno
+# tracing.propagation.keys:
+#  -
 
 goauth.client.enabled: false

@@ -3,11 +3,13 @@ module github.com/curtisnewbie/vfm
 go 1.18
 
 require (
-	github.com/curtisnewbie/miso v0.0.0-20230823100349-b8d657b4bc0f
+	github.com/curtisnewbie/gocommon v0.0.0-20230827134902-5dd450b3a780
 	github.com/gin-gonic/gin v1.8.1
 	github.com/sirupsen/logrus v1.9.0
 	gorm.io/gorm v1.23.8
 )
+
+require github.com/curtisnewbie/miso v0.0.0-20230827133614-fb68aef9c5a2
 
 require (
 	github.com/armon/go-metrics v0.4.0 // indirect
@@ -47,7 +49,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
-	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/prometheus/client_golang v1.4.0 // indirect
