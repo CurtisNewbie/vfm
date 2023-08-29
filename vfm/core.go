@@ -54,7 +54,7 @@ type FileTag struct {
 	CreateBy   string
 	UpdateTime core.ETime
 	UpdateBy   string
-	IsDel      core.IS_DEL
+	IsDel      common.IS_DEL
 }
 
 func (t FileTag) IsZero() bool {
@@ -69,7 +69,7 @@ type Tag struct {
 	CreateBy   string
 	UpdateTime core.ETime
 	UpdateBy   string
-	IsDel      core.IS_DEL
+	IsDel      common.IS_DEL
 }
 
 func (t Tag) IsZero() bool {
@@ -83,7 +83,7 @@ type FileVFolder struct {
 	CreateBy   string
 	UpdateTime core.ETime
 	UpdateBy   string
-	IsDel      core.IS_DEL
+	IsDel      common.IS_DEL
 }
 
 type VFolderBrief struct {
@@ -99,7 +99,7 @@ type FileSharing struct {
 	CreateBy   string
 	UpdateTime core.ETime
 	UpdateBy   string
-	IsDel      core.IS_DEL
+	IsDel      common.IS_DEL
 }
 
 type ListedDir struct {
@@ -520,7 +520,7 @@ func FileExists(c core.Rail, tx *gorm.DB, req PreflightCheckReq, user common.Use
 		Where("uploader_id = ?", user.UserId).
 		Where("file_type = ?", FILE_TYPE_FILE).
 		Where("is_logic_deleted = ?", FILE_LDEL_N).
-		Where("is_del = ?", core.IS_DEL_N).
+		Where("is_del = ?", common.IS_DEL_N).
 		Limit(1).
 		Scan(&id)
 
@@ -851,14 +851,14 @@ func GranteFileAccess(rail core.Rail, tx *gorm.DB, grantedToUserId int, fileId i
 				FileId:     fileId,
 				CreateTime: core.ETime(time.Now()),
 				CreateBy:   user.Username,
-				IsDel:      core.IS_DEL_N,
+				IsDel:      common.IS_DEL_N,
 			}
 			return tx.Table("file_sharing").
 				Omit("id", "update_by", "update_time").
 				Create(&fs).Error
 		}
 
-		if fs.IsDel == core.IS_DEL_Y {
+		if fs.IsDel == common.IS_DEL_Y {
 			return tx.Exec("update file_sharing set is_del = 0 where id = ?", fs.Id).Error
 		}
 		return nil
@@ -1355,7 +1355,7 @@ func TagFile(rail core.Rail, tx *gorm.DB, req TagFileReq, user common.User) erro
 				Create(&ft).Error
 		}
 
-		if ft.IsDel == core.IS_DEL_Y {
+		if ft.IsDel == common.IS_DEL_Y {
 			return tx.Exec("update file_tag set is_del = 0, update_time = ?, update_by = ? where id = ?", time.Now(), user.Username, ft.Id).
 				Error
 		}
@@ -1379,7 +1379,7 @@ func tryCreateTag(rail core.Rail, tx *gorm.DB, userId int, tagName string, usern
 		return t.Id, nil
 	}
 
-	if t.IsDel == core.IS_DEL_Y {
+	if t.IsDel == common.IS_DEL_Y {
 		e := tx.Exec("update tag set is_del = 0, update_time = ?, update_by = ? where id = ?", time.Now(), username, t.Id).Error
 		if e != nil {
 			return 0, fmt.Errorf("failed to update tag, id: %v, %e", t.Id, e)
@@ -1426,7 +1426,7 @@ func UntagFile(rail core.Rail, tx *gorm.DB, req UntagFileReq, user common.User) 
 			return e
 		}
 
-		if fileTag.IsZero() || fileTag.IsDel == core.IS_DEL_Y {
+		if fileTag.IsZero() || fileTag.IsDel == common.IS_DEL_Y {
 			rail.Infof("FileTag for file_id: %d, tag_id: %d, doesn't exist", req.FileId, tag.Id)
 			return nil
 		}

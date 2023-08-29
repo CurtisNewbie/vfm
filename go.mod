@@ -3,13 +3,13 @@ module github.com/curtisnewbie/vfm
 go 1.18
 
 require (
-	github.com/curtisnewbie/gocommon v0.0.0-20230827134902-5dd450b3a780
+	github.com/curtisnewbie/gocommon v0.0.0-20230829064553-43a2d3d28ce0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/sirupsen/logrus v1.9.0
 	gorm.io/gorm v1.23.8
 )
 
-require github.com/curtisnewbie/miso v0.0.0-20230827133614-fb68aef9c5a2
+require github.com/curtisnewbie/miso v0.0.0-20230829064304-3e203fa27ab9
 
 require (
 	github.com/armon/go-metrics v0.4.0 // indirect

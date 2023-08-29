@@ -18,3 +18,5 @@
 
 .DS_Store
 __debug_bin
+go.work
+go.work.sum
