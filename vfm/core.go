@@ -256,9 +256,9 @@ type UserVFolder struct {
 
 func newListFilesInVFolderQuery(rail core.Rail, tx *gorm.DB, req ListFileReq, userNo string) *gorm.DB {
 	return tx.Table("file_info fi").
-		Joins("left join file_vfolder fv on (fi.uuid = fv.uuid and fv.is_del = 0)").
-		Joins("left join user_vfolder uv on (fv.folder_no = uv.folder_no and uv.is_del = 0)").
-		Where("uv.user_no = ? and uv.folder_no = ?", userNo, req.FolderNo)
+		Joins("LEFT JOIN file_vfolder fv ON (fi.uuid = fv.uuid AND fv.is_del = 0)").
+		Joins("LEFT JOIN user_vfolder uv ON (fv.folder_no = uv.folder_no AND uv.is_del = 0)").
+		Where("uv.user_no = ? AND uv.folder_no = ?", userNo, req.FolderNo)
 }
 
 func listFilesInVFolder(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
@@ -286,7 +286,7 @@ func listFilesInVFolder(rail core.Rail, tx *gorm.DB, req ListFileReq, user commo
 
 	var total int
 	t = newListFilesInVFolderQuery(rail, tx, req, user.UserNo).
-		Select("count(fi.id)").
+		Select("COUNT(fi.id)").
 		Scan(&total)
 	if t.Error != nil {
 		return ListFilesRes{}, fmt.Errorf("failed to count files in vfolder, %v", t.Error)
@@ -304,7 +304,7 @@ func queryFilenames(tx *gorm.DB, fileKeys []string) (map[string]string, error) {
 	var rec []FileKeyName
 	e := tx.Select("uuid, name").
 		Table("file_info").
-		Where("uuid in ?", fileKeys).
+		Where("uuid IN ?", fileKeys).
 		Scan(&rec).Error
 	if e != nil {
 		return nil, e
@@ -438,18 +438,18 @@ func newListFilesSelectiveQuery(rail core.Rail, tx *gorm.DB, req ListFileReq, us
 
 	tx = tx.Table("file_info fi").
 		Table("file_info fi").
-		Joins("left join file_sharing fs on (fi.id = fs.file_id and fs.user_id = ?)", userId)
+		Joins("LEFT JOIN file_sharing fs ON (fi.id = fs.file_id AND fs.user_id = ?)", userId)
 
 	if req.Ownership != nil && *req.Ownership == FOWNERSHIP_OWNER {
 		tx = tx.Where("fi.uploader_id = ?", userId)
 	} else {
 		if req.UserGroup == nil {
-			tx = tx.Where("fi.uploader_id = ? or fi.user_group = 0 or (fs.id is not null and fs.is_del = 0)", userId)
+			tx = tx.Where("fi.uploader_id = ? OR fi.user_group = 0 OR (fs.id IS NOT NULL AND fs.is_del = 0)", userId)
 		} else {
 			if *req.UserGroup == USER_GROUP_PUBLIC {
 				tx = tx.Where("fi.user_group = 0")
 			} else {
-				tx = tx.Where("fi.uploader_id = ? and fi.user_group = 1 ", userId)
+				tx = tx.Where("fi.uploader_id = ? AND fi.user_group = 1 ", userId)
 			}
 		}
 	}
@@ -459,14 +459,14 @@ func newListFilesSelectiveQuery(rail core.Rail, tx *gorm.DB, req ListFileReq, us
 	}
 
 	if req.Filename != nil && *req.Filename != "" {
-		tx = tx.Where("fi.name like ?", "%"+*req.Filename+"%")
+		tx = tx.Where("fi.name LIKE ?", "%"+*req.Filename+"%")
 	}
 
 	if req.FileType != nil && *req.FileType != "" {
 		tx = tx.Where("fi.file_type = ?", *req.FileType)
 	}
 
-	tx = tx.Where("fi.is_logic_deleted = 0 and fi.is_del = 0")
+	tx = tx.Where("fi.is_logic_deleted = 0 AND fi.is_del = 0")
 
 	return tx
 }
@@ -474,26 +474,26 @@ func newListFilesSelectiveQuery(rail core.Rail, tx *gorm.DB, req ListFileReq, us
 func newListFilesForTagsQuery(rail core.Rail, t *gorm.DB, req ListFileReq, userId int) *gorm.DB {
 
 	t = t.Table("file_info fi").
-		Joins("left join file_tag ft on (ft.user_id = ? and fi.id = ft.file_id)", userId).
-		Joins("left join tag t on (ft.tag_id = t.id)").
-		Joins("left join file_sharing fs on (fi.id = fs.file_id and fs.user_id = ?)", userId)
+		Joins("LEFT JOIN file_tag ft ON (ft.user_id = ? AND fi.id = ft.file_id)", userId).
+		Joins("LEFT JOIN tag t ON (ft.tag_id = t.id)").
+		Joins("LEFT JOIN file_sharing fs ON (fi.id = fs.file_id AND fs.user_id = ?)", userId)
 
 	if req.Ownership != nil && *req.Ownership == FOWNERSHIP_OWNER {
 		t = t.Where("fi.uploader_id = ?", userId)
 	} else {
 		if req.UserGroup == nil {
-			t = t.Where("fi.uploader_id = ? or fi.user_group = 0 or (fs.id is not null and fs.is_del = 0)", userId)
+			t = t.Where("fi.uploader_id = ? OR fi.user_group = 0 OR (fs.id IS NOT NULL AND fs.is_del = 0)", userId)
 		} else {
 			if *req.UserGroup == USER_GROUP_PUBLIC {
 				t = t.Where("fi.user_group = 0")
 			} else {
-				t = t.Where("fi.uploader_id = ? and fi.user_group = 1 ", userId)
+				t = t.Where("fi.uploader_id = ? AND fi.user_group = 1 ", userId)
 			}
 		}
 	}
 
 	if req.Filename != nil && *req.Filename != "" {
-		t = t.Where("fi.name like ?", "%"+*req.Filename+"%")
+		t = t.Where("fi.name LIKE ?", "%"+*req.Filename+"%")
 	}
 
 	t = t.Where("fi.file_type = 'FILE'").
@@ -564,20 +564,20 @@ func ListFileTags(rail core.Rail, tx *gorm.DB, req ListFileTagReq, user common.U
 
 func newListFileTagsQuery(c core.Rail, tx *gorm.DB, r ListFileTagReq, userId int) *gorm.DB {
 	return tx.Table("file_tag ft").
-		Joins("left join tag t on ft.tag_id = t.id").
-		Where("t.user_id = ? and ft.file_id = ? and ft.is_del = 0 and t.is_del = 0", userId, r.FileId)
+		Joins("LEFT JOIN tag t ON ft.tag_id = t.id").
+		Where("t.user_id = ? AND ft.file_id = ? AND ft.is_del = 0 AND t.is_del = 0", userId, r.FileId)
 }
 
 func findFile(c core.Rail, tx *gorm.DB, fileKey string) (FileInfo, error) {
 	var f FileInfo
-	t := tx.Raw("select * from file_info where uuid = ? and is_del = 0", fileKey).
+	t := tx.Raw("SELECT * FROM file_info WHERE uuid = ? AND is_del = 0", fileKey).
 		Scan(&f)
 	return f, t.Error
 }
 
 func findFileKey(rail core.Rail, tx *gorm.DB, id int) (string, error) {
 	var fk string
-	t := tx.Raw("select uuid from file_info where id = ?", id).
+	t := tx.Raw("SELECT uuid FROM file_info WHERE id = ?", id).
 		Scan(&fk)
 	if t.Error != nil {
 		return fk, t.Error
@@ -588,7 +588,7 @@ func findFileKey(rail core.Rail, tx *gorm.DB, id int) (string, error) {
 func findFileById(rail core.Rail, tx *gorm.DB, id int) (FileInfo, error) {
 	var f FileInfo
 
-	t := tx.Raw("select * from file_info where id = ? and is_del = 0", id).
+	t := tx.Raw("SELECT * FROM file_info WHERE id = ? AND is_del = 0", id).
 		Scan(&f)
 	if t.Error != nil {
 		return f, t.Error
@@ -697,7 +697,7 @@ func MoveFileToDir(rail core.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.
 				return core.NewWebErr("Target file deleted")
 			}
 
-			return tx.Exec("update file_info set parent_file = ?, update_by = ?, update_time = ? where uuid = ?",
+			return tx.Exec("UPDATE file_info SET parent_file = ?, update_by = ?, update_time = ? WHERE uuid = ?",
 				req.ParentFileUuid, user.Username, time.Now(), req.Uuid).
 				Error
 		})
@@ -707,7 +707,7 @@ func MoveFileToDir(rail core.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.
 func _saveFile(rail core.Rail, tx *gorm.DB, f FileInfo, user common.User) error {
 	userId := user.UserId
 	uname := user.Username
-	now := core.ETime(time.Now())
+	now := core.Now()
 
 	f.IsLogicDeleted = FILE_LDEL_N
 	f.IsPhysicDeleted = FILE_PDEL_N
@@ -742,10 +742,10 @@ func CreateVFolder(rail core.Rail, tx *gorm.DB, r CreateVFolderReq, user common.
 		var id int
 		t := tx.Table("vfolder vf").
 			Select("vf.id").
-			Joins("left join user_vfolder uv on (vf.folder_no = uv.folder_no)").
-			Where("uv.user_no = ? and uv.ownership = 'OWNER'", userNo).
+			Joins("LEFT JOIN user_vfolder uv ON (vf.folder_no = uv.folder_no)").
+			Where("uv.user_no = ? AND uv.ownership = 'OWNER'", userNo).
 			Where("vf.name = ?", r.Name).
-			Where("vf.is_del = 0 and uv.is_del = 0").
+			Where("vf.is_del = 0 AND uv.is_del = 0").
 			Limit(1).
 			Scan(&id)
 		if t.Error != nil {
@@ -759,7 +759,7 @@ func CreateVFolder(rail core.Rail, tx *gorm.DB, r CreateVFolderReq, user common.
 
 		e := tx.Transaction(func(tx *gorm.DB) error {
 
-			ctime := core.ETime(time.Now())
+			ctime := core.Now()
 
 			// for the vfolder
 			vf := VFolder{Name: r.Name, FolderNo: folderNo, CreateTime: ctime, CreateBy: user.Username}
@@ -849,7 +849,7 @@ func GranteFileAccess(rail core.Rail, tx *gorm.DB, grantedToUserId int, fileId i
 			fs = FileSharing{
 				UserId:     grantedToUserId,
 				FileId:     fileId,
-				CreateTime: core.ETime(time.Now()),
+				CreateTime: core.Now(),
 				CreateBy:   user.Username,
 				IsDel:      common.IS_DEL_N,
 			}
@@ -859,7 +859,7 @@ func GranteFileAccess(rail core.Rail, tx *gorm.DB, grantedToUserId int, fileId i
 		}
 
 		if fs.IsDel == common.IS_DEL_Y {
-			return tx.Exec("update file_sharing set is_del = 0 where id = ?", fs.Id).Error
+			return tx.Exec("UPDATE file_sharing SET is_del = 0 WHERE id = ?", fs.Id).Error
 		}
 		return nil
 	})
@@ -879,7 +879,7 @@ func ListGrantedFileAccess(rail core.Rail, tx *gorm.DB, r ListGrantedAccessReq) 
 	var lfs []ListedFileSharing
 	e := newListGrantedFileAccessQuery(rail, tx, r).
 		Select("id, user_id, create_time 'create_date', 'create_by'").
-		Order("id desc").
+		Order("id DESC").
 		Scan(&lfs).Error
 	if e != nil {
 		return ListGrantedAccessRes{}, fmt.Errorf("failed to list file_sharing, req: %+v, %v", r, e)
@@ -905,7 +905,7 @@ func findVFolder(rail core.Rail, tx *gorm.DB, folderNo string, userNo string) (V
 	var vfo VFolderWithOwnership
 	t := tx.Table("vfolder vf").
 		Select("vf.*, uv.ownership").
-		Joins("left join user_vfolder uv on (vf.folder_no = uv.folder_no and uv.is_del = 0)").
+		Joins("LEFT JOIN user_vfolder uv ON (vf.folder_no = uv.folder_no AND uv.is_del = 0)").
 		Where("vf.is_del = 0").
 		Where("uv.user_no = ?", userNo).
 		Where("uv.folder_no = ?", folderNo).
@@ -963,7 +963,7 @@ func ShareVFolder(rail core.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo strin
 			Username:   sharedTo.Username,
 			Ownership:  VFOWNERSHIP_GRANTED,
 			GrantedBy:  user.Username,
-			CreateTime: core.ETime(time.Now()),
+			CreateTime: core.Now(),
 			CreateBy:   user.Username,
 		}
 		if e := tx.Omit("id", "update_by", "update_time").Table("user_vfolder").Create(&uv).Error; e != nil {
@@ -992,7 +992,7 @@ func RemoveVFolderAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedFolderAcc
 			return core.NewWebErr("Operation not permitted")
 		}
 		return tx.
-			Exec("delete from user_vfolder where folder_no = ? and user_no = ? and ownership = 'GRANTED'", req.FolderNo, req.UserNo).
+			Exec("DELETE FROM user_vfolder WHERE folder_no = ? AND user_no = ? AND ownership = 'GRANTED'", req.FolderNo, req.UserNo).
 			Error
 	})
 }
@@ -1001,8 +1001,8 @@ func ListVFolderBrief(rail core.Rail, tx *gorm.DB, user common.User) ([]VFolderB
 	var vfb []VFolderBrief
 	e := tx.Select("f.folder_no, f.name").
 		Table("vfolder f").
-		Joins("left join user_vfolder uv on (f.folder_no = uv.folder_no and uv.is_del = 0)").
-		Where("f.is_del = 0 and uv.user_no = ? and uv.ownership = 'OWNER'", user.UserNo).
+		Joins("LEFT JOIN user_vfolder uv ON (f.folder_no = uv.folder_no AND uv.is_del = 0)").
+		Where("f.is_del = 0 AND uv.user_no = ? AND uv.ownership = 'OWNER'", user.UserNo).
 		Scan(&vfb).Error
 	return vfb, e
 }
@@ -1038,7 +1038,7 @@ func AddFileToVFolder(rail core.Rail, tx *gorm.DB, req AddFileToVfolderReq, user
 
 		filtered := core.KeysOfSet(s)
 		userId := user.UserId
-		now := core.ETime(time.Now())
+		now := core.Now()
 		username := user.Username
 		for _, fk := range filtered {
 			f, e := findFile(rail, tx, fk)
@@ -1059,7 +1059,7 @@ func AddFileToVFolder(rail core.Rail, tx *gorm.DB, req AddFileToVfolderReq, user
 			var id int
 			e = tx.Select("id").
 				Table("file_vfolder").
-				Where("folder_no = ? and uuid = ?", req.FolderNo, fk).
+				Where("folder_no = ? AND uuid = ?", req.FolderNo, fk).
 				Scan(&id).
 				Error
 			if e != nil {
@@ -1124,7 +1124,7 @@ func RemoveFileFromVFolder(rail core.Rail, tx *gorm.DB, req RemoveFileFromVfolde
 				continue // not a file type, may be a dir
 			}
 
-			e = tx.Exec("delete from file_vfolder where folder_no = ? and uuid = ?", req.FolderNo, fk).Error
+			e = tx.Exec("DELETE FROM file_vfolder WHERE folder_no = ? AND uuid = ?", req.FolderNo, fk).Error
 			if e != nil {
 				return fmt.Errorf("failed to delete file_vfolder record, %v", e)
 			}
@@ -1142,7 +1142,7 @@ type ListVFolderReq struct {
 func ListVFolders(rail core.Rail, tx *gorm.DB, req ListVFolderReq, user common.User) (ListVFolderRes, error) {
 	t := newListVFoldersQuery(rail, tx, req, user.UserNo).
 		Select("f.id, f.create_time, f.create_by, f.update_time, f.update_by, f.folder_no, f.name, uv.ownership").
-		Order("f.id desc")
+		Order("f.id DESC")
 
 	var lvf []ListedVFolder
 	if e := t.Scan(&lvf).Error; e != nil {
@@ -1151,7 +1151,7 @@ func ListVFolders(rail core.Rail, tx *gorm.DB, req ListVFolderReq, user common.U
 
 	var total int
 	e := newListVFoldersQuery(rail, tx, req, user.UserNo).
-		Select("count(*)").
+		Select("COUNT(*)").
 		Scan(&total).Error
 	if e != nil {
 		return ListVFolderRes{}, fmt.Errorf("failed to count vfolder, req: %+v, %v", req, e)
@@ -1162,8 +1162,8 @@ func ListVFolders(rail core.Rail, tx *gorm.DB, req ListVFolderReq, user common.U
 
 func newListVFoldersQuery(rail core.Rail, tx *gorm.DB, req ListVFolderReq, userNo string) *gorm.DB {
 	t := tx.Table("vfolder f").
-		Joins("left join user_vfolder uv on (f.folder_no = uv.folder_no and uv.is_del = 0)").
-		Where("f.is_del = 0 and uv.user_no = ?", userNo)
+		Joins("LEFT JOIN user_vfolder uv ON (f.folder_no = uv.folder_no AND uv.is_del = 0)").
+		Where("f.is_del = 0 AND uv.user_no = ?", userNo)
 
 	if req.Name != "" {
 		t = t.Where("f.name like ?", "%"+req.Name+"%")
@@ -1197,7 +1197,7 @@ func RemoveGrantedFileAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedAcces
 	return _lockFileExec(rail, f.Uuid, func() error {
 		// it was a logical delete in file-server, it now becomes a physical delete
 		return tx.
-			Exec("delete from file_sharing where file_id = ? and user_id = ? limit 1", req.FileId, req.UserId).
+			Exec("DELETE FROM file_sharing WHERE file_id = ? AND user_id = ? LIMIT 1", req.FileId, req.UserId).
 			Error
 	})
 }
@@ -1272,7 +1272,7 @@ func ListGrantedFolderAccess(rail core.Rail, tx *gorm.DB, req ListGrantedFolderA
 
 func newListGrantedFolderAccessQuery(rail core.Rail, tx *gorm.DB, r ListGrantedFolderAccessReq) *gorm.DB {
 	return tx.Table("user_vfolder").
-		Where("folder_no = ? and ownership = 'GRANTED' and is_del = 0", r.FolderNo)
+		Where("folder_no = ? AND ownership = 'GRANTED' AND is_del = 0", r.FolderNo)
 }
 
 type UpdateFileReq struct {
@@ -1306,13 +1306,13 @@ func UpdateFile(rail core.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) 
 	}
 
 	return tx.
-		Exec("update file_info set user_group = ?, name = ? where id = ? and is_logic_deleted = 0 and is_del = 0", r.UserGroup, r.Name, r.Id).
+		Exec("UPDATE file_info SET user_group = ?, name = ? WHERE id = ? AND is_logic_deleted = 0 AND is_del = 0", r.UserGroup, r.Name, r.Id).
 		Error
 }
 
 func ListAllTags(rail core.Rail, tx *gorm.DB, user common.User) ([]string, error) {
 	var l []string
-	e := tx.Raw("select t.name from tag t where t.user_id = ? and t.is_del = 0", user.UserId).
+	e := tx.Raw("SELECT t.name FROM tag t WHERE t.user_id = ? AND t.is_del = 0", user.UserId).
 		Scan(&l).
 		Error
 
@@ -1347,7 +1347,7 @@ func TagFile(rail core.Rail, tx *gorm.DB, req TagFileReq, user common.User) erro
 			ft = FileTag{UserId: user.UserId,
 				FileId:     req.FileId,
 				TagId:      tagId,
-				CreateTime: core.ETime(time.Now()),
+				CreateTime: core.Now(),
 				CreateBy:   user.Username,
 			}
 			return tx.Table("file_tag").
@@ -1356,7 +1356,7 @@ func TagFile(rail core.Rail, tx *gorm.DB, req TagFileReq, user common.User) erro
 		}
 
 		if ft.IsDel == common.IS_DEL_Y {
-			return tx.Exec("update file_tag set is_del = 0, update_time = ?, update_by = ? where id = ?", time.Now(), user.Username, ft.Id).
+			return tx.Exec("UPDATE file_tag SET is_del = 0, update_time = ?, update_by = ? WHERE id = ?", time.Now(), user.Username, ft.Id).
 				Error
 		}
 
@@ -1371,7 +1371,7 @@ func tryCreateTag(rail core.Rail, tx *gorm.DB, userId int, tagName string, usern
 	}
 
 	if t.IsZero() {
-		t = Tag{Name: tagName, UserId: userId, CreateBy: username, CreateTime: core.ETime(time.Now())}
+		t = Tag{Name: tagName, UserId: userId, CreateBy: username, CreateTime: core.Now()}
 		e := tx.Table("tag").Omit("id", "update_time", "update_by").Create(&t).Error
 		if e != nil {
 			return 0, fmt.Errorf("failed to create tag, userId: %v, tagName: %v, %e", userId, tagName, e)
@@ -1380,7 +1380,7 @@ func tryCreateTag(rail core.Rail, tx *gorm.DB, userId int, tagName string, usern
 	}
 
 	if t.IsDel == common.IS_DEL_Y {
-		e := tx.Exec("update tag set is_del = 0, update_time = ?, update_by = ? where id = ?", time.Now(), username, t.Id).Error
+		e := tx.Exec("UPDATE tag SET is_del = 0, update_time = ?, update_by = ? WHERE id = ?", time.Now(), username, t.Id).Error
 		if e != nil {
 			return 0, fmt.Errorf("failed to update tag, id: %v, %e", t.Id, e)
 		}
@@ -1391,14 +1391,14 @@ func tryCreateTag(rail core.Rail, tx *gorm.DB, userId int, tagName string, usern
 
 func findTag(rail core.Rail, tx *gorm.DB, userId int, tagName string) (Tag, error) {
 	var t Tag
-	e := tx.Raw("select * from tag where user_id = ? and name = ?", userId, tagName).
+	e := tx.Raw("SELECT * FROM tag WHERE user_id = ? AND name = ?", userId, tagName).
 		Scan(&t).Error
 	return t, e
 }
 
 func findFileTag(rail core.Rail, tx *gorm.DB, fileId int, tagId int) (FileTag, error) {
 	var ft FileTag
-	e := tx.Raw("select * from file_tag where file_id = ? and tag_id = ?", fileId, tagId).
+	e := tx.Raw("SELECT * FROM file_tag WHERE file_id = ? AND tag_id = ?", fileId, tagId).
 		Scan(&ft).Error
 	return ft, e
 }
@@ -1433,7 +1433,7 @@ func UntagFile(rail core.Rail, tx *gorm.DB, req UntagFileReq, user common.User) 
 
 		return tx.Transaction(func(txx *gorm.DB) error {
 			// it was a logic delete in file-server, it now becomes a physical delete
-			e = txx.Exec("delete from file_tag where id = ?", fileTag.Id).Error
+			e = txx.Exec("DELETE FROM file_tag WHERE id = ?", fileTag.Id).Error
 			if e != nil {
 				return fmt.Errorf("failed to update file_tag, %v", e)
 			}
@@ -1447,7 +1447,7 @@ func UntagFile(rail core.Rail, tx *gorm.DB, req UntagFileReq, user common.User) 
 			*/
 			var anyFileTagId int
 			e = txx.Table("file_tag").
-				Where("tag_id = ? and is_del = 0", tag.Id).
+				Where("tag_id = ? AND is_del = 0", tag.Id).
 				Limit(1).
 				Scan(&anyFileTagId).
 				Error
@@ -1549,7 +1549,7 @@ func DeleteFile(rail core.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 			var anyId int
 			e := tx.Select("id").
 				Table("file_info").
-				Where("parent_file = ? and is_logic_deleted = 0 and is_del = 0", req.Uuid).
+				Where("parent_file = ? AND is_logic_deleted = 0 AND is_del = 0", req.Uuid).
 				Limit(1).
 				Scan(&anyId).Error
 			if e != nil {
@@ -1583,8 +1583,8 @@ func validateFileAccess(rail core.Rail, tx *gorm.DB, fileKey string, userId int,
 	e := tx.
 		Select("fi.id 'file_id', fi.fstore_file_id, fi.name, fi.user_group, fi.uploader_id, fi.is_logic_deleted, fi.file_type, fs.id 'file_sharing_id'").
 		Table("file_info fi").
-		Joins("left join file_sharing fs on (fi.id = fs.file_id and fs.user_id = ?)", userId).
-		Where("fi.uuid = ? and fi.is_del = 0", fileKey).
+		Joins("LEFT JOIN file_sharing fs ON (fi.id = fs.file_id AND fs.user_id = ?)", userId).
+		Where("fi.uuid = ? AND fi.is_del = 0", fileKey).
 		Limit(1).
 		Scan(&f).Error
 	if e != nil {
@@ -1613,8 +1613,8 @@ func validateFileAccess(rail core.Rail, tx *gorm.DB, fileKey string, userId int,
 		e := tx.
 			Select("uv.id").
 			Table("file_info fi").
-			Joins("left join file_vfolder fv on (fi.uuid = fv.uuid and fv.is_del = 0)").
-			Joins("left join user_vfolder uv on (uv.user_no = ? and uv.folder_no = fv.folder_no and uv.is_del = 0)", userNo).
+			Joins("LEFT JOIN file_vfolder fv ON (fi.uuid = fv.uuid AND fv.is_del = 0)").
+			Joins("LEFT JOIN user_vfolder uv ON (uv.user_no = ? AND uv.folder_no = fv.folder_no AND uv.is_del = 0)", userNo).
 			Where("fi.id = ?", f.FileId).
 			Limit(1).
 			Scan(&uvid).Error
@@ -1739,7 +1739,7 @@ func ReactOnImageCompressed(rail core.Rail, tx *gorm.DB, evt CompressImageEvent)
 	return _lockFileExec(rail, evt.FileKey, func() error {
 		f, e := findFile(rail, tx, evt.FileKey)
 		if e != nil {
-			rail.Errorf("unable to find file, uuid: %v, %v", evt.FileKey, e)
+			rail.Errorf("Unable to find file, uuid: %v, %v", evt.FileKey, e)
 			return nil
 		}
 		if f.IsZero() {
@@ -1747,7 +1747,7 @@ func ReactOnImageCompressed(rail core.Rail, tx *gorm.DB, evt CompressImageEvent)
 			return nil
 		}
 
-		return tx.Exec("update file_info set thumbnail = ? where uuid = ?", evt.FileId, evt.FileKey).
+		return tx.Exec("UPDATE file_info SET thumbnail = ? WHERE uuid = ?", evt.FileId, evt.FileKey).
 			Error
 	})
 }
@@ -1767,14 +1767,14 @@ func CompensateImageCompression(rail core.Rail, tx *gorm.DB) error {
 	for {
 		var files []FileCompressInfo
 		t := tx.
-			Raw(`select id, name, uuid, fstore_file_id
-			from file_info
-			where id > ?
-			and file_type = 'file'
-			and is_logic_deleted = 0
-			and thumbnail = ''
-			order by id asc
-			limit ?`, minId, limit).
+			Raw(`SELECT id, name, uuid, fstore_file_id
+			FROM file_info
+			WHERE id > ?
+			AND file_type = 'file'
+			AND is_logic_deleted = 0
+			AND thumbnail = ''
+			ORDER BY id ASC
+			LIMIT ?`, minId, limit).
 			Scan(&files)
 		if t.Error != nil {
 			return t.Error
