@@ -6,10 +6,7 @@ import (
 	"testing"
 
 	"github.com/curtisnewbie/gocommon/common"
-	"github.com/curtisnewbie/miso/client"
-	"github.com/curtisnewbie/miso/core"
-	"github.com/curtisnewbie/miso/mysql"
-	"github.com/curtisnewbie/miso/redis"
+	"github.com/curtisnewbie/miso/miso"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,11 +25,12 @@ func corePreTest(t *testing.T) {
 	host := "localhost"
 	port := "3306"
 	connParam := "charset=utf8mb4&parseTime=True&loc=Local&readTimeout=30s&writeTimeout=30s&timeout=3s"
+	rail := miso.EmptyRail()
 
-	if e := mysql.InitMySql(user, pw, db, host, port, connParam); e != nil {
+	if e := miso.InitMySQL(user, pw, db, host, port, connParam); e != nil {
 		t.Fatal(e)
 	}
-	if _, e := redis.InitRedisFromProp(); e != nil {
+	if _, e := miso.InitRedisFromProp(rail); e != nil {
 		t.Fatal(e)
 	}
 	logrus.SetLevel(logrus.DebugLevel)
@@ -40,9 +38,9 @@ func corePreTest(t *testing.T) {
 
 func TestListFilesInVFolder(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
+	c := miso.EmptyRail()
 	var folderNo string = "hfKh3QZSsWjKufZWflqu8jb0n"
-	r, e := listFilesInVFolder(c, mysql.GetConn(), ListFileReq{FolderNo: &folderNo}, testUser())
+	r, e := listFilesInVFolder(c, miso.GetMySQL(), ListFileReq{FolderNo: &folderNo}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -51,15 +49,15 @@ func TestListFilesInVFolder(t *testing.T) {
 
 func TestListFilesSelective(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
-	r, e := listFilesSelective(c, mysql.GetConn(), ListFileReq{}, testUser())
+	c := miso.EmptyRail()
+	r, e := listFilesSelective(c, miso.GetMySQL(), ListFileReq{}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
 	t.Logf("%+v", r)
 
 	var filename = "myfile"
-	r, e = listFilesSelective(c, mysql.GetConn(), ListFileReq{
+	r, e = listFilesSelective(c, miso.GetMySQL(), ListFileReq{
 		Filename: &filename,
 	}, testUser())
 	if e != nil {
@@ -70,17 +68,17 @@ func TestListFilesSelective(t *testing.T) {
 
 func TestListFilesForTags(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
+	c := miso.EmptyRail()
 	var tagName string = "test"
 
-	r, e := listFilesForTags(c, mysql.GetConn(), ListFileReq{TagName: &tagName}, testUser())
+	r, e := listFilesForTags(c, miso.GetMySQL(), ListFileReq{TagName: &tagName}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
 	t.Logf("%+v", r)
 
 	var filename = "myfile"
-	r, e = listFilesForTags(c, mysql.GetConn(), ListFileReq{
+	r, e = listFilesForTags(c, miso.GetMySQL(), ListFileReq{
 		Filename: &filename,
 		TagName:  &tagName,
 	}, testUser())
@@ -92,9 +90,9 @@ func TestListFilesForTags(t *testing.T) {
 
 func TestFileExists(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
+	c := miso.EmptyRail()
 	fname := "test-files.zip"
-	b, e := FileExists(c, mysql.GetConn(), PreflightCheckReq{Filename: fname}, testUser())
+	b, e := FileExists(c, miso.GetMySQL(), PreflightCheckReq{Filename: fname}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -107,8 +105,8 @@ func TestFileExists(t *testing.T) {
 
 func TestListFileTags(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
-	r, e := ListFileTags(c, mysql.GetConn(), ListFileTagReq{FileId: 1892}, testUser())
+	c := miso.EmptyRail()
+	r, e := ListFileTags(c, miso.GetMySQL(), ListFileTagReq{FileId: 1892}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -117,8 +115,8 @@ func TestListFileTags(t *testing.T) {
 
 func TestFindParentFile(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
-	pf, e := FindParentFile(c, mysql.GetConn(), FetchParentFileReq{FileKey: "ZZZ718071967023104410314"}, testUser())
+	c := miso.EmptyRail()
+	pf, e := FindParentFile(c, miso.GetMySQL(), FetchParentFileReq{FileKey: "ZZZ718071967023104410314"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -130,12 +128,12 @@ func TestFindParentFile(t *testing.T) {
 
 func TestMoveFileToDir(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
+	c := miso.EmptyRail()
 	req := MoveIntoDirReq{
 		Uuid:           "ZZZ687238965264384971813",
 		ParentFileUuid: "ZZZ718222444658688014704",
 	}
-	e := MoveFileToDir(c, mysql.GetConn(), req, testUser())
+	e := MoveFileToDir(c, miso.GetMySQL(), req, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -143,8 +141,8 @@ func TestMoveFileToDir(t *testing.T) {
 
 func TestMakeDir(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
-	fileKey, e := MakeDir(c, mysql.GetConn(), MakeDirReq{Name: "mydir"}, testUser())
+	c := miso.EmptyRail()
+	fileKey, e := MakeDir(c, miso.GetMySQL(), MakeDirReq{Name: "mydir"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -156,9 +154,9 @@ func TestMakeDir(t *testing.T) {
 
 func TestCreateVFolder(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
-	r, _ := core.ERand(5)
-	folderNo, e := CreateVFolder(c, mysql.GetConn(), CreateVFolderReq{"MyFolder_" + r}, testUser())
+	c := miso.EmptyRail()
+	r, _ := miso.ERand(5)
+	folderNo, e := CreateVFolder(c, miso.GetMySQL(), CreateVFolderReq{"MyFolder_" + r}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -171,8 +169,8 @@ func TestCreateVFolder(t *testing.T) {
 
 func TestListDirs(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
-	dirs, e := ListDirs(c, mysql.GetConn(), testUser())
+	c := miso.EmptyRail()
+	dirs, e := ListDirs(c, miso.GetMySQL(), testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -181,7 +179,7 @@ func TestListDirs(t *testing.T) {
 
 func TestGranteFileAccess(t *testing.T) {
 	corePreTest(t)
-	e := GranteFileAccess(core.EmptyRail(), mysql.GetConn(), 2, 3, testUser())
+	e := GranteFileAccess(miso.EmptyRail(), miso.GetMySQL(), 2, 3, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -189,7 +187,7 @@ func TestGranteFileAccess(t *testing.T) {
 
 func TestRemoveGrantedFileAccess(t *testing.T) {
 	corePreTest(t)
-	e := RemoveGrantedFileAccess(core.EmptyRail(), mysql.GetConn(), RemoveGrantedAccessReq{FileId: 3, UserId: 2}, testUser())
+	e := RemoveGrantedFileAccess(miso.EmptyRail(), miso.GetMySQL(), RemoveGrantedAccessReq{FileId: 3, UserId: 2}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -197,7 +195,7 @@ func TestRemoveGrantedFileAccess(t *testing.T) {
 
 func TestListGrantedFileAccess(t *testing.T) {
 	corePreTest(t)
-	l, e := ListGrantedFileAccess(core.EmptyRail(), mysql.GetConn(), ListGrantedAccessReq{FileId: 3})
+	l, e := ListGrantedFileAccess(miso.EmptyRail(), miso.GetMySQL(), ListGrantedAccessReq{FileId: 3})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -206,7 +204,7 @@ func TestListGrantedFileAccess(t *testing.T) {
 
 func TestShareVFolder(t *testing.T) {
 	corePreTest(t)
-	if e := ShareVFolder(core.EmptyRail(), mysql.GetConn(),
+	if e := ShareVFolder(miso.EmptyRail(), miso.GetMySQL(),
 		UserInfo{Id: 30, Username: "sharon", UserNo: "UE202205142310074386952"}, "hfKh3QZSsWjKufZWflqu8jb0n", testUser()); e != nil {
 		t.Fatal(e)
 	}
@@ -218,14 +216,14 @@ func TestRemoveVFolderAccess(t *testing.T) {
 		UserNo:   "UE202303190019399941339",
 		FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
 	}
-	if e := RemoveVFolderAccess(core.EmptyRail(), mysql.GetConn(), req, testUser()); e != nil {
+	if e := RemoveVFolderAccess(miso.EmptyRail(), miso.GetMySQL(), req, testUser()); e != nil {
 		t.Fatal(e)
 	}
 }
 
 func TestListVFolderBrief(t *testing.T) {
 	corePreTest(t)
-	v, e := ListVFolderBrief(core.EmptyRail(), mysql.GetConn(), testUser())
+	v, e := ListVFolderBrief(miso.EmptyRail(), miso.GetMySQL(), testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -234,7 +232,7 @@ func TestListVFolderBrief(t *testing.T) {
 
 func TestAddFileToVFolder(t *testing.T) {
 	corePreTest(t)
-	e := AddFileToVFolder(core.EmptyRail(), mysql.GetConn(),
+	e := AddFileToVFolder(miso.EmptyRail(), miso.GetMySQL(),
 		AddFileToVfolderReq{
 			FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
 			FileKeys: []string{"ZZZ687250481528832971813"},
@@ -246,7 +244,7 @@ func TestAddFileToVFolder(t *testing.T) {
 
 func TestRemoveFileFromVFolder(t *testing.T) {
 	corePreTest(t)
-	e := RemoveFileFromVFolder(core.EmptyRail(), mysql.GetConn(),
+	e := RemoveFileFromVFolder(miso.EmptyRail(), miso.GetMySQL(),
 		RemoveFileFromVfolderReq{
 			FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
 			FileKeys: []string{"ZZZ687250481528832971813"},
@@ -258,7 +256,7 @@ func TestRemoveFileFromVFolder(t *testing.T) {
 
 func TestListVFolders(t *testing.T) {
 	corePreTest(t)
-	l, e := ListVFolders(core.EmptyRail(), mysql.GetConn(), ListVFolderReq{}, testUser())
+	l, e := ListVFolders(miso.EmptyRail(), miso.GetMySQL(), ListVFolderReq{}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -267,7 +265,7 @@ func TestListVFolders(t *testing.T) {
 
 func TestListGrantedFolderAccess(t *testing.T) {
 	corePreTest(t)
-	l, e := ListGrantedFolderAccess(core.EmptyRail(), mysql.GetConn(),
+	l, e := ListGrantedFolderAccess(miso.EmptyRail(), miso.GetMySQL(),
 		ListGrantedFolderAccessReq{FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n"}, testUser())
 	if e != nil {
 		t.Fatal(e)
@@ -277,7 +275,7 @@ func TestListGrantedFolderAccess(t *testing.T) {
 
 func TestUpdateFile(t *testing.T) {
 	corePreTest(t)
-	e := UpdateFile(core.EmptyRail(), mysql.GetConn(), UpdateFileReq{Id: 301, UserGroup: USER_GROUP_PRIVATE, Name: "test-files-222.zip"}, testUser())
+	e := UpdateFile(miso.EmptyRail(), miso.GetMySQL(), UpdateFileReq{Id: 301, UserGroup: USER_GROUP_PRIVATE, Name: "test-files-222.zip"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -285,7 +283,7 @@ func TestUpdateFile(t *testing.T) {
 
 func TestListAllTags(t *testing.T) {
 	corePreTest(t)
-	tags, e := ListAllTags(core.EmptyRail(), mysql.GetConn(), testUser())
+	tags, e := ListAllTags(miso.EmptyRail(), miso.GetMySQL(), testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -294,9 +292,9 @@ func TestListAllTags(t *testing.T) {
 
 func TestTagFile(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
+	c := miso.EmptyRail()
 
-	e := TagFile(c, mysql.GetConn(), TagFileReq{FileId: 355, TagName: "mytag"}, testUser())
+	e := TagFile(c, miso.GetMySQL(), TagFileReq{FileId: 355, TagName: "mytag"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -304,9 +302,9 @@ func TestTagFile(t *testing.T) {
 
 func TestUntagFile(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
+	c := miso.EmptyRail()
 
-	e := UntagFile(c, mysql.GetConn(), UntagFileReq{FileId: 355, TagName: "mytag"}, testUser())
+	e := UntagFile(c, miso.GetMySQL(), UntagFileReq{FileId: 355, TagName: "mytag"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -314,7 +312,7 @@ func TestUntagFile(t *testing.T) {
 
 func TestCreateFile(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
+	c := miso.EmptyRail()
 
 	file, err := os.ReadFile("../README.md")
 	if err != nil {
@@ -323,21 +321,21 @@ func TestCreateFile(t *testing.T) {
 
 	buf := bytes.NewBuffer(file)
 
-	r := client.NewDynTClient(c, "/file", "fstore").
+	r := miso.NewDynTClient(c, "/file", "fstore").
 		AddHeader("filename", "README.md").
 		Put(buf)
 	if r.Err != nil {
 		t.Fatal(r.Err)
 	}
 
-	resp, err := client.ReadGnResp[string](r)
+	resp, err := miso.ReadGnResp[string](r)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fakeFileId := resp.Data
 	c.Infof("fake fileId: %v", fakeFileId)
 
-	e := CreateFile(c, mysql.GetConn(), CreateFileReq{
+	e := CreateFile(c, miso.GetMySQL(), CreateFileReq{
 		Filename:         "myfile",
 		FakeFstoreFileId: fakeFileId,
 		UserGroup:        USER_GROUP_PRIVATE,
@@ -349,8 +347,8 @@ func TestCreateFile(t *testing.T) {
 
 func TestDeleteFile(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
-	e := DeleteFile(c, mysql.GetConn(), DeleteFileReq{Uuid: "ZZZ718078073798656022858"}, testUser())
+	c := miso.EmptyRail()
+	e := DeleteFile(c, miso.GetMySQL(), DeleteFileReq{Uuid: "ZZZ718078073798656022858"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -358,8 +356,8 @@ func TestDeleteFile(t *testing.T) {
 
 func TestGenTempToken(t *testing.T) {
 	corePreTest(t)
-	c := core.EmptyRail()
-	tkn, e := GenTempToken(c, mysql.GetConn(), GenerateTempTokenReq{"ZZZ687250496077824971813"}, testUser())
+	c := miso.EmptyRail()
+	tkn, e := GenTempToken(c, miso.GetMySQL(), GenerateTempTokenReq{"ZZZ687250496077824971813"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}

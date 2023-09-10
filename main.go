@@ -3,11 +3,11 @@ package main
 import (
 	"os"
 
-	"github.com/curtisnewbie/miso/server"
+	"github.com/curtisnewbie/miso/miso"
 	"github.com/curtisnewbie/vfm/vfm"
 )
 
 func main() {
-	server.PreServerBootstrap(vfm.PrepareServer)
-	server.BootstrapServer(os.Args)
+	miso.PreServerBootstrap(vfm.PrepareServer)
+	miso.BootstrapServer(os.Args)
 }

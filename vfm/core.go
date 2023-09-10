@@ -6,9 +6,7 @@ import (
 	"time"
 
 	"github.com/curtisnewbie/gocommon/common"
-	"github.com/curtisnewbie/miso/bus"
-	"github.com/curtisnewbie/miso/core"
-	"github.com/curtisnewbie/miso/redis"
+	"github.com/curtisnewbie/miso/miso"
 	"gorm.io/gorm"
 )
 
@@ -33,7 +31,7 @@ const (
 )
 
 var (
-	_imageSuffix = core.NewSet[string]()
+	_imageSuffix = miso.NewSet[string]()
 )
 
 func init() {
@@ -50,9 +48,9 @@ type FileTag struct {
 	FileId     int
 	TagId      int
 	UserId     int
-	CreateTime core.ETime
+	CreateTime miso.ETime
 	CreateBy   string
-	UpdateTime core.ETime
+	UpdateTime miso.ETime
 	UpdateBy   string
 	IsDel      common.IS_DEL
 }
@@ -65,9 +63,9 @@ type Tag struct {
 	Id         int
 	Name       string
 	UserId     int
-	CreateTime core.ETime
+	CreateTime miso.ETime
 	CreateBy   string
-	UpdateTime core.ETime
+	UpdateTime miso.ETime
 	UpdateBy   string
 	IsDel      common.IS_DEL
 }
@@ -79,9 +77,9 @@ func (t Tag) IsZero() bool {
 type FileVFolder struct {
 	FolderNo   string
 	Uuid       string
-	CreateTime core.ETime
+	CreateTime miso.ETime
 	CreateBy   string
-	UpdateTime core.ETime
+	UpdateTime miso.ETime
 	UpdateBy   string
 	IsDel      common.IS_DEL
 }
@@ -95,9 +93,9 @@ type FileSharing struct {
 	Id         int
 	FileId     int
 	UserId     int
-	CreateTime core.ETime
+	CreateTime miso.ETime
 	CreateBy   string
-	UpdateTime core.ETime
+	UpdateTime miso.ETime
 	UpdateBy   string
 	IsDel      common.IS_DEL
 }
@@ -112,13 +110,13 @@ type ListedFile struct {
 	Id             int        `json:"id"`
 	Uuid           string     `json:"uuid"`
 	Name           string     `json:"name"`
-	UploadTime     core.ETime `json:"uploadTime"`
+	UploadTime     miso.ETime `json:"uploadTime"`
 	UploaderName   string     `json:"uploaderName"`
 	SizeInBytes    int64      `json:"sizeInBytes"`
 	UserGroup      int        `json:"userGroup"`
 	IsOwner        bool       `json:"isOwner"`
 	FileType       string     `json:"fileType"`
-	UpdateTime     core.ETime `json:"updateTime"`
+	UpdateTime     miso.ETime `json:"updateTime"`
 	ParentFileName string     `json:"parentFileName"`
 	ParentFile     string     `json:"-"`
 	UploaderId     int        `json:"-"`
@@ -133,14 +131,14 @@ type ListedFileSharing struct {
 	Id         int        `json:"id"`
 	UserId     int        `json:"userId"`
 	Username   string     `json:"username"`
-	CreateDate core.ETime `json:"CreateDate"`
+	CreateDate miso.ETime `json:"CreateDate"`
 	CreateBy   string     `json:"createBy"`
 }
 
 type ListedFileTag struct {
 	Id         int        `json:"id"`
 	Name       string     `json:"name"`
-	CreateTime core.ETime `json:"createTime"`
+	CreateTime miso.ETime `json:"createTime"`
 	CreateBy   string     `json:"createBy"`
 }
 
@@ -148,15 +146,15 @@ type ListedVFolder struct {
 	Id         int        `json:"id"`
 	FolderNo   string     `json:"folderNo"`
 	Name       string     `json:"name"`
-	CreateTime core.ETime `json:"createTime"`
+	CreateTime miso.ETime `json:"createTime"`
 	CreateBy   string     `json:"createBy"`
-	UpdateTime core.ETime `json:"updateTime"`
+	UpdateTime miso.ETime `json:"updateTime"`
 	UpdateBy   string     `json:"updateBy"`
 	Ownership  string     `json:"ownership"`
 }
 
 type ListVFolderRes struct {
-	Page    core.Paging     `json:"pagingVo"`
+	Page    miso.Paging     `json:"pagingVo"`
 	Payload []ListedVFolder `json:"payload"`
 }
 
@@ -166,7 +164,7 @@ type ShareVfolderReq struct {
 }
 
 type ListFilesRes struct {
-	Page    core.Paging  `json:"pagingVo"`
+	Page    miso.Paging  `json:"pagingVo"`
 	Payload []ListedFile `json:"payload"`
 }
 
@@ -198,16 +196,16 @@ type FileInfo struct {
 	SizeInBytes      int64
 	UploaderId       int
 	UploaderName     string
-	UploadTime       core.ETime
-	LogicDeleteTime  core.ETime
-	PhysicDeleteTime core.ETime
+	UploadTime       miso.ETime
+	LogicDeleteTime  miso.ETime
+	PhysicDeleteTime miso.ETime
 	UserGroup        int
 	FsGroupId        int
 	FileType         string
 	ParentFile       string
-	CreateTime       core.ETime
+	CreateTime       miso.ETime
 	CreateBy         string
-	UpdateTime       core.ETime
+	UpdateTime       miso.ETime
 	UpdateBy         string
 	IsDel            int
 }
@@ -220,9 +218,9 @@ type VFolderWithOwnership struct {
 	Id         int
 	FolderNo   string
 	Name       string
-	CreateTime core.ETime
+	CreateTime miso.ETime
 	CreateBy   string
-	UpdateTime core.ETime
+	UpdateTime miso.ETime
 	UpdateBy   string
 	Ownership  string
 }
@@ -235,9 +233,9 @@ type VFolder struct {
 	Id         int
 	FolderNo   string
 	Name       string
-	CreateTime core.ETime
+	CreateTime miso.ETime
 	CreateBy   string
-	UpdateTime core.ETime
+	UpdateTime miso.ETime
 	UpdateBy   string
 }
 
@@ -248,20 +246,20 @@ type UserVFolder struct {
 	FolderNo   string
 	Ownership  string
 	GrantedBy  string // grantedBy (user_no)
-	CreateTime core.ETime
+	CreateTime miso.ETime
 	CreateBy   string
-	UpdateTime core.ETime
+	UpdateTime miso.ETime
 	UpdateBy   string
 }
 
-func newListFilesInVFolderQuery(rail core.Rail, tx *gorm.DB, req ListFileReq, userNo string) *gorm.DB {
+func newListFilesInVFolderQuery(rail miso.Rail, tx *gorm.DB, req ListFileReq, userNo string) *gorm.DB {
 	return tx.Table("file_info fi").
 		Joins("LEFT JOIN file_vfolder fv ON (fi.uuid = fv.uuid AND fv.is_del = 0)").
 		Joins("LEFT JOIN user_vfolder uv ON (fv.folder_no = uv.folder_no AND uv.is_del = 0)").
 		Where("uv.user_no = ? AND uv.folder_no = ?", userNo, req.FolderNo)
 }
 
-func listFilesInVFolder(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
+func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
 	offset := req.Page.GetOffset()
 	limit := req.Page.GetLimit()
 
@@ -292,7 +290,7 @@ func listFilesInVFolder(rail core.Rail, tx *gorm.DB, req ListFileReq, user commo
 		return ListFilesRes{}, fmt.Errorf("failed to count files in vfolder, %v", t.Error)
 	}
 
-	return ListFilesRes{Payload: files, Page: core.RespPage(req.Page, total)}, nil
+	return ListFilesRes{Payload: files, Page: miso.RespPage(req.Page, total)}, nil
 }
 
 type FileKeyName struct {
@@ -317,7 +315,7 @@ func queryFilenames(tx *gorm.DB, fileKeys []string) (map[string]string, error) {
 }
 
 type ListFileReq struct {
-	Page       core.Paging `json:"pagingVo"`
+	Page       miso.Paging `json:"pagingVo"`
 	UserGroup  *int        `json:"userGroup"`
 	Filename   *string     `json:"filename"`
 	Ownership  *int        `json:"ownership"`
@@ -327,7 +325,7 @@ type ListFileReq struct {
 	ParentFile *string     `json:"parentFile"`
 }
 
-func ListFiles(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
+func ListFiles(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
 	var res ListFilesRes
 	var e error
 
@@ -342,7 +340,7 @@ func ListFiles(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.User) (
 		return res, e
 	}
 
-	parentFileKeys := core.NewSet[string]()
+	parentFileKeys := miso.NewSet[string]()
 	for _, f := range res.Payload {
 		if f.ParentFile != "" {
 			parentFileKeys.Add(f.ParentFile)
@@ -363,7 +361,7 @@ func ListFiles(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.User) (
 	return res, e
 }
 
-func listFilesForTags(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
+func listFilesForTags(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
 	var files []ListedFile
 	t := newListFilesForTagsQuery(rail, tx, req, user.UserId).
 		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.user_group, fi.uploader_id,
@@ -391,10 +389,10 @@ func listFilesForTags(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.
 		return ListFilesRes{}, fmt.Errorf("failed to count files, %v", t.Error)
 	}
 
-	return ListFilesRes{Payload: files, Page: core.RespPage(req.Page, total)}, nil
+	return ListFilesRes{Payload: files, Page: miso.RespPage(req.Page, total)}, nil
 }
 
-func listFilesSelective(rail core.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
+func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
 	/*
 	   If parentFile is empty, and filename/userGroup are not searched, then we only return the top level file or dir.
 	   The query for tags will ignore parent_file param, so it's working fine
@@ -431,10 +429,10 @@ func listFilesSelective(rail core.Rail, tx *gorm.DB, req ListFileReq, user commo
 		return ListFilesRes{}, fmt.Errorf("failed to count files, %v", t.Error)
 	}
 
-	return ListFilesRes{Payload: files, Page: core.RespPage(req.Page, total)}, nil
+	return ListFilesRes{Payload: files, Page: miso.RespPage(req.Page, total)}, nil
 }
 
-func newListFilesSelectiveQuery(rail core.Rail, tx *gorm.DB, req ListFileReq, userId int) *gorm.DB {
+func newListFilesSelectiveQuery(rail miso.Rail, tx *gorm.DB, req ListFileReq, userId int) *gorm.DB {
 
 	tx = tx.Table("file_info fi").
 		Table("file_info fi").
@@ -471,7 +469,7 @@ func newListFilesSelectiveQuery(rail core.Rail, tx *gorm.DB, req ListFileReq, us
 	return tx
 }
 
-func newListFilesForTagsQuery(rail core.Rail, t *gorm.DB, req ListFileReq, userId int) *gorm.DB {
+func newListFilesForTagsQuery(rail miso.Rail, t *gorm.DB, req ListFileReq, userId int) *gorm.DB {
 
 	t = t.Table("file_info fi").
 		Joins("LEFT JOIN file_tag ft ON (ft.user_id = ? AND fi.id = ft.file_id)", userId).
@@ -511,7 +509,7 @@ type PreflightCheckReq struct {
 	ParentFileKey string `form:"parentFileKey"`
 }
 
-func FileExists(c core.Rail, tx *gorm.DB, req PreflightCheckReq, user common.User) (any, error) {
+func FileExists(c miso.Rail, tx *gorm.DB, req PreflightCheckReq, user common.User) (any, error) {
 	var id int
 	t := tx.Table("file_info").
 		Select("id").
@@ -532,16 +530,16 @@ func FileExists(c core.Rail, tx *gorm.DB, req PreflightCheckReq, user common.Use
 }
 
 type ListFileTagReq struct {
-	Page   core.Paging `json:"pagingVo"`
+	Page   miso.Paging `json:"pagingVo"`
 	FileId int         `json:"fileId" validation:"positive"`
 }
 
 type ListFileTagRes struct {
-	Page    core.Paging     `json:"pagingVo"`
+	Page    miso.Paging     `json:"pagingVo"`
 	Payload []ListedFileTag `json:"payload"`
 }
 
-func ListFileTags(rail core.Rail, tx *gorm.DB, req ListFileTagReq, user common.User) (ListFileTagRes, error) {
+func ListFileTags(rail miso.Rail, tx *gorm.DB, req ListFileTagReq, user common.User) (ListFileTagRes, error) {
 	var ftags []ListedFileTag
 
 	t := newListFileTagsQuery(rail, tx, req, user.UserId).
@@ -562,20 +560,20 @@ func ListFileTags(rail core.Rail, tx *gorm.DB, req ListFileTagReq, user common.U
 	return ListFileTagRes{Payload: ftags}, nil
 }
 
-func newListFileTagsQuery(c core.Rail, tx *gorm.DB, r ListFileTagReq, userId int) *gorm.DB {
+func newListFileTagsQuery(c miso.Rail, tx *gorm.DB, r ListFileTagReq, userId int) *gorm.DB {
 	return tx.Table("file_tag ft").
 		Joins("LEFT JOIN tag t ON ft.tag_id = t.id").
 		Where("t.user_id = ? AND ft.file_id = ? AND ft.is_del = 0 AND t.is_del = 0", userId, r.FileId)
 }
 
-func findFile(c core.Rail, tx *gorm.DB, fileKey string) (FileInfo, error) {
+func findFile(c miso.Rail, tx *gorm.DB, fileKey string) (FileInfo, error) {
 	var f FileInfo
 	t := tx.Raw("SELECT * FROM file_info WHERE uuid = ? AND is_del = 0", fileKey).
 		Scan(&f)
 	return f, t.Error
 }
 
-func findFileKey(rail core.Rail, tx *gorm.DB, id int) (string, error) {
+func findFileKey(rail miso.Rail, tx *gorm.DB, id int) (string, error) {
 	var fk string
 	t := tx.Raw("SELECT uuid FROM file_info WHERE id = ?", id).
 		Scan(&fk)
@@ -585,7 +583,7 @@ func findFileKey(rail core.Rail, tx *gorm.DB, id int) (string, error) {
 	return fk, nil
 }
 
-func findFileById(rail core.Rail, tx *gorm.DB, id int) (FileInfo, error) {
+func findFileById(rail miso.Rail, tx *gorm.DB, id int) (FileInfo, error) {
 	var f FileInfo
 
 	t := tx.Raw("SELECT * FROM file_info WHERE id = ? AND is_del = 0", id).
@@ -600,7 +598,7 @@ type FetchParentFileReq struct {
 	FileKey string `form:"fileKey"`
 }
 
-func FindParentFile(c core.Rail, tx *gorm.DB, req FetchParentFileReq, user common.User) (ParentFileInfo, error) {
+func FindParentFile(c miso.Rail, tx *gorm.DB, req FetchParentFileReq, user common.User) (ParentFileInfo, error) {
 	userId := user.UserId
 
 	var f FileInfo
@@ -609,12 +607,12 @@ func FindParentFile(c core.Rail, tx *gorm.DB, req FetchParentFileReq, user commo
 		return ParentFileInfo{}, e
 	}
 	if f.IsZero() {
-		return ParentFileInfo{}, core.NewWebErr("File not found")
+		return ParentFileInfo{}, miso.NewWebErr("File not found")
 	}
 
 	// dir is only visible to the uploader for now
 	if f.UploaderId != userId {
-		return ParentFileInfo{}, core.NewWebErr("Not permitted")
+		return ParentFileInfo{}, miso.NewWebErr("Not permitted")
 	}
 
 	if f.ParentFile == "" {
@@ -626,7 +624,7 @@ func FindParentFile(c core.Rail, tx *gorm.DB, req FetchParentFileReq, user commo
 		return ParentFileInfo{}, e
 	}
 	if pf.IsZero() {
-		return ParentFileInfo{}, core.NewWebErr("File not found", fmt.Sprintf("ParentFile %v not found", f.ParentFile))
+		return ParentFileInfo{}, miso.NewWebErr("File not found", fmt.Sprintf("ParentFile %v not found", f.ParentFile))
 	}
 
 	return ParentFileInfo{FileKey: pf.Uuid, Filename: pf.Name, Zero: false}, nil
@@ -637,11 +635,11 @@ type MakeDirReq struct {
 	Name       string `json:"name" validation:"notEmpty"` // name of the directory
 }
 
-func MakeDir(rail core.Rail, tx *gorm.DB, req MakeDirReq, user common.User) (string, error) {
+func MakeDir(rail miso.Rail, tx *gorm.DB, req MakeDirReq, user common.User) (string, error) {
 
 	var dir FileInfo
 	dir.Name = req.Name
-	dir.Uuid = core.GenIdP("ZZZ")
+	dir.Uuid = miso.GenIdP("ZZZ")
 	dir.SizeInBytes = 0
 	dir.UserGroup = USER_GROUP_PRIVATE
 	dir.FileType = FILE_TYPE_DIR
@@ -664,7 +662,7 @@ type MoveIntoDirReq struct {
 	ParentFileUuid string `json:"parentFileUuid"`
 }
 
-func MoveFileToDir(rail core.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.User) error {
+func MoveFileToDir(rail miso.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.User) error {
 	if req.Uuid == "" || req.ParentFileUuid == "" || req.Uuid == req.ParentFileUuid {
 		return nil
 	}
@@ -686,15 +684,15 @@ func MoveFileToDir(rail core.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.
 			}
 
 			if pr.UploaderId != user.UserId {
-				return core.NewWebErr("You are not the owner of this directory")
+				return miso.NewWebErr("You are not the owner of this directory")
 			}
 
 			if pr.FileType != FILE_TYPE_DIR {
-				return core.NewWebErr("Target file is not a directory")
+				return miso.NewWebErr("Target file is not a directory")
 			}
 
 			if pr.IsLogicDeleted != FILE_LDEL_N {
-				return core.NewWebErr("Target file deleted")
+				return miso.NewWebErr("Target file deleted")
 			}
 
 			return tx.Exec("UPDATE file_info SET parent_file = ?, update_by = ?, update_time = ? WHERE uuid = ?",
@@ -704,10 +702,10 @@ func MoveFileToDir(rail core.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.
 	})
 }
 
-func _saveFile(rail core.Rail, tx *gorm.DB, f FileInfo, user common.User) error {
+func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error {
 	userId := user.UserId
 	uname := user.Username
-	now := core.Now()
+	now := miso.Now()
 
 	f.IsLogicDeleted = FILE_LDEL_N
 	f.IsPhysicDeleted = FILE_PDEL_N
@@ -722,22 +720,22 @@ func _saveFile(rail core.Rail, tx *gorm.DB, f FileInfo, user common.User) error 
 		Create(&f).Error
 }
 
-func _lockFileExec(rail core.Rail, fileKey string, r redis.Runnable) error {
-	return redis.RLockExec(rail, "file:uuid:"+fileKey, r)
+func _lockFileExec(rail miso.Rail, fileKey string, r miso.Runnable) error {
+	return miso.RLockExec(rail, "file:uuid:"+fileKey, r)
 }
 
-func _lockFileGet[T any](rail core.Rail, fileKey string, r redis.LRunnable[T]) (any, error) {
-	return redis.RLockRun(rail, "file:uuid:"+fileKey, r)
+func _lockFileGet[T any](rail miso.Rail, fileKey string, r miso.LRunnable[T]) (any, error) {
+	return miso.RLockRun(rail, "file:uuid:"+fileKey, r)
 }
 
 type CreateVFolderReq struct {
 	Name string `json:"name"`
 }
 
-func CreateVFolder(rail core.Rail, tx *gorm.DB, r CreateVFolderReq, user common.User) (string, error) {
+func CreateVFolder(rail miso.Rail, tx *gorm.DB, r CreateVFolderReq, user common.User) (string, error) {
 	userNo := user.UserNo
 
-	v, e := redis.RLockRun(rail, "vfolder:user:"+userNo, func() (any, error) {
+	v, e := miso.RLockRun(rail, "vfolder:user:"+userNo, func() (any, error) {
 
 		var id int
 		t := tx.Table("vfolder vf").
@@ -752,14 +750,14 @@ func CreateVFolder(rail core.Rail, tx *gorm.DB, r CreateVFolderReq, user common.
 			return "", t.Error
 		}
 		if id > 0 {
-			return "", core.NewWebErr(fmt.Sprintf("Found folder with same name ('%s')", r.Name))
+			return "", miso.NewWebErr(fmt.Sprintf("Found folder with same name ('%s')", r.Name))
 		}
 
-		folderNo := core.GenIdP("VFLD")
+		folderNo := miso.GenIdP("VFLD")
 
 		e := tx.Transaction(func(tx *gorm.DB) error {
 
-			ctime := core.Now()
+			ctime := miso.Now()
 
 			// for the vfolder
 			vf := VFolder{Name: r.Name, FolderNo: folderNo, CreateTime: ctime, CreateBy: user.Username}
@@ -793,7 +791,7 @@ func CreateVFolder(rail core.Rail, tx *gorm.DB, r CreateVFolderReq, user common.
 	return v.(string), e
 }
 
-func ListDirs(c core.Rail, tx *gorm.DB, user common.User) ([]ListedDir, error) {
+func ListDirs(c miso.Rail, tx *gorm.DB, user common.User) ([]ListedDir, error) {
 	var dirs []ListedDir
 	e := tx.Table("file_info").
 		Select("id, uuid, name").
@@ -805,32 +803,32 @@ func ListDirs(c core.Rail, tx *gorm.DB, user common.User) ([]ListedDir, error) {
 	return dirs, e
 }
 
-func GranteFileAccess(rail core.Rail, tx *gorm.DB, grantedToUserId int, fileId int, user common.User) error {
+func GranteFileAccess(rail miso.Rail, tx *gorm.DB, grantedToUserId int, fileId int, user common.User) error {
 	userId := user.UserId
 	if grantedToUserId == userId {
-		return core.NewWebErr("You can't grant file access to yourself")
+		return miso.NewWebErr("You can't grant file access to yourself")
 	}
 
 	f, e := findFileById(rail, tx, fileId)
 	if e != nil {
 		rail.Errorf("Failed to find find by id, %v", e)
-		return core.NewWebErr("Unable to find file")
+		return miso.NewWebErr("Unable to find file")
 	}
 
 	if f.IsZero() {
-		return core.NewWebErr("File not found")
+		return miso.NewWebErr("File not found")
 	}
 
 	if f.IsLogicDeleted != FILE_LDEL_N {
-		return core.NewWebErr("File deleted already")
+		return miso.NewWebErr("File deleted already")
 	}
 
 	if f.UploaderId != userId {
-		return core.NewWebErr("Only uploader can grant access to the file")
+		return miso.NewWebErr("Only uploader can grant access to the file")
 	}
 
 	if f.FileType != FILE_TYPE_FILE {
-		return core.NewWebErr("You can't not grant access to directory type files")
+		return miso.NewWebErr("You can't not grant access to directory type files")
 	}
 	rail.Debugf("Granting file access to file: %v (%v) to user: %v", fileId, f.Uuid, grantedToUserId)
 
@@ -849,7 +847,7 @@ func GranteFileAccess(rail core.Rail, tx *gorm.DB, grantedToUserId int, fileId i
 			fs = FileSharing{
 				UserId:     grantedToUserId,
 				FileId:     fileId,
-				CreateTime: core.Now(),
+				CreateTime: miso.Now(),
 				CreateBy:   user.Username,
 				IsDel:      common.IS_DEL_N,
 			}
@@ -866,16 +864,16 @@ func GranteFileAccess(rail core.Rail, tx *gorm.DB, grantedToUserId int, fileId i
 }
 
 type ListGrantedAccessReq struct {
-	Page   core.Paging `json:"pagingVo"`
+	Page   miso.Paging `json:"pagingVo"`
 	FileId int         `json:"fileId" validation:"positive"`
 }
 
 type ListGrantedAccessRes struct {
-	Page    core.Paging         `json:"pagingVo"`
+	Page    miso.Paging         `json:"pagingVo"`
 	Payload []ListedFileSharing `json:"payload"`
 }
 
-func ListGrantedFileAccess(rail core.Rail, tx *gorm.DB, r ListGrantedAccessReq) (ListGrantedAccessRes, error) {
+func ListGrantedFileAccess(rail miso.Rail, tx *gorm.DB, r ListGrantedAccessReq) (ListGrantedAccessRes, error) {
 	var lfs []ListedFileSharing
 	e := newListGrantedFileAccessQuery(rail, tx, r).
 		Select("id, user_id, create_time 'create_date', 'create_by'").
@@ -892,16 +890,16 @@ func ListGrantedFileAccess(rail core.Rail, tx *gorm.DB, r ListGrantedAccessReq) 
 	if e != nil {
 		return ListGrantedAccessRes{}, fmt.Errorf("failed to count file_sharing, req: %+v, %v", r, e)
 	}
-	return ListGrantedAccessRes{Page: core.RespPage(r.Page, total), Payload: lfs}, nil
+	return ListGrantedAccessRes{Page: miso.RespPage(r.Page, total), Payload: lfs}, nil
 }
 
-func newListGrantedFileAccessQuery(rail core.Rail, tx *gorm.DB, r ListGrantedAccessReq) *gorm.DB {
+func newListGrantedFileAccessQuery(rail miso.Rail, tx *gorm.DB, r ListGrantedAccessReq) *gorm.DB {
 	return tx.Table("file_sharing").
 		Where("file_id = ?", r.FileId).
 		Where("is_del = 0")
 }
 
-func findVFolder(rail core.Rail, tx *gorm.DB, folderNo string, userNo string) (VFolderWithOwnership, error) {
+func findVFolder(rail miso.Rail, tx *gorm.DB, folderNo string, userNo string) (VFolderWithOwnership, error) {
 	var vfo VFolderWithOwnership
 	t := tx.Table("vfolder vf").
 		Select("vf.*, uv.ownership").
@@ -920,15 +918,15 @@ func findVFolder(rail core.Rail, tx *gorm.DB, folderNo string, userNo string) (V
 	return vfo, nil
 }
 
-func _lockFolderExec(c core.Rail, folderNo string, r redis.Runnable) error {
-	return redis.RLockExec(c, "vfolder:"+folderNo, r)
+func _lockFolderExec(c miso.Rail, folderNo string, r miso.Runnable) error {
+	return miso.RLockExec(c, "vfolder:"+folderNo, r)
 }
 
-func _lockFolderGet[T any](c core.Rail, folderNo string, r redis.LRunnable[T]) (any, error) {
-	return redis.RLockRun(c, "vfolder:"+folderNo, r)
+func _lockFolderGet[T any](c miso.Rail, folderNo string, r miso.LRunnable[T]) (any, error) {
+	return miso.RLockRun(c, "vfolder:"+folderNo, r)
 }
 
-func ShareVFolder(rail core.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo string, user common.User) error {
+func ShareVFolder(rail miso.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo string, user common.User) error {
 	if user.UserNo == sharedTo.UserNo {
 		return nil
 	}
@@ -938,7 +936,7 @@ func ShareVFolder(rail core.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo strin
 			return e
 		}
 		if !vfo.IsOwner() {
-			return core.NewWebErr("Operation not permitted")
+			return miso.NewWebErr("Operation not permitted")
 		}
 
 		var id int
@@ -963,7 +961,7 @@ func ShareVFolder(rail core.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo strin
 			Username:   sharedTo.Username,
 			Ownership:  VFOWNERSHIP_GRANTED,
 			GrantedBy:  user.Username,
-			CreateTime: core.Now(),
+			CreateTime: miso.Now(),
 			CreateBy:   user.Username,
 		}
 		if e := tx.Omit("id", "update_by", "update_time").Table("user_vfolder").Create(&uv).Error; e != nil {
@@ -979,7 +977,7 @@ type RemoveGrantedFolderAccessReq struct {
 	UserNo   string `json:"userNo"`
 }
 
-func RemoveVFolderAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedFolderAccessReq, user common.User) error {
+func RemoveVFolderAccess(rail miso.Rail, tx *gorm.DB, req RemoveGrantedFolderAccessReq, user common.User) error {
 	if user.UserNo == req.UserNo {
 		return nil
 	}
@@ -989,7 +987,7 @@ func RemoveVFolderAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedFolderAcc
 			return e
 		}
 		if !vfo.IsOwner() {
-			return core.NewWebErr("Operation not permitted")
+			return miso.NewWebErr("Operation not permitted")
 		}
 		return tx.
 			Exec("DELETE FROM user_vfolder WHERE folder_no = ? AND user_no = ? AND ownership = 'GRANTED'", req.FolderNo, req.UserNo).
@@ -997,7 +995,7 @@ func RemoveVFolderAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedFolderAcc
 	})
 }
 
-func ListVFolderBrief(rail core.Rail, tx *gorm.DB, user common.User) ([]VFolderBrief, error) {
+func ListVFolderBrief(rail miso.Rail, tx *gorm.DB, user common.User) ([]VFolderBrief, error) {
 	var vfb []VFolderBrief
 	e := tx.Select("f.folder_no, f.name").
 		Table("vfolder f").
@@ -1012,7 +1010,7 @@ type AddFileToVfolderReq struct {
 	FileKeys []string `json:"fileKeys"`
 }
 
-func AddFileToVFolder(rail core.Rail, tx *gorm.DB, req AddFileToVfolderReq, user common.User) error {
+func AddFileToVFolder(rail miso.Rail, tx *gorm.DB, req AddFileToVfolderReq, user common.User) error {
 
 	if len(req.FileKeys) < 1 {
 		return nil
@@ -1025,20 +1023,15 @@ func AddFileToVFolder(rail core.Rail, tx *gorm.DB, req AddFileToVfolderReq, user
 			return e
 		}
 		if !vfo.IsOwner() {
-			return core.NewWebErr("Operation not permitted")
+			return miso.NewWebErr("Operation not permitted")
 		}
 
-		s := core.NewSet[string]()
-		for _, v := range req.FileKeys {
-			s.Add(v)
-		}
-		if s.IsEmpty() {
+		filtered := miso.Distinct(req.FileKeys)
+		if len(filtered) < 1 {
 			return nil
 		}
-
-		filtered := core.KeysOfSet(s)
 		userId := user.UserId
-		now := core.Now()
+		now := miso.Now()
 		username := user.Username
 		for _, fk := range filtered {
 			f, e := findFile(rail, tx, fk)
@@ -1084,7 +1077,7 @@ type RemoveFileFromVfolderReq struct {
 	FileKeys []string `json:"fileKeys"`
 }
 
-func RemoveFileFromVFolder(rail core.Rail, tx *gorm.DB, req RemoveFileFromVfolderReq, user common.User) error {
+func RemoveFileFromVFolder(rail miso.Rail, tx *gorm.DB, req RemoveFileFromVfolderReq, user common.User) error {
 	if len(req.FileKeys) < 1 {
 		return nil
 	}
@@ -1096,18 +1089,14 @@ func RemoveFileFromVFolder(rail core.Rail, tx *gorm.DB, req RemoveFileFromVfolde
 			return e
 		}
 		if !vfo.IsOwner() {
-			return core.NewWebErr("Operation not permitted")
+			return miso.NewWebErr("Operation not permitted")
 		}
 
-		s := core.NewSet[string]()
-		for _, v := range req.FileKeys {
-			s.Add(v)
-		}
-		if s.IsEmpty() {
+		filtered := miso.Distinct(req.FileKeys)
+		if len(filtered) < 1 {
 			return nil
 		}
 
-		filtered := core.KeysOfSet(s)
 		for _, fk := range filtered {
 			f, e := findFile(rail, tx, fk)
 			if e != nil {
@@ -1135,11 +1124,11 @@ func RemoveFileFromVFolder(rail core.Rail, tx *gorm.DB, req RemoveFileFromVfolde
 }
 
 type ListVFolderReq struct {
-	Page core.Paging `json:"pagingVo"`
+	Page miso.Paging `json:"pagingVo"`
 	Name string      `json:"name"`
 }
 
-func ListVFolders(rail core.Rail, tx *gorm.DB, req ListVFolderReq, user common.User) (ListVFolderRes, error) {
+func ListVFolders(rail miso.Rail, tx *gorm.DB, req ListVFolderReq, user common.User) (ListVFolderRes, error) {
 	t := newListVFoldersQuery(rail, tx, req, user.UserNo).
 		Select("f.id, f.create_time, f.create_by, f.update_time, f.update_by, f.folder_no, f.name, uv.ownership").
 		Order("f.id DESC")
@@ -1157,10 +1146,10 @@ func ListVFolders(rail core.Rail, tx *gorm.DB, req ListVFolderReq, user common.U
 		return ListVFolderRes{}, fmt.Errorf("failed to count vfolder, req: %+v, %v", req, e)
 	}
 
-	return ListVFolderRes{Page: core.RespPage(req.Page, total), Payload: lvf}, nil
+	return ListVFolderRes{Page: miso.RespPage(req.Page, total), Payload: lvf}, nil
 }
 
-func newListVFoldersQuery(rail core.Rail, tx *gorm.DB, req ListVFolderReq, userNo string) *gorm.DB {
+func newListVFoldersQuery(rail miso.Rail, tx *gorm.DB, req ListVFolderReq, userNo string) *gorm.DB {
 	t := tx.Table("vfolder f").
 		Joins("LEFT JOIN user_vfolder uv ON (f.folder_no = uv.folder_no AND uv.is_del = 0)").
 		Where("f.is_del = 0 AND uv.user_no = ?", userNo)
@@ -1176,22 +1165,22 @@ type RemoveGrantedAccessReq struct {
 	UserId int `json:"userId" validation:"positive"`
 }
 
-func RemoveGrantedFileAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedAccessReq, user common.User) error {
+func RemoveGrantedFileAccess(rail miso.Rail, tx *gorm.DB, req RemoveGrantedAccessReq, user common.User) error {
 	f, e := findFileById(rail, tx, req.FileId)
 	if e != nil {
 		return fmt.Errorf("failed to find file, %v", e)
 	}
 
 	if f.IsZero() {
-		return core.NewWebErr("File not found")
+		return miso.NewWebErr("File not found")
 	}
 
 	if f.IsLogicDeleted != FILE_LDEL_N {
-		return core.NewWebErr("File deleted already")
+		return miso.NewWebErr("File deleted already")
 	}
 
 	if f.UploaderId != user.UserId {
-		return core.NewWebErr("Not permitted")
+		return miso.NewWebErr("Not permitted")
 	}
 
 	return _lockFileExec(rail, f.Uuid, func() error {
@@ -1203,29 +1192,29 @@ func RemoveGrantedFileAccess(rail core.Rail, tx *gorm.DB, req RemoveGrantedAcces
 }
 
 type ListGrantedFolderAccessReq struct {
-	Page     core.Paging `json:"pagingVo"`
+	Page     miso.Paging `json:"pagingVo"`
 	FolderNo string      `json:"folderNo"`
 }
 
 type ListGrantedFolderAccessRes struct {
-	Page    core.Paging          `json:"pagingVo"`
+	Page    miso.Paging          `json:"pagingVo"`
 	Payload []ListedFolderAccess `json:"payload"`
 }
 
 type ListedFolderAccess struct {
 	UserNo     string     `json:"userNo"`
 	Username   string     `json:"username"`
-	CreateTime core.ETime `json:"createTime"`
+	CreateTime miso.ETime `json:"createTime"`
 }
 
-func ListGrantedFolderAccess(rail core.Rail, tx *gorm.DB, req ListGrantedFolderAccessReq, user common.User) (ListGrantedFolderAccessRes, error) {
+func ListGrantedFolderAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedFolderAccessReq, user common.User) (ListGrantedFolderAccessRes, error) {
 	folderNo := req.FolderNo
 	vfo, e := findVFolder(rail, tx, folderNo, user.UserNo)
 	if e != nil {
 		return ListGrantedFolderAccessRes{}, e
 	}
 	if !vfo.IsOwner() {
-		return ListGrantedFolderAccessRes{}, core.NewWebErr("Operation not permitted")
+		return ListGrantedFolderAccessRes{}, miso.NewWebErr("Operation not permitted")
 	}
 
 	var l []ListedFolderAccess
@@ -1267,10 +1256,10 @@ func ListGrantedFolderAccess(rail core.Rail, tx *gorm.DB, req ListGrantedFolderA
 		}
 	}
 
-	return ListGrantedFolderAccessRes{Payload: l, Page: core.RespPage(req.Page, total)}, nil
+	return ListGrantedFolderAccessRes{Payload: l, Page: miso.RespPage(req.Page, total)}, nil
 }
 
-func newListGrantedFolderAccessQuery(rail core.Rail, tx *gorm.DB, r ListGrantedFolderAccessReq) *gorm.DB {
+func newListGrantedFolderAccessQuery(rail miso.Rail, tx *gorm.DB, r ListGrantedFolderAccessReq) *gorm.DB {
 	return tx.Table("user_vfolder").
 		Where("folder_no = ? AND ownership = 'GRANTED' AND is_del = 0", r.FolderNo)
 }
@@ -1281,28 +1270,28 @@ type UpdateFileReq struct {
 	Name      string `json:"name"`
 }
 
-func UpdateFile(rail core.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) error {
+func UpdateFile(rail miso.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) error {
 	f, e := findFileById(rail, tx, r.Id)
 	if e != nil {
 		return e
 	}
 	if f.IsZero() {
-		return core.NewWebErr("File not found")
+		return miso.NewWebErr("File not found")
 	}
 
 	// dir is only visible to the uploader for now
 	if f.UploaderId != user.UserId {
-		return core.NewWebErr("Not permitted")
+		return miso.NewWebErr("Not permitted")
 	}
 
 	// Directory is by default private, and it's not allowed to update it
 	if f.FileType == FILE_TYPE_DIR && r.UserGroup != f.UserGroup {
-		return core.NewWebErr("Updating directory's UserGroup is not allowed")
+		return miso.NewWebErr("Updating directory's UserGroup is not allowed")
 	}
 
 	r.Name = strings.TrimSpace(r.Name)
 	if r.Name == "" {
-		return core.NewWebErr("Name can't be empty")
+		return miso.NewWebErr("Name can't be empty")
 	}
 
 	return tx.
@@ -1310,7 +1299,7 @@ func UpdateFile(rail core.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) 
 		Error
 }
 
-func ListAllTags(rail core.Rail, tx *gorm.DB, user common.User) ([]string, error) {
+func ListAllTags(rail miso.Rail, tx *gorm.DB, user common.User) ([]string, error) {
 	var l []string
 	e := tx.Raw("SELECT t.name FROM tag t WHERE t.user_id = ? AND t.is_del = 0", user.UserId).
 		Scan(&l).
@@ -1324,7 +1313,7 @@ type TagFileReq struct {
 	TagName string `json:"tagName" validation:"notEmpty"`
 }
 
-func TagFile(rail core.Rail, tx *gorm.DB, req TagFileReq, user common.User) error {
+func TagFile(rail miso.Rail, tx *gorm.DB, req TagFileReq, user common.User) error {
 	req.TagName = strings.TrimSpace(req.TagName)
 	return _lockFileTagExec(rail, user.UserId, req.TagName, func() error {
 
@@ -1347,7 +1336,7 @@ func TagFile(rail core.Rail, tx *gorm.DB, req TagFileReq, user common.User) erro
 			ft = FileTag{UserId: user.UserId,
 				FileId:     req.FileId,
 				TagId:      tagId,
-				CreateTime: core.Now(),
+				CreateTime: miso.Now(),
 				CreateBy:   user.Username,
 			}
 			return tx.Table("file_tag").
@@ -1364,14 +1353,14 @@ func TagFile(rail core.Rail, tx *gorm.DB, req TagFileReq, user common.User) erro
 	})
 }
 
-func tryCreateTag(rail core.Rail, tx *gorm.DB, userId int, tagName string, username string) (int, error) {
+func tryCreateTag(rail miso.Rail, tx *gorm.DB, userId int, tagName string, username string) (int, error) {
 	t, e := findTag(rail, tx, userId, tagName)
 	if e != nil {
 		return 0, fmt.Errorf("failed to find tag, userId: %v, tagName: %v, %e", userId, tagName, e)
 	}
 
 	if t.IsZero() {
-		t = Tag{Name: tagName, UserId: userId, CreateBy: username, CreateTime: core.Now()}
+		t = Tag{Name: tagName, UserId: userId, CreateBy: username, CreateTime: miso.Now()}
 		e := tx.Table("tag").Omit("id", "update_time", "update_by").Create(&t).Error
 		if e != nil {
 			return 0, fmt.Errorf("failed to create tag, userId: %v, tagName: %v, %e", userId, tagName, e)
@@ -1389,14 +1378,14 @@ func tryCreateTag(rail core.Rail, tx *gorm.DB, userId int, tagName string, usern
 	return t.Id, nil
 }
 
-func findTag(rail core.Rail, tx *gorm.DB, userId int, tagName string) (Tag, error) {
+func findTag(rail miso.Rail, tx *gorm.DB, userId int, tagName string) (Tag, error) {
 	var t Tag
 	e := tx.Raw("SELECT * FROM tag WHERE user_id = ? AND name = ?", userId, tagName).
 		Scan(&t).Error
 	return t, e
 }
 
-func findFileTag(rail core.Rail, tx *gorm.DB, fileId int, tagId int) (FileTag, error) {
+func findFileTag(rail miso.Rail, tx *gorm.DB, fileId int, tagId int) (FileTag, error) {
 	var ft FileTag
 	e := tx.Raw("SELECT * FROM file_tag WHERE file_id = ? AND tag_id = ?", fileId, tagId).
 		Scan(&ft).Error
@@ -1408,7 +1397,7 @@ type UntagFileReq struct {
 	TagName string `json:"tagName" validation:"notEmpty"`
 }
 
-func UntagFile(rail core.Rail, tx *gorm.DB, req UntagFileReq, user common.User) error {
+func UntagFile(rail miso.Rail, tx *gorm.DB, req UntagFileReq, user common.User) error {
 	req.TagName = strings.TrimSpace(req.TagName)
 	return _lockFileTagExec(rail, user.UserId, req.TagName, func() error {
 		// each tag is bound to a specific user
@@ -1464,8 +1453,8 @@ func UntagFile(rail core.Rail, tx *gorm.DB, req UntagFileReq, user common.User) 
 	})
 }
 
-func _lockFileTagExec(rail core.Rail, userId int, tagName string, run redis.Runnable) error {
-	return redis.RLockExec(rail, fmt.Sprintf("file:tag:uid:%d:name:%s", userId, tagName), run)
+func _lockFileTagExec(rail miso.Rail, userId int, tagName string, run miso.Runnable) error {
+	return miso.RLockExec(rail, fmt.Sprintf("file:tag:uid:%d:name:%s", userId, tagName), run)
 }
 
 type CreateFileReq struct {
@@ -1476,18 +1465,18 @@ type CreateFileReq struct {
 	ParentFile       string   `json:"parentFile"`
 }
 
-func CreateFile(rail core.Rail, tx *gorm.DB, r CreateFileReq, user common.User) error {
+func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) error {
 	fsf, e := FetchFstoreFileInfo(rail, "", r.FakeFstoreFileId)
 	if e != nil {
 		return fmt.Errorf("failed to fetch file info from fstore, %v", e)
 	}
 	if fsf.IsZero() || fsf.Status != FS_STATUS_NORMAL {
-		return core.NewWebErr("File not found or deleted")
+		return miso.NewWebErr("File not found or deleted")
 	}
 
 	var f FileInfo
 	f.Name = r.Filename
-	f.Uuid = core.GenIdP("ZZZ")
+	f.Uuid = miso.GenIdP("ZZZ")
 	f.FstoreFileId = fsf.FileId
 	f.SizeInBytes = fsf.Size
 	f.UserGroup = USER_GROUP_PRIVATE
@@ -1527,18 +1516,18 @@ type DeleteFileReq struct {
 	Uuid string `json:"uuid"`
 }
 
-func DeleteFile(rail core.Rail, tx *gorm.DB, req DeleteFileReq, user common.User) error {
+func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User) error {
 	return _lockFileExec(rail, req.Uuid, func() error {
 		f, e := findFile(rail, tx, req.Uuid)
 		if e != nil {
 			return fmt.Errorf("unable to find file, uuid: %v, %v", req.Uuid, e)
 		}
 		if f.IsZero() {
-			return core.NewWebErr("File not found")
+			return miso.NewWebErr("File not found")
 		}
 
 		if f.UploaderId != user.UserId {
-			return core.NewWebErr("Not permitted")
+			return miso.NewWebErr("Not permitted")
 		}
 
 		if f.IsLogicDeleted == FILE_LDEL_Y {
@@ -1556,7 +1545,7 @@ func DeleteFile(rail core.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 				return fmt.Errorf("failed to count files in dir, uuid: %v, %v", req.Uuid, e)
 			}
 			if anyId > 0 {
-				return core.NewWebErr("Directory is not empty, unable to delete it")
+				return miso.NewWebErr("Directory is not empty, unable to delete it")
 			}
 		}
 
@@ -1578,7 +1567,7 @@ func DeleteFile(rail core.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 	})
 }
 
-func validateFileAccess(rail core.Rail, tx *gorm.DB, fileKey string, userId int, userNo string) (bool, FileDownloadInfo, error) {
+func validateFileAccess(rail miso.Rail, tx *gorm.DB, fileKey string, userId int, userNo string) (bool, FileDownloadInfo, error) {
 	var f FileDownloadInfo
 	e := tx.
 		Select("fi.id 'file_id', fi.fstore_file_id, fi.name, fi.user_group, fi.uploader_id, fi.is_logic_deleted, fi.file_type, fs.id 'file_sharing_id'").
@@ -1592,13 +1581,13 @@ func validateFileAccess(rail core.Rail, tx *gorm.DB, fileKey string, userId int,
 	}
 
 	if f.FileId < 1 {
-		return false, f, core.NewWebErr("File not found")
+		return false, f, miso.NewWebErr("File not found")
 	}
 	if f.IsLogicDeleted == FILE_LDEL_Y {
-		return false, f, core.NewWebErr("File deleted")
+		return false, f, miso.NewWebErr("File deleted")
 	}
 	if f.FileType != FILE_TYPE_FILE {
-		return false, f, core.NewWebErr("Downloading a directory is not supported")
+		return false, f, miso.NewWebErr("Downloading a directory is not supported")
 	}
 
 	var permitted bool = f.UserGroup == USER_GROUP_PUBLIC // publicly accessible
@@ -1630,17 +1619,17 @@ type GenerateTempTokenReq struct {
 	FileKey string `json:"fileKey"`
 }
 
-func GenTempToken(rail core.Rail, tx *gorm.DB, r GenerateTempTokenReq, user common.User) (string, error) {
+func GenTempToken(rail miso.Rail, tx *gorm.DB, r GenerateTempTokenReq, user common.User) (string, error) {
 	// TODO: get rid of userId
 	ok, f, e := validateFileAccess(rail, tx, r.FileKey, user.UserId, user.UserNo)
 	if e != nil {
 		return "", e
 	}
 	if !ok {
-		return "", core.NewWebErr("Not permitted")
+		return "", miso.NewWebErr("Not permitted")
 	}
 	if f.FstoreFileId == "" {
-		return "", core.NewWebErr("File cannot be downloaded, please contact system administrator")
+		return "", miso.NewWebErr("File cannot be downloaded, please contact system administrator")
 	}
 
 	t, e := GetFstoreTmpToken(rail, f.FstoreFileId, f.Name)
@@ -1656,7 +1645,7 @@ type ListFilesInDirReq struct {
 	Page    int    `form:"page"`
 }
 
-func ListFilesInDir(rail core.Rail, tx *gorm.DB, req ListFilesInDirReq) ([]string, error) {
+func ListFilesInDir(rail miso.Rail, tx *gorm.DB, req ListFilesInDirReq) ([]string, error) {
 	if req.Limit < 0 || req.Limit > 100 {
 		req.Limit = 100
 	}
@@ -1694,14 +1683,14 @@ type FileInfoResp struct {
 	Thumbnail    string `json:"thumbnail"`
 }
 
-func FetchFileInfoInternal(rail core.Rail, tx *gorm.DB, req FetchFileInfoReq) (FileInfoResp, error) {
+func FetchFileInfoInternal(rail miso.Rail, tx *gorm.DB, req FetchFileInfoReq) (FileInfoResp, error) {
 	var fir FileInfoResp
 	f, e := findFile(rail, tx, req.FileKey)
 	if e != nil {
 		return fir, e
 	}
 	if f.IsZero() {
-		return fir, core.NewWebErr("File not found")
+		return fir, miso.NewWebErr("File not found")
 	}
 
 	fir.Name = f.Name
@@ -1723,7 +1712,7 @@ type ValidateFileOwnerReq struct {
 	UserId  int    `form:"userId"`
 }
 
-func ValidateFileOwner(rail core.Rail, tx *gorm.DB, q ValidateFileOwnerReq) (bool, error) {
+func ValidateFileOwner(rail miso.Rail, tx *gorm.DB, q ValidateFileOwnerReq) (bool, error) {
 	var id int
 	e := tx.Select("id").
 		Table("file_info").
@@ -1735,7 +1724,7 @@ func ValidateFileOwner(rail core.Rail, tx *gorm.DB, q ValidateFileOwnerReq) (boo
 	return id > 0, e
 }
 
-func ReactOnImageCompressed(rail core.Rail, tx *gorm.DB, evt CompressImageEvent) error {
+func ReactOnImageCompressed(rail miso.Rail, tx *gorm.DB, evt CompressImageEvent) error {
 	return _lockFileExec(rail, evt.FileKey, func() error {
 		f, e := findFile(rail, tx, evt.FileKey)
 		if e != nil {
@@ -1759,7 +1748,7 @@ type FileCompressInfo struct {
 	FstoreFileId string
 }
 
-func CompensateImageCompression(rail core.Rail, tx *gorm.DB) error {
+func CompensateImageCompression(rail miso.Rail, tx *gorm.DB) error {
 
 	limit := 500
 	minId := 0
@@ -1785,7 +1774,7 @@ func CompensateImageCompression(rail core.Rail, tx *gorm.DB) error {
 
 		for _, f := range files {
 			if isImage(f.Name) {
-				if e := bus.SendToEventBus(rail, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
+				if e := miso.PubEventBus(rail, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
 					rail.Errorf("Failed to send CompressImageEvent, uuid: %v, %v", f.Uuid, e)
 				}
 			}
