@@ -8,6 +8,8 @@ import (
 )
 
 func PrepareServer(rail miso.Rail) error {
+	common.LoadBuiltinPropagationKeys()
+
 	if err := PrepareGoAuthReport(rail); err != nil {
 		return err
 	}
