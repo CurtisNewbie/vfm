@@ -53,7 +53,7 @@ type FetchUsernamesRes struct {
 }
 
 func FindUserId(rail miso.Rail, username string) (int, error) {
-	r := miso.NewDynTClient(rail, "/remote/user/id", "auth-service").
+	r := miso.NewDynTClient(rail, "/remote/user/id", "user-vault").
 		EnableTracing().
 		AddQueryParams("username", username).
 		Get()
@@ -75,7 +75,7 @@ func FindUserId(rail miso.Rail, username string) (int, error) {
 }
 
 func FindUser(rail miso.Rail, req FindUserReq) (UserInfo, error) {
-	r := miso.NewDynTClient(rail, "/remote/user/info", "auth-service").
+	r := miso.NewDynTClient(rail, "/remote/user/info", "user-vault").
 		EnableTracing().
 		PostJson(req)
 	if r.Err != nil {
@@ -103,7 +103,7 @@ func CachedFindUser(rail miso.Rail, userId int) (UserInfo, error) {
 }
 
 func FetchUsernames(rail miso.Rail, req FetchUsernamesReq) (FetchUsernamesRes, error) {
-	r := miso.NewDynTClient(rail, "/remote/user/userno/username", "auth-service").
+	r := miso.NewDynTClient(rail, "/remote/user/userno/username", "user-vault").
 		EnableTracing().
 		PostJson(&req)
 	if r.Err != nil {

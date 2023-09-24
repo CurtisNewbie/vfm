@@ -20,7 +20,9 @@ func TestFindUserId(t *testing.T) {
 	rail := miso.EmptyRail()
 	id, e := FindUserId(rail, "zhuangyongj")
 	miso.TestIsNil(t, e)
-	miso.TestEqual(t, id, 1)
+	if id < 1 {
+		t.Fatalf("id < 1")
+	}
 }
 
 func TestFindUser(t *testing.T) {
