@@ -131,7 +131,7 @@ type ListedFileSharing struct {
 	Id         int        `json:"id"`
 	UserId     int        `json:"userId"`
 	Username   string     `json:"username"`
-	CreateDate miso.ETime `json:"CreateDate"`
+	CreateDate miso.ETime `json:"createDate"`
 	CreateBy   string     `json:"createBy"`
 }
 
@@ -890,6 +890,18 @@ func ListGrantedFileAccess(rail miso.Rail, tx *gorm.DB, r ListGrantedAccessReq) 
 	if e != nil {
 		return ListGrantedAccessRes{}, fmt.Errorf("failed to count file_sharing, req: %+v, %v", r, e)
 	}
+
+	for i := range lfs {
+		s := lfs[i]
+		u, err := CachedFindUser(rail, s.UserId)
+		if err == nil {
+			s.Username = u.Username
+			lfs[i] = s
+			continue
+		}
+		rail.Errorf("Failed to find user, userId: %v, %v", s.UserId, err)
+	}
+
 	return ListGrantedAccessRes{Page: miso.RespPage(r.Page, total), Payload: lfs}, nil
 }
 
