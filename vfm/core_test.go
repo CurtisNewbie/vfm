@@ -155,7 +155,7 @@ func TestMakeDir(t *testing.T) {
 func TestCreateVFolder(t *testing.T) {
 	corePreTest(t)
 	c := miso.EmptyRail()
-	r, _ := miso.ERand(5)
+	r := miso.ERand(5)
 	folderNo, e := CreateVFolder(c, miso.GetMySQL(), CreateVFolderReq{"MyFolder_" + r}, testUser())
 	if e != nil {
 		t.Fatal(e)

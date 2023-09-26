@@ -35,7 +35,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 	miso.IGet("/open/api/file/parent",
 		func(c *gin.Context, rail miso.Rail, req FetchParentFileReq) (any, error) {
 			if req.FileKey == "" {
-				return nil, miso.NewWebErr("fileKey is required")
+				return nil, miso.NewErr("fileKey is required")
 			}
 			pf, e := FindParentFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
 			if e != nil {
@@ -68,7 +68,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			uid, e := FindUserId(rail, req.GrantedTo)
 			if e != nil {
 				rail.Warnf("Unable to find user id, grantedTo: %s, %v", req.GrantedTo, e)
-				return nil, miso.NewWebErr("Failed to find user")
+				return nil, miso.NewErr("Failed to find user")
 			}
 			return nil, GranteFileAccess(rail, miso.GetMySQL(), uid, req.FileId, common.GetUser(rail))
 		},
@@ -194,7 +194,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			sharedTo, e := FindUser(rail, FindUserReq{Username: &req.Username})
 			if e != nil {
 				rail.Warnf("Unable to find user, sharedTo: %s, %v", req.Username, e)
-				return nil, miso.NewWebErr("Failed to find user")
+				return nil, miso.NewErr("Failed to find user")
 			}
 			return nil, ShareVFolder(rail, miso.GetMySQL(), sharedTo, req.FolderNo, common.GetUser(rail))
 		},

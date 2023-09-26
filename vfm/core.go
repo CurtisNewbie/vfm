@@ -607,12 +607,12 @@ func FindParentFile(c miso.Rail, tx *gorm.DB, req FetchParentFileReq, user commo
 		return ParentFileInfo{}, e
 	}
 	if f.IsZero() {
-		return ParentFileInfo{}, miso.NewWebErr("File not found")
+		return ParentFileInfo{}, miso.NewErr("File not found")
 	}
 
 	// dir is only visible to the uploader for now
 	if f.UploaderId != userId {
-		return ParentFileInfo{}, miso.NewWebErr("Not permitted")
+		return ParentFileInfo{}, miso.NewErr("Not permitted")
 	}
 
 	if f.ParentFile == "" {
@@ -624,7 +624,7 @@ func FindParentFile(c miso.Rail, tx *gorm.DB, req FetchParentFileReq, user commo
 		return ParentFileInfo{}, e
 	}
 	if pf.IsZero() {
-		return ParentFileInfo{}, miso.NewWebErr("File not found", fmt.Sprintf("ParentFile %v not found", f.ParentFile))
+		return ParentFileInfo{}, miso.NewErr("File not found", fmt.Sprintf("ParentFile %v not found", f.ParentFile))
 	}
 
 	return ParentFileInfo{FileKey: pf.Uuid, Filename: pf.Name, Zero: false}, nil
@@ -684,15 +684,15 @@ func MoveFileToDir(rail miso.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.
 			}
 
 			if pr.UploaderId != user.UserId {
-				return miso.NewWebErr("You are not the owner of this directory")
+				return miso.NewErr("You are not the owner of this directory")
 			}
 
 			if pr.FileType != FILE_TYPE_DIR {
-				return miso.NewWebErr("Target file is not a directory")
+				return miso.NewErr("Target file is not a directory")
 			}
 
 			if pr.IsLogicDeleted != FILE_LDEL_N {
-				return miso.NewWebErr("Target file deleted")
+				return miso.NewErr("Target file deleted")
 			}
 
 			return tx.Exec("UPDATE file_info SET parent_file = ?, update_by = ?, update_time = ? WHERE uuid = ?",
@@ -750,7 +750,7 @@ func CreateVFolder(rail miso.Rail, tx *gorm.DB, r CreateVFolderReq, user common.
 			return "", t.Error
 		}
 		if id > 0 {
-			return "", miso.NewWebErr(fmt.Sprintf("Found folder with same name ('%s')", r.Name))
+			return "", miso.NewErr(fmt.Sprintf("Found folder with same name ('%s')", r.Name))
 		}
 
 		folderNo := miso.GenIdP("VFLD")
@@ -806,29 +806,29 @@ func ListDirs(c miso.Rail, tx *gorm.DB, user common.User) ([]ListedDir, error) {
 func GranteFileAccess(rail miso.Rail, tx *gorm.DB, grantedToUserId int, fileId int, user common.User) error {
 	userId := user.UserId
 	if grantedToUserId == userId {
-		return miso.NewWebErr("You can't grant file access to yourself")
+		return miso.NewErr("You can't grant file access to yourself")
 	}
 
 	f, e := findFileById(rail, tx, fileId)
 	if e != nil {
 		rail.Errorf("Failed to find find by id, %v", e)
-		return miso.NewWebErr("Unable to find file")
+		return miso.NewErr("Unable to find file")
 	}
 
 	if f.IsZero() {
-		return miso.NewWebErr("File not found")
+		return miso.NewErr("File not found")
 	}
 
 	if f.IsLogicDeleted != FILE_LDEL_N {
-		return miso.NewWebErr("File deleted already")
+		return miso.NewErr("File deleted already")
 	}
 
 	if f.UploaderId != userId {
-		return miso.NewWebErr("Only uploader can grant access to the file")
+		return miso.NewErr("Only uploader can grant access to the file")
 	}
 
 	if f.FileType != FILE_TYPE_FILE {
-		return miso.NewWebErr("You can't not grant access to directory type files")
+		return miso.NewErr("You can't not grant access to directory type files")
 	}
 	rail.Debugf("Granting file access to file: %v (%v) to user: %v", fileId, f.Uuid, grantedToUserId)
 
@@ -948,7 +948,7 @@ func ShareVFolder(rail miso.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo strin
 			return e
 		}
 		if !vfo.IsOwner() {
-			return miso.NewWebErr("Operation not permitted")
+			return miso.NewErr("Operation not permitted")
 		}
 
 		var id int
@@ -999,7 +999,7 @@ func RemoveVFolderAccess(rail miso.Rail, tx *gorm.DB, req RemoveGrantedFolderAcc
 			return e
 		}
 		if !vfo.IsOwner() {
-			return miso.NewWebErr("Operation not permitted")
+			return miso.NewErr("Operation not permitted")
 		}
 		return tx.
 			Exec("DELETE FROM user_vfolder WHERE folder_no = ? AND user_no = ? AND ownership = 'GRANTED'", req.FolderNo, req.UserNo).
@@ -1035,7 +1035,7 @@ func AddFileToVFolder(rail miso.Rail, tx *gorm.DB, req AddFileToVfolderReq, user
 			return e
 		}
 		if !vfo.IsOwner() {
-			return miso.NewWebErr("Operation not permitted")
+			return miso.NewErr("Operation not permitted")
 		}
 
 		filtered := miso.Distinct(req.FileKeys)
@@ -1101,7 +1101,7 @@ func RemoveFileFromVFolder(rail miso.Rail, tx *gorm.DB, req RemoveFileFromVfolde
 			return e
 		}
 		if !vfo.IsOwner() {
-			return miso.NewWebErr("Operation not permitted")
+			return miso.NewErr("Operation not permitted")
 		}
 
 		filtered := miso.Distinct(req.FileKeys)
@@ -1184,15 +1184,15 @@ func RemoveGrantedFileAccess(rail miso.Rail, tx *gorm.DB, req RemoveGrantedAcces
 	}
 
 	if f.IsZero() {
-		return miso.NewWebErr("File not found")
+		return miso.NewErr("File not found")
 	}
 
 	if f.IsLogicDeleted != FILE_LDEL_N {
-		return miso.NewWebErr("File deleted already")
+		return miso.NewErr("File deleted already")
 	}
 
 	if f.UploaderId != user.UserId {
-		return miso.NewWebErr("Not permitted")
+		return miso.NewErr("Not permitted")
 	}
 
 	return _lockFileExec(rail, f.Uuid, func() error {
@@ -1226,7 +1226,7 @@ func ListGrantedFolderAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedFolderA
 		return ListGrantedFolderAccessRes{}, e
 	}
 	if !vfo.IsOwner() {
-		return ListGrantedFolderAccessRes{}, miso.NewWebErr("Operation not permitted")
+		return ListGrantedFolderAccessRes{}, miso.NewErr("Operation not permitted")
 	}
 
 	var l []ListedFolderAccess
@@ -1288,22 +1288,22 @@ func UpdateFile(rail miso.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) 
 		return e
 	}
 	if f.IsZero() {
-		return miso.NewWebErr("File not found")
+		return miso.NewErr("File not found")
 	}
 
 	// dir is only visible to the uploader for now
 	if f.UploaderId != user.UserId {
-		return miso.NewWebErr("Not permitted")
+		return miso.NewErr("Not permitted")
 	}
 
 	// Directory is by default private, and it's not allowed to update it
 	if f.FileType == FILE_TYPE_DIR && r.UserGroup != f.UserGroup {
-		return miso.NewWebErr("Updating directory's UserGroup is not allowed")
+		return miso.NewErr("Updating directory's UserGroup is not allowed")
 	}
 
 	r.Name = strings.TrimSpace(r.Name)
 	if r.Name == "" {
-		return miso.NewWebErr("Name can't be empty")
+		return miso.NewErr("Name can't be empty")
 	}
 
 	return tx.
@@ -1483,7 +1483,7 @@ func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) 
 		return fmt.Errorf("failed to fetch file info from fstore, %v", e)
 	}
 	if fsf.IsZero() || fsf.Status != FS_STATUS_NORMAL {
-		return miso.NewWebErr("File not found or deleted")
+		return miso.NewErr("File not found or deleted")
 	}
 
 	var f FileInfo
@@ -1535,11 +1535,11 @@ func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 			return fmt.Errorf("unable to find file, uuid: %v, %v", req.Uuid, e)
 		}
 		if f.IsZero() {
-			return miso.NewWebErr("File not found")
+			return miso.NewErr("File not found")
 		}
 
 		if f.UploaderId != user.UserId {
-			return miso.NewWebErr("Not permitted")
+			return miso.NewErr("Not permitted")
 		}
 
 		if f.IsLogicDeleted == FILE_LDEL_Y {
@@ -1557,7 +1557,7 @@ func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 				return fmt.Errorf("failed to count files in dir, uuid: %v, %v", req.Uuid, e)
 			}
 			if anyId > 0 {
-				return miso.NewWebErr("Directory is not empty, unable to delete it")
+				return miso.NewErr("Directory is not empty, unable to delete it")
 			}
 		}
 
@@ -1593,13 +1593,13 @@ func validateFileAccess(rail miso.Rail, tx *gorm.DB, fileKey string, userId int,
 	}
 
 	if f.FileId < 1 {
-		return false, f, miso.NewWebErr("File not found")
+		return false, f, miso.NewErr("File not found")
 	}
 	if f.IsLogicDeleted == FILE_LDEL_Y {
-		return false, f, miso.NewWebErr("File deleted")
+		return false, f, miso.NewErr("File deleted")
 	}
 	if f.FileType != FILE_TYPE_FILE {
-		return false, f, miso.NewWebErr("Downloading a directory is not supported")
+		return false, f, miso.NewErr("Downloading a directory is not supported")
 	}
 
 	var permitted bool = f.UserGroup == USER_GROUP_PUBLIC // publicly accessible
@@ -1638,10 +1638,10 @@ func GenTempToken(rail miso.Rail, tx *gorm.DB, r GenerateTempTokenReq, user comm
 		return "", e
 	}
 	if !ok {
-		return "", miso.NewWebErr("Not permitted")
+		return "", miso.NewErr("Not permitted")
 	}
 	if f.FstoreFileId == "" {
-		return "", miso.NewWebErr("File cannot be downloaded, please contact system administrator")
+		return "", miso.NewErr("File cannot be downloaded, please contact system administrator")
 	}
 
 	t, e := GetFstoreTmpToken(rail, f.FstoreFileId, f.Name)
@@ -1702,7 +1702,7 @@ func FetchFileInfoInternal(rail miso.Rail, tx *gorm.DB, req FetchFileInfoReq) (F
 		return fir, e
 	}
 	if f.IsZero() {
-		return fir, miso.NewWebErr("File not found")
+		return fir, miso.NewErr("File not found")
 	}
 
 	fir.Name = f.Name
