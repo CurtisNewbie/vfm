@@ -964,7 +964,9 @@ type ListVFolderReq struct {
 func ListVFolders(rail miso.Rail, tx *gorm.DB, req ListVFolderReq, user common.User) (ListVFolderRes, error) {
 	t := newListVFoldersQuery(rail, tx, req, user.UserNo).
 		Select("f.id, f.create_time, f.create_by, f.update_time, f.update_by, f.folder_no, f.name, uv.ownership").
-		Order("f.id DESC")
+		Order("f.id DESC").
+		Offset(req.Page.GetOffset()).
+		Limit(req.Page.GetLimit())
 
 	var lvf []ListedVFolder
 	if e := t.Scan(&lvf).Error; e != nil {
