@@ -96,7 +96,6 @@ type ListedFile struct {
 	UploadTime     miso.ETime `json:"uploadTime"`
 	UploaderName   string     `json:"uploaderName"`
 	SizeInBytes    int64      `json:"sizeInBytes"`
-	IsOwner        bool       `json:"isOwner"`
 	FileType       string     `json:"fileType"`
 	UpdateTime     miso.ETime `json:"updateTime"`
 	ParentFileName string     `json:"parentFileName"`
@@ -248,12 +247,6 @@ func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 		return ListFilesRes{}, fmt.Errorf("failed to list files in vfolder, %v", t.Error)
 	}
 
-	for i, f := range files {
-		if f.UploaderId == user.UserId {
-			files[i].IsOwner = true
-		}
-	}
-
 	var total int
 	t = newListFilesInVFolderQuery(rail, tx, req, user.UserNo).
 		Select("COUNT(fi.id)").
@@ -344,15 +337,9 @@ func listFilesForTags(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.
 		return ListFilesRes{}, fmt.Errorf("failed to list files, %v", t.Error)
 	}
 
-	for i, f := range files {
-		if f.UploaderId == user.UserId {
-			files[i].IsOwner = true
-		}
-	}
-
 	var total int
 	t = newListFilesForTagsQuery(rail, tx, req, user.UserId).
-		Select("count(*)").
+		Select("COUNT(*)").
 		Scan(&total)
 
 	if t.Error != nil {
@@ -383,12 +370,6 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 		Scan(&files)
 	if t.Error != nil {
 		return ListFilesRes{}, fmt.Errorf("failed to list files, %v", t.Error)
-	}
-
-	for i, f := range files {
-		if f.UploaderId == user.UserId {
-			files[i].IsOwner = true
-		}
 	}
 
 	var total int
