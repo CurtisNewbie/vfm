@@ -321,18 +321,20 @@ func TestCreateFile(t *testing.T) {
 
 	buf := bytes.NewBuffer(file)
 
-	r := miso.NewDynTClient(c, "/file", "fstore").
+	var r miso.GnResp[string]
+	err = miso.NewDynTClient(c, "/file", "fstore").
 		AddHeader("filename", "README.md").
-		Put(buf)
-	if r.Err != nil {
-		t.Fatal(r.Err)
-	}
-
-	resp, err := miso.ReadGnResp[string](r)
+		Put(buf).
+		Json(&r)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fakeFileId := resp.Data
+
+	if err := r.Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	fakeFileId := r.Data
 	c.Infof("fake fileId: %v", fakeFileId)
 
 	e := CreateFile(c, miso.GetMySQL(), CreateFileReq{

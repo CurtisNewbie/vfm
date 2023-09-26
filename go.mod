@@ -9,7 +9,7 @@ require (
 	gorm.io/gorm v1.23.8
 )
 
-require github.com/curtisnewbie/miso v0.0.3-beta.1.0.20230926070936-2ee5f9e4a3ca
+require github.com/curtisnewbie/miso v0.0.3-beta.1.0.20230926074717-68f853938566
 
 require (
 	github.com/armon/go-metrics v0.4.0 // indirect
