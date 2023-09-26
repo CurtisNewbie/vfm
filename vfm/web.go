@@ -46,32 +46,6 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 		goauth.Protected("User make directory", MANAGE_FILE_CODE),
 	)
 
-	miso.IPost("/open/api/file/grant-access",
-		func(c *gin.Context, rail miso.Rail, req GrantAccessReq) (any, error) {
-			uid, e := FindUserId(rail, req.GrantedTo)
-			if e != nil {
-				rail.Warnf("Unable to find user id, grantedTo: %s, %v", req.GrantedTo, e)
-				return nil, miso.NewErr("Failed to find user")
-			}
-			return nil, GranteFileAccess(rail, miso.GetMySQL(), uid, req.FileId, common.GetUser(rail))
-		},
-		goauth.Protected("User grant file access", MANAGE_FILE_CODE),
-	)
-
-	miso.IPost("/open/api/file/list-granted-access",
-		func(c *gin.Context, rail miso.Rail, req ListGrantedAccessReq) (any, error) {
-			return ListGrantedFileAccess(rail, miso.GetMySQL(), req)
-		},
-		goauth.Protected("User list granted file access", MANAGE_FILE_CODE),
-	)
-
-	miso.IPost("/open/api/file/remove-granted-access",
-		func(c *gin.Context, rail miso.Rail, req RemoveGrantedAccessReq) (any, error) {
-			return nil, RemoveGrantedFileAccess(rail, miso.GetMySQL(), req, common.GetUser(rail))
-		},
-		goauth.Protected("User remove granted file access", MANAGE_FILE_CODE),
-	)
-
 	miso.Get("/open/api/file/dir/list",
 		func(c *gin.Context, rail miso.Rail) (any, error) {
 			return ListDirs(rail, miso.GetMySQL(), common.GetUser(rail))

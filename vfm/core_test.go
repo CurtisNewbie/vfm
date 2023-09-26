@@ -177,31 +177,6 @@ func TestListDirs(t *testing.T) {
 	t.Logf("%+v", dirs)
 }
 
-func TestGranteFileAccess(t *testing.T) {
-	corePreTest(t)
-	e := GranteFileAccess(miso.EmptyRail(), miso.GetMySQL(), 2, 3, testUser())
-	if e != nil {
-		t.Fatal(e)
-	}
-}
-
-func TestRemoveGrantedFileAccess(t *testing.T) {
-	corePreTest(t)
-	e := RemoveGrantedFileAccess(miso.EmptyRail(), miso.GetMySQL(), RemoveGrantedAccessReq{FileId: 3, UserId: 2}, testUser())
-	if e != nil {
-		t.Fatal(e)
-	}
-}
-
-func TestListGrantedFileAccess(t *testing.T) {
-	corePreTest(t)
-	l, e := ListGrantedFileAccess(miso.EmptyRail(), miso.GetMySQL(), ListGrantedAccessReq{FileId: 3})
-	if e != nil {
-		t.Fatal(e)
-	}
-	t.Logf("%+v", l)
-}
-
 func TestShareVFolder(t *testing.T) {
 	corePreTest(t)
 	if e := ShareVFolder(miso.EmptyRail(), miso.GetMySQL(),
@@ -275,7 +250,7 @@ func TestListGrantedFolderAccess(t *testing.T) {
 
 func TestUpdateFile(t *testing.T) {
 	corePreTest(t)
-	e := UpdateFile(miso.EmptyRail(), miso.GetMySQL(), UpdateFileReq{Id: 301, UserGroup: USER_GROUP_PRIVATE, Name: "test-files-222.zip"}, testUser())
+	e := UpdateFile(miso.EmptyRail(), miso.GetMySQL(), UpdateFileReq{Id: 301, Name: "test-files-222.zip"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -340,7 +315,6 @@ func TestCreateFile(t *testing.T) {
 	e := CreateFile(c, miso.GetMySQL(), CreateFileReq{
 		Filename:         "myfile",
 		FakeFstoreFileId: fakeFileId,
-		UserGroup:        USER_GROUP_PRIVATE,
 	}, testUser())
 	if e != nil {
 		t.Fatal(e)

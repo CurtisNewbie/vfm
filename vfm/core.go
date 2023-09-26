@@ -11,14 +11,8 @@ import (
 )
 
 const (
-	USER_GROUP_PUBLIC  = 0 // public user group
-	USER_GROUP_PRIVATE = 1 // private user group
-
 	FILE_TYPE_FILE = "FILE" // file
 	FILE_TYPE_DIR  = "DIR"  // directory
-
-	FOWNERSHIP_ALL   = 0
-	FOWNERSHIP_OWNER = 1
 
 	FILE_LDEL_N = 0 // normal file
 	FILE_LDEL_Y = 1 // file marked deleted
@@ -89,17 +83,6 @@ type VFolderBrief struct {
 	Name     string `json:"name"`
 }
 
-type FileSharing struct {
-	Id         int
-	FileId     int
-	UserId     int
-	CreateTime miso.ETime
-	CreateBy   string
-	UpdateTime miso.ETime
-	UpdateBy   string
-	IsDel      common.IS_DEL
-}
-
 type ListedDir struct {
 	Id   int    `json:"id"`
 	Uuid string `json:"uuid"`
@@ -113,7 +96,6 @@ type ListedFile struct {
 	UploadTime     miso.ETime `json:"uploadTime"`
 	UploaderName   string     `json:"uploaderName"`
 	SizeInBytes    int64      `json:"sizeInBytes"`
-	UserGroup      int        `json:"userGroup"`
 	IsOwner        bool       `json:"isOwner"`
 	FileType       string     `json:"fileType"`
 	UpdateTime     miso.ETime `json:"updateTime"`
@@ -125,14 +107,6 @@ type ListedFile struct {
 type GrantAccessReq struct {
 	FileId    int    `json:"fileId" validation:"positive"`
 	GrantedTo string `json:"grantedTo" validation:"notEmpty"`
-}
-
-type ListedFileSharing struct {
-	Id         int        `json:"id"`
-	UserId     int        `json:"userId"`
-	Username   string     `json:"username"`
-	CreateDate miso.ETime `json:"createDate"`
-	CreateBy   string     `json:"createBy"`
 }
 
 type ListedFileTag struct {
@@ -177,11 +151,9 @@ type ParentFileInfo struct {
 type FileDownloadInfo struct {
 	FileId         int
 	Name           string
-	UserGroup      int
 	UploaderId     int
 	IsLogicDeleted int
 	FileType       string
-	FileSharingId  int
 	FstoreFileId   string
 }
 
@@ -266,7 +238,7 @@ func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 	var files []ListedFile
 
 	t := newListFilesInVFolderQuery(rail, tx, req, user.UserNo).
-		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.user_group, fi.uploader_id,
+		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
 			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time`).
 		Offset(offset).
 		Limit(limit).
@@ -316,9 +288,7 @@ func queryFilenames(tx *gorm.DB, fileKeys []string) (map[string]string, error) {
 
 type ListFileReq struct {
 	Page       miso.Paging `json:"pagingVo"`
-	UserGroup  *int        `json:"userGroup"`
 	Filename   *string     `json:"filename"`
-	Ownership  *int        `json:"ownership"`
 	TagName    *string     `json:"tagName"`
 	FolderNo   *string     `json:"folderNo"`
 	FileType   *string     `json:"fileType"`
@@ -364,7 +334,7 @@ func ListFiles(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (
 func listFilesForTags(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
 	var files []ListedFile
 	t := newListFilesForTagsQuery(rail, tx, req, user.UserId).
-		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.user_group, fi.uploader_id,
+		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
 			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time`).
 		Order("fi.id desc").
 		Offset(req.Page.GetOffset()).
@@ -394,10 +364,10 @@ func listFilesForTags(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.
 
 func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
 	/*
-	   If parentFile is empty, and filename/userGroup are not searched, then we only return the top level file or dir.
+	   If parentFile is empty, and filename are not searched, then we only return the top level file or dir.
 	   The query for tags will ignore parent_file param, so it's working fine
 	*/
-	if (req.ParentFile == nil || *req.ParentFile == "") && (req.Filename == nil || *req.Filename == "") && req.UserGroup == nil {
+	if (req.ParentFile == nil || *req.ParentFile == "") && (req.Filename == nil || *req.Filename == "") {
 		req.Filename = nil
 		var pf = ""
 		req.ParentFile = &pf // top-level file/dir
@@ -405,7 +375,7 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 
 	var files []ListedFile
 	t := newListFilesSelectiveQuery(rail, tx, req, user.UserId).
-		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.user_group, fi.uploader_id,
+		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
 			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time`).
 		Order("fi.file_type asc, fi.id desc").
 		Offset(req.Page.GetOffset()).
@@ -435,22 +405,8 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 func newListFilesSelectiveQuery(rail miso.Rail, tx *gorm.DB, req ListFileReq, userId int) *gorm.DB {
 
 	tx = tx.Table("file_info fi").
-		Table("file_info fi").
-		Joins("LEFT JOIN file_sharing fs ON (fi.id = fs.file_id AND fs.user_id = ?)", userId)
-
-	if req.Ownership != nil && *req.Ownership == FOWNERSHIP_OWNER {
-		tx = tx.Where("fi.uploader_id = ?", userId)
-	} else {
-		if req.UserGroup == nil {
-			tx = tx.Where("fi.uploader_id = ? OR fi.user_group = 0 OR (fs.id IS NOT NULL AND fs.is_del = 0)", userId)
-		} else {
-			if *req.UserGroup == USER_GROUP_PUBLIC {
-				tx = tx.Where("fi.user_group = 0")
-			} else {
-				tx = tx.Where("fi.uploader_id = ? AND fi.user_group = 1 ", userId)
-			}
-		}
-	}
+		Where("fi.uploader_id = ?", userId).
+		Where("fi.is_logic_deleted = 0 AND fi.is_del = 0")
 
 	if req.ParentFile != nil {
 		tx = tx.Where("fi.parent_file = ?", *req.ParentFile)
@@ -464,8 +420,6 @@ func newListFilesSelectiveQuery(rail miso.Rail, tx *gorm.DB, req ListFileReq, us
 		tx = tx.Where("fi.file_type = ?", *req.FileType)
 	}
 
-	tx = tx.Where("fi.is_logic_deleted = 0 AND fi.is_del = 0")
-
 	return tx
 }
 
@@ -473,28 +427,14 @@ func newListFilesForTagsQuery(rail miso.Rail, t *gorm.DB, req ListFileReq, userI
 
 	t = t.Table("file_info fi").
 		Joins("LEFT JOIN file_tag ft ON (ft.user_id = ? AND fi.id = ft.file_id)", userId).
-		Joins("LEFT JOIN tag t ON (ft.tag_id = t.id)").
-		Joins("LEFT JOIN file_sharing fs ON (fi.id = fs.file_id AND fs.user_id = ?)", userId)
-
-	if req.Ownership != nil && *req.Ownership == FOWNERSHIP_OWNER {
-		t = t.Where("fi.uploader_id = ?", userId)
-	} else {
-		if req.UserGroup == nil {
-			t = t.Where("fi.uploader_id = ? OR fi.user_group = 0 OR (fs.id IS NOT NULL AND fs.is_del = 0)", userId)
-		} else {
-			if *req.UserGroup == USER_GROUP_PUBLIC {
-				t = t.Where("fi.user_group = 0")
-			} else {
-				t = t.Where("fi.uploader_id = ? AND fi.user_group = 1 ", userId)
-			}
-		}
-	}
+		Joins("LEFT JOIN tag t ON (ft.tag_id = t.id)")
 
 	if req.Filename != nil && *req.Filename != "" {
 		t = t.Where("fi.name LIKE ?", "%"+*req.Filename+"%")
 	}
 
-	t = t.Where("fi.file_type = 'FILE'").
+	t = t.Where("fi.uploader_id = ?", userId).
+		Where("fi.file_type = 'FILE'").
 		Where("fi.is_del = 0").
 		Where("fi.is_logic_deleted = 0").
 		Where("ft.is_del = 0").
@@ -573,16 +513,6 @@ func findFile(c miso.Rail, tx *gorm.DB, fileKey string) (FileInfo, error) {
 	return f, t.Error
 }
 
-func findFileKey(rail miso.Rail, tx *gorm.DB, id int) (string, error) {
-	var fk string
-	t := tx.Raw("SELECT uuid FROM file_info WHERE id = ?", id).
-		Scan(&fk)
-	if t.Error != nil {
-		return fk, t.Error
-	}
-	return fk, nil
-}
-
 func findFileById(rail miso.Rail, tx *gorm.DB, id int) (FileInfo, error) {
 	var f FileInfo
 
@@ -641,7 +571,6 @@ func MakeDir(rail miso.Rail, tx *gorm.DB, req MakeDirReq, user common.User) (str
 	dir.Name = req.Name
 	dir.Uuid = miso.GenIdP("ZZZ")
 	dir.SizeInBytes = 0
-	dir.UserGroup = USER_GROUP_PRIVATE
 	dir.FileType = FILE_TYPE_DIR
 
 	if e := _saveFile(rail, tx, dir, user); e != nil {
@@ -801,114 +730,6 @@ func ListDirs(c miso.Rail, tx *gorm.DB, user common.User) ([]ListedDir, error) {
 		Where("is_del = 0").
 		Scan(&dirs).Error
 	return dirs, e
-}
-
-func GranteFileAccess(rail miso.Rail, tx *gorm.DB, grantedToUserId int, fileId int, user common.User) error {
-	userId := user.UserId
-	if grantedToUserId == userId {
-		return miso.NewErr("You can't grant file access to yourself")
-	}
-
-	f, e := findFileById(rail, tx, fileId)
-	if e != nil {
-		rail.Errorf("Failed to find find by id, %v", e)
-		return miso.NewErr("Unable to find file")
-	}
-
-	if f.IsZero() {
-		return miso.NewErr("File not found")
-	}
-
-	if f.IsLogicDeleted != FILE_LDEL_N {
-		return miso.NewErr("File deleted already")
-	}
-
-	if f.UploaderId != userId {
-		return miso.NewErr("Only uploader can grant access to the file")
-	}
-
-	if f.FileType != FILE_TYPE_FILE {
-		return miso.NewErr("You can't not grant access to directory type files")
-	}
-	rail.Debugf("Granting file access to file: %v (%v) to user: %v", fileId, f.Uuid, grantedToUserId)
-
-	return _lockFileExec(rail, f.Uuid, func() error {
-		var fs FileSharing
-		t := tx.Table("file_sharing").
-			Select("id, is_del").
-			Where("file_id = ?", fileId).
-			Where("user_id = ?", grantedToUserId).
-			Scan(&fs)
-		if t.Error != nil {
-			return t.Error
-		}
-
-		if t.RowsAffected < 1 {
-			fs = FileSharing{
-				UserId:     grantedToUserId,
-				FileId:     fileId,
-				CreateTime: miso.Now(),
-				CreateBy:   user.Username,
-				IsDel:      common.IS_DEL_N,
-			}
-			return tx.Table("file_sharing").
-				Omit("id", "update_by", "update_time").
-				Create(&fs).Error
-		}
-
-		if fs.IsDel == common.IS_DEL_Y {
-			return tx.Exec("UPDATE file_sharing SET is_del = 0 WHERE id = ?", fs.Id).Error
-		}
-		return nil
-	})
-}
-
-type ListGrantedAccessReq struct {
-	Page   miso.Paging `json:"pagingVo"`
-	FileId int         `json:"fileId" validation:"positive"`
-}
-
-type ListGrantedAccessRes struct {
-	Page    miso.Paging         `json:"pagingVo"`
-	Payload []ListedFileSharing `json:"payload"`
-}
-
-func ListGrantedFileAccess(rail miso.Rail, tx *gorm.DB, r ListGrantedAccessReq) (ListGrantedAccessRes, error) {
-	var lfs []ListedFileSharing
-	e := newListGrantedFileAccessQuery(rail, tx, r).
-		Select("id, user_id, create_time 'create_date', 'create_by'").
-		Order("id DESC").
-		Scan(&lfs).Error
-	if e != nil {
-		return ListGrantedAccessRes{}, fmt.Errorf("failed to list file_sharing, req: %+v, %v", r, e)
-	}
-
-	var total int
-	e = newListGrantedFileAccessQuery(rail, tx, r).
-		Select("count(*)").
-		Scan(&total).Error
-	if e != nil {
-		return ListGrantedAccessRes{}, fmt.Errorf("failed to count file_sharing, req: %+v, %v", r, e)
-	}
-
-	for i := range lfs {
-		s := lfs[i]
-		u, err := CachedFindUser(rail, s.UserId)
-		if err == nil {
-			s.Username = u.Username
-			lfs[i] = s
-			continue
-		}
-		rail.Errorf("Failed to find user, userId: %v, %v", s.UserId, err)
-	}
-
-	return ListGrantedAccessRes{Page: miso.RespPage(r.Page, total), Payload: lfs}, nil
-}
-
-func newListGrantedFileAccessQuery(rail miso.Rail, tx *gorm.DB, r ListGrantedAccessReq) *gorm.DB {
-	return tx.Table("file_sharing").
-		Where("file_id = ?", r.FileId).
-		Where("is_del = 0")
 }
 
 func findVFolder(rail miso.Rail, tx *gorm.DB, folderNo string, userNo string) (VFolderWithOwnership, error) {
@@ -1177,32 +998,6 @@ type RemoveGrantedAccessReq struct {
 	UserId int `json:"userId" validation:"positive"`
 }
 
-func RemoveGrantedFileAccess(rail miso.Rail, tx *gorm.DB, req RemoveGrantedAccessReq, user common.User) error {
-	f, e := findFileById(rail, tx, req.FileId)
-	if e != nil {
-		return fmt.Errorf("failed to find file, %v", e)
-	}
-
-	if f.IsZero() {
-		return miso.NewErr("File not found")
-	}
-
-	if f.IsLogicDeleted != FILE_LDEL_N {
-		return miso.NewErr("File deleted already")
-	}
-
-	if f.UploaderId != user.UserId {
-		return miso.NewErr("Not permitted")
-	}
-
-	return _lockFileExec(rail, f.Uuid, func() error {
-		// it was a logical delete in file-server, it now becomes a physical delete
-		return tx.
-			Exec("DELETE FROM file_sharing WHERE file_id = ? AND user_id = ? LIMIT 1", req.FileId, req.UserId).
-			Error
-	})
-}
-
 type ListGrantedFolderAccessReq struct {
 	Page     miso.Paging `json:"pagingVo"`
 	FolderNo string      `json:"folderNo"`
@@ -1277,9 +1072,8 @@ func newListGrantedFolderAccessQuery(rail miso.Rail, tx *gorm.DB, r ListGrantedF
 }
 
 type UpdateFileReq struct {
-	Id        int    `json:"id" validation:"positive"`
-	UserGroup int    `json:"userGroup"`
-	Name      string `json:"name"`
+	Id   int    `json:"id" validation:"positive"`
+	Name string `json:"name"`
 }
 
 func UpdateFile(rail miso.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) error {
@@ -1296,18 +1090,13 @@ func UpdateFile(rail miso.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) 
 		return miso.NewErr("Not permitted")
 	}
 
-	// Directory is by default private, and it's not allowed to update it
-	if f.FileType == FILE_TYPE_DIR && r.UserGroup != f.UserGroup {
-		return miso.NewErr("Updating directory's UserGroup is not allowed")
-	}
-
 	r.Name = strings.TrimSpace(r.Name)
 	if r.Name == "" {
 		return miso.NewErr("Name can't be empty")
 	}
 
 	return tx.
-		Exec("UPDATE file_info SET user_group = ?, name = ? WHERE id = ? AND is_logic_deleted = 0 AND is_del = 0", r.UserGroup, r.Name, r.Id).
+		Exec("UPDATE file_info SET name = ? WHERE id = ? AND is_logic_deleted = 0 AND is_del = 0", r.Name, r.Id).
 		Error
 }
 
@@ -1472,7 +1261,6 @@ func _lockFileTagExec(rail miso.Rail, userId int, tagName string, run miso.Runna
 type CreateFileReq struct {
 	Filename         string   `json:"filename"`
 	FakeFstoreFileId string   `json:"fstoreFileId"`
-	UserGroup        int      `json:"userGroup"`
 	Tags             []string `json:"tags"`
 	ParentFile       string   `json:"parentFile"`
 }
@@ -1491,7 +1279,6 @@ func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) 
 	f.Uuid = miso.GenIdP("ZZZ")
 	f.FstoreFileId = fsf.FileId
 	f.SizeInBytes = fsf.Size
-	f.UserGroup = USER_GROUP_PRIVATE
 	f.FileType = FILE_TYPE_FILE
 
 	if e := _saveFile(rail, tx, f, user); e != nil {
@@ -1582,9 +1369,8 @@ func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 func validateFileAccess(rail miso.Rail, tx *gorm.DB, fileKey string, userId int, userNo string) (bool, FileDownloadInfo, error) {
 	var f FileDownloadInfo
 	e := tx.
-		Select("fi.id 'file_id', fi.fstore_file_id, fi.name, fi.user_group, fi.uploader_id, fi.is_logic_deleted, fi.file_type, fs.id 'file_sharing_id'").
+		Select("fi.id 'file_id', fi.fstore_file_id, fi.name, fi.uploader_id, fi.is_logic_deleted, fi.file_type").
 		Table("file_info fi").
-		Joins("LEFT JOIN file_sharing fs ON (fi.id = fs.file_id AND fs.user_id = ?)", userId).
 		Where("fi.uuid = ? AND fi.is_del = 0", fileKey).
 		Limit(1).
 		Scan(&f).Error
@@ -1602,13 +1388,9 @@ func validateFileAccess(rail miso.Rail, tx *gorm.DB, fileKey string, userId int,
 		return false, f, miso.NewErr("Downloading a directory is not supported")
 	}
 
-	var permitted bool = f.UserGroup == USER_GROUP_PUBLIC // publicly accessible
-	if !permitted {
-		permitted = f.UploaderId == userId // owner of the file
-	}
-	if !permitted {
-		permitted = f.FileSharingId > 0 // granted access to the file
-	}
+	permitted := f.UploaderId == userId // owner of the file
+
+	// user may have access to the vfolder, which contains thefile
 	if !permitted {
 		var uvid int
 		e := tx.

@@ -1,0 +1,1 @@
+alter table file_info modify `user_group` int NOT NULL default 1 COMMENT 'the group that the file belongs to, 0-public, 1-private';
