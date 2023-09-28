@@ -582,7 +582,7 @@ type MoveIntoDirReq struct {
 }
 
 func MoveFileToDir(rail miso.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.User) error {
-	if req.Uuid == "" || req.ParentFileUuid == "" || req.Uuid == req.ParentFileUuid {
+	if req.Uuid == "" || req.Uuid == req.ParentFileUuid {
 		return nil
 	}
 
@@ -593,33 +593,35 @@ func MoveFileToDir(rail miso.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.
 	}
 	defer flock.Unlock()
 
-	// lock directory
-	pflock := fileLock(rail, req.ParentFileUuid)
-	if err := pflock.Lock(); err != nil {
-		return err
-	}
-	defer pflock.Unlock()
+	// lock directory if necessary, if parentFileUuid is empty, the file is moved out of a directory
+	if req.ParentFileUuid != "" {
+		pflock := fileLock(rail, req.ParentFileUuid)
+		if err := pflock.Lock(); err != nil {
+			return err
+		}
+		defer pflock.Unlock()
 
-	pr, e := findFile(rail, tx, req.ParentFileUuid)
-	if e != nil {
-		return fmt.Errorf("failed to find parentFile, %v", e)
-	}
-	rail.Debugf("parentFile: %+v", pr)
+		pr, e := findFile(rail, tx, req.ParentFileUuid)
+		if e != nil {
+			return fmt.Errorf("failed to find parentFile, %v", e)
+		}
+		rail.Debugf("parentFile: %+v", pr)
 
-	if pr.IsZero() {
-		return fmt.Errorf("perentFile not found, parentFileKey: %v", req.ParentFileUuid)
-	}
+		if pr.IsZero() {
+			return fmt.Errorf("perentFile not found, parentFileKey: %v", req.ParentFileUuid)
+		}
 
-	if pr.UploaderId != user.UserId {
-		return miso.NewErr("You are not the owner of this directory")
-	}
+		if pr.UploaderId != user.UserId {
+			return miso.NewErr("You are not the owner of this directory")
+		}
 
-	if pr.FileType != FILE_TYPE_DIR {
-		return miso.NewErr("Target file is not a directory")
-	}
+		if pr.FileType != FILE_TYPE_DIR {
+			return miso.NewErr("Target file is not a directory")
+		}
 
-	if pr.IsLogicDeleted != FILE_LDEL_N {
-		return miso.NewErr("Target file deleted")
+		if pr.IsLogicDeleted != FILE_LDEL_N {
+			return miso.NewErr("Target file deleted")
+		}
 	}
 
 	return tx.Exec("UPDATE file_info SET parent_file = ?, update_by = ?, update_time = ? WHERE uuid = ?",
