@@ -58,36 +58,40 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 	uuid = uuidCol.After
 
 	// lock before we do anything about it
-	return _lockFileExec(rail, uuid, func() error {
-		f, err := findFile(rail, miso.GetMySQL(), uuid)
-		if err != nil {
-			return err
-		}
-		if f.IsZero() {
-			rail.Infof("file is deleted, %v", uuid)
-			return nil // file already deleted
-		}
+	lock := fileLock(rail, uuid)
+	if err := lock.Lock(); err != nil {
+		return err
+	}
+	defer lock.Unlock()
 
-		if f.FileType != FILE_TYPE_FILE {
-			rail.Infof("file is dir, %v", uuid)
-			return nil // a directory
-		}
+	f, err := findFile(rail, miso.GetMySQL(), uuid)
+	if err != nil {
+		return err
+	}
+	if f.IsZero() {
+		rail.Infof("file is deleted, %v", uuid)
+		return nil // file already deleted
+	}
 
-		if f.Thumbnail != "" {
-			rail.Infof("file has thumbnail aleady, %v", uuid)
-			return nil // already has a thumbnail
-		}
+	if f.FileType != FILE_TYPE_FILE {
+		rail.Infof("file is dir, %v", uuid)
+		return nil // a directory
+	}
 
-		if !isImage(f.Name) {
-			rail.Infof("file is not image, %v, %v", uuid, f.Name)
-			return nil // not an image
-		}
+	if f.Thumbnail != "" {
+		rail.Infof("file has thumbnail aleady, %v", uuid)
+		return nil // already has a thumbnail
+	}
 
-		if e := miso.PubEventBus(rail, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
-			return miso.TraceErrf(e, "Failed to send CompressImageEvent, uuid: %v", f.Uuid)
-		}
-		return nil
-	})
+	if !isImage(f.Name) {
+		rail.Infof("file is not image, %v, %v", uuid, f.Name)
+		return nil // not an image
+	}
+
+	if e := miso.PubEventBus(rail, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
+		return miso.TraceErrf(e, "Failed to send CompressImageEvent, uuid: %v", f.Uuid)
+	}
+	return nil
 }
 
 // hammer sends event message when the thumbnail image is compressed and saved on mini-fstore
@@ -119,43 +123,47 @@ func OnThumbnailUpdated(rail miso.Rail, evt StreamEvent) error {
 	}
 
 	// lock before we do anything about it
-	return _lockFileExec(rail, uuid, func() error {
-		f, err := findFile(rail, miso.GetMySQL(), uuid)
-		if err != nil {
-			return err
-		}
-		if f.IsZero() || f.FileType != FILE_TYPE_FILE {
-			return nil
-		}
+	lock := fileLock(rail, uuid)
+	if err := lock.Lock(); err != nil {
+		return err
+	}
+	defer lock.Unlock()
 
-		if f.Thumbnail == "" || f.ParentFile == "" {
-			return nil
-		}
+	f, err := findFile(rail, miso.GetMySQL(), uuid)
+	if err != nil {
+		return err
+	}
+	if f.IsZero() || f.FileType != FILE_TYPE_FILE {
+		return nil
+	}
 
-		pf, err := findFile(rail, miso.GetMySQL(), f.ParentFile)
-		if err != nil {
-			return err
-		}
-		if pf.IsZero() {
-			rail.Infof("parent file not found, %v", pf)
-			return nil
-		}
+	if f.Thumbnail == "" || f.ParentFile == "" {
+		return nil
+	}
 
-		user, err := CachedFindUser(rail, f.UploaderId)
-		if err != nil {
-			return err
-		}
+	pf, err := findFile(rail, miso.GetMySQL(), f.ParentFile)
+	if err != nil {
+		return err
+	}
+	if pf.IsZero() {
+		rail.Infof("parent file not found, %v", pf)
+		return nil
+	}
 
-		evt := CreateFantahseaImgEvt{
-			Username:     user.Username,
-			UserNo:       user.UserNo,
-			DirFileKey:   pf.Uuid,
-			DirName:      pf.Name,
-			ImageName:    f.Name,
-			ImageFileKey: f.Uuid,
-		}
-		return miso.PubEventBus(rail, evt, addFantahseaDirGalleryImgEventBus)
-	})
+	user, err := CachedFindUser(rail, f.UploaderId)
+	if err != nil {
+		return err
+	}
+
+	cfi := CreateFantahseaImgEvt{
+		Username:     user.Username,
+		UserNo:       user.UserNo,
+		DirFileKey:   pf.Uuid,
+		DirName:      pf.Name,
+		ImageName:    f.Name,
+		ImageFileKey: f.Uuid,
+	}
+	return miso.PubEventBus(rail, cfi, addFantahseaDirGalleryImgEventBus)
 }
 
 // event-pump send binlog event when a file_info is deleted (is_logic_deleted changed)

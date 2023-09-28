@@ -586,39 +586,45 @@ func MoveFileToDir(rail miso.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.
 		return nil
 	}
 
-	// lock the file
-	return _lockFileExec(rail, req.Uuid, func() error {
+	// flock the file
+	flock := fileLock(rail, req.Uuid)
+	if err := flock.Lock(); err != nil {
+		return err
+	}
+	defer flock.Unlock()
 
-		// lock directory
-		return _lockFileExec(rail, req.ParentFileUuid, func() error {
+	// lock directory
+	pflock := fileLock(rail, req.ParentFileUuid)
+	if err := pflock.Lock(); err != nil {
+		return err
+	}
+	defer pflock.Unlock()
 
-			pr, e := findFile(rail, tx, req.ParentFileUuid)
-			if e != nil {
-				return fmt.Errorf("failed to find parentFile, %v", e)
-			}
-			rail.Debugf("parentFile: %+v", pr)
+	pr, e := findFile(rail, tx, req.ParentFileUuid)
+	if e != nil {
+		return fmt.Errorf("failed to find parentFile, %v", e)
+	}
+	rail.Debugf("parentFile: %+v", pr)
 
-			if pr.IsZero() {
-				return fmt.Errorf("perentFile not found, parentFileKey: %v", req.ParentFileUuid)
-			}
+	if pr.IsZero() {
+		return fmt.Errorf("perentFile not found, parentFileKey: %v", req.ParentFileUuid)
+	}
 
-			if pr.UploaderId != user.UserId {
-				return miso.NewErr("You are not the owner of this directory")
-			}
+	if pr.UploaderId != user.UserId {
+		return miso.NewErr("You are not the owner of this directory")
+	}
 
-			if pr.FileType != FILE_TYPE_DIR {
-				return miso.NewErr("Target file is not a directory")
-			}
+	if pr.FileType != FILE_TYPE_DIR {
+		return miso.NewErr("Target file is not a directory")
+	}
 
-			if pr.IsLogicDeleted != FILE_LDEL_N {
-				return miso.NewErr("Target file deleted")
-			}
+	if pr.IsLogicDeleted != FILE_LDEL_N {
+		return miso.NewErr("Target file deleted")
+	}
 
-			return tx.Exec("UPDATE file_info SET parent_file = ?, update_by = ?, update_time = ? WHERE uuid = ?",
-				req.ParentFileUuid, user.Username, time.Now(), req.Uuid).
-				Error
-		})
-	})
+	return tx.Exec("UPDATE file_info SET parent_file = ?, update_by = ?, update_time = ? WHERE uuid = ?",
+		req.ParentFileUuid, user.Username, time.Now(), req.Uuid).
+		Error
 }
 
 func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error {
@@ -639,12 +645,8 @@ func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error 
 		Create(&f).Error
 }
 
-func _lockFileExec(rail miso.Rail, fileKey string, r miso.Runnable) error {
-	return miso.RLockExec(rail, "file:uuid:"+fileKey, r)
-}
-
-func _lockFileGet[T any](rail miso.Rail, fileKey string, r miso.LRunnable[T]) (any, error) {
-	return miso.RLockRun(rail, "file:uuid:"+fileKey, r)
+func fileLock(rail miso.Rail, fileKey string) *miso.RLock {
+	return miso.NewRLock(rail, "file:uuid:"+fileKey)
 }
 
 type CreateVFolderReq struct {
@@ -743,10 +745,6 @@ func findVFolder(rail miso.Rail, tx *gorm.DB, folderNo string, userNo string) (V
 
 func _lockFolderExec(c miso.Rail, folderNo string, r miso.Runnable) error {
 	return miso.RLockExec(c, "vfolder:"+folderNo, r)
-}
-
-func _lockFolderGet[T any](c miso.Rail, folderNo string, r miso.LRunnable[T]) (any, error) {
-	return miso.RLockRun(c, "vfolder:"+folderNo, r)
 }
 
 func ShareVFolder(rail miso.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo string, user common.User) error {
@@ -1308,54 +1306,58 @@ type DeleteFileReq struct {
 }
 
 func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User) error {
-	return _lockFileExec(rail, req.Uuid, func() error {
-		f, e := findFile(rail, tx, req.Uuid)
+	lock := fileLock(rail, req.Uuid)
+	if err := lock.Lock(); err != nil {
+		return err
+	}
+	defer lock.Unlock()
+
+	f, e := findFile(rail, tx, req.Uuid)
+	if e != nil {
+		return fmt.Errorf("unable to find file, uuid: %v, %v", req.Uuid, e)
+	}
+	if f.IsZero() {
+		return miso.NewErr("File not found")
+	}
+
+	if f.UploaderId != user.UserId {
+		return miso.NewErr("Not permitted")
+	}
+
+	if f.IsLogicDeleted == FILE_LDEL_Y {
+		return nil // deleted already
+	}
+
+	if f.FileType == FILE_TYPE_DIR { // if it's dir make sure it's empty
+		var anyId int
+		e := tx.Select("id").
+			Table("file_info").
+			Where("parent_file = ? AND is_logic_deleted = 0 AND is_del = 0", req.Uuid).
+			Limit(1).
+			Scan(&anyId).Error
 		if e != nil {
-			return fmt.Errorf("unable to find file, uuid: %v, %v", req.Uuid, e)
+			return fmt.Errorf("failed to count files in dir, uuid: %v, %v", req.Uuid, e)
 		}
-		if f.IsZero() {
-			return miso.NewErr("File not found")
+		if anyId > 0 {
+			return miso.NewErr("Directory is not empty, unable to delete it")
 		}
+	}
 
-		if f.UploaderId != user.UserId {
-			return miso.NewErr("Not permitted")
+	if f.FstoreFileId != "" {
+		if e := DeleteFstoreFile(rail, f.FstoreFileId); e != nil {
+			return fmt.Errorf("failed to delete fstore file, fileId: %v, %v", f.FstoreFileId, e)
 		}
+	}
 
-		if f.IsLogicDeleted == FILE_LDEL_Y {
-			return nil // deleted already
+	if f.Thumbnail != "" {
+		if e := DeleteFstoreFile(rail, f.Thumbnail); e != nil {
+			return fmt.Errorf("failed to delete fstore file (thumbnail), fileId: %v, %v", f.Thumbnail, e)
 		}
+	}
 
-		if f.FileType == FILE_TYPE_DIR { // if it's dir make sure it's empty
-			var anyId int
-			e := tx.Select("id").
-				Table("file_info").
-				Where("parent_file = ? AND is_logic_deleted = 0 AND is_del = 0", req.Uuid).
-				Limit(1).
-				Scan(&anyId).Error
-			if e != nil {
-				return fmt.Errorf("failed to count files in dir, uuid: %v, %v", req.Uuid, e)
-			}
-			if anyId > 0 {
-				return miso.NewErr("Directory is not empty, unable to delete it")
-			}
-		}
-
-		if f.FstoreFileId != "" {
-			if e := DeleteFstoreFile(rail, f.FstoreFileId); e != nil {
-				return fmt.Errorf("failed to delete fstore file, fileId: %v, %v", f.FstoreFileId, e)
-			}
-		}
-
-		if f.Thumbnail != "" {
-			if e := DeleteFstoreFile(rail, f.Thumbnail); e != nil {
-				return fmt.Errorf("failed to delete fstore file (thumbnail), fileId: %v, %v", f.Thumbnail, e)
-			}
-		}
-
-		return tx.
-			Exec("UPDATE file_info SET is_logic_deleted = 1, logic_delete_time = NOW() WHERE id = ? AND is_logic_deleted = 0", f.Id).
-			Error
-	})
+	return tx.
+		Exec("UPDATE file_info SET is_logic_deleted = 1, logic_delete_time = NOW() WHERE id = ? AND is_logic_deleted = 0", f.Id).
+		Error
 }
 
 func validateFileAccess(rail miso.Rail, tx *gorm.DB, fileKey string, userNo string) (FileDownloadInfo, error) {
@@ -1513,20 +1515,24 @@ func ValidateFileOwner(rail miso.Rail, tx *gorm.DB, q ValidateFileOwnerReq) (boo
 }
 
 func ReactOnImageCompressed(rail miso.Rail, tx *gorm.DB, evt CompressImageEvent) error {
-	return _lockFileExec(rail, evt.FileKey, func() error {
-		f, e := findFile(rail, tx, evt.FileKey)
-		if e != nil {
-			rail.Errorf("Unable to find file, uuid: %v, %v", evt.FileKey, e)
-			return nil
-		}
-		if f.IsZero() {
-			rail.Errorf("File not found, uuid: %v", evt.FileKey)
-			return nil
-		}
+	lock := miso.NewRLock(rail, "file:uuid:"+evt.FileKey)
+	if err := lock.Lock(); err != nil {
+		return err
+	}
+	defer lock.Unlock()
 
-		return tx.Exec("UPDATE file_info SET thumbnail = ? WHERE uuid = ?", evt.FileId, evt.FileKey).
-			Error
-	})
+	f, e := findFile(rail, tx, evt.FileKey)
+	if e != nil {
+		rail.Errorf("Unable to find file, uuid: %v, %v", evt.FileKey, e)
+		return nil
+	}
+	if f.IsZero() {
+		rail.Errorf("File not found, uuid: %v", evt.FileKey)
+		return nil
+	}
+
+	return tx.Exec("UPDATE file_info SET thumbnail = ? WHERE uuid = ?", evt.FileId, evt.FileKey).
+		Error
 }
 
 type FileCompressInfo struct {
