@@ -2,6 +2,7 @@ package vfm
 
 import (
 	"github.com/curtisnewbie/miso/miso"
+	"gorm.io/gorm"
 )
 
 const (
@@ -98,6 +99,27 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 func OnImageCompressed(rail miso.Rail, evt CompressImageEvent) error {
 	rail.Infof("Received CompressedImageEvent, %+v", evt)
 	return ReactOnImageCompressed(rail, miso.GetMySQL(), evt)
+}
+
+func ReactOnImageCompressed(rail miso.Rail, tx *gorm.DB, evt CompressImageEvent) error {
+	lock := miso.NewRLock(rail, "file:uuid:"+evt.FileKey)
+	if err := lock.Lock(); err != nil {
+		return err
+	}
+	defer lock.Unlock()
+
+	f, e := findFile(rail, tx, evt.FileKey)
+	if e != nil {
+		rail.Errorf("Unable to find file, uuid: %v, %v", evt.FileKey, e)
+		return nil
+	}
+	if f.IsZero() {
+		rail.Errorf("File not found, uuid: %v", evt.FileKey)
+		return nil
+	}
+
+	return tx.Exec("UPDATE file_info SET thumbnail = ? WHERE uuid = ?", evt.FileId, evt.FileKey).
+		Error
 }
 
 // event-pump send binlog event when a file_info's thumbnail is updated.
