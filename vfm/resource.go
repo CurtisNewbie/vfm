@@ -1,9 +1,9 @@
 package vfm
 
 const (
-	MANAGE_FILE_CODE = "manage-files"
-	MANAGE_FILE_NAME = "Manage files"
+	ManageFileResCode = "manage-files"
+	ManageFileResName = "Manage files"
 
-	ADMIN_FS_CODE = "admin-file-service"
-	ADMIN_FS_NAME = "Admin file service"
+	AdminFsResCode = "admin-file-service"
+	AdminFsResName = "Admin file service"
 )

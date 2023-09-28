@@ -12,7 +12,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 		func(c *gin.Context, rail miso.Rail, req PreflightCheckReq) (any, error) {
 			return FileExists(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User - preflight check for duplicate file uploads", MANAGE_FILE_CODE),
+		goauth.Protected("User - preflight check for duplicate file uploads", ManageFileResCode),
 	)
 
 	miso.IGet("/open/api/file/parent",
@@ -29,70 +29,70 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			}
 			return pf, nil
 		},
-		goauth.Protected("User fetch parent file info", MANAGE_FILE_CODE),
+		goauth.Protected("User fetch parent file info", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/file/move-to-dir",
 		func(c *gin.Context, rail miso.Rail, req MoveIntoDirReq) (any, error) {
 			return nil, MoveFileToDir(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User move files into directory", MANAGE_FILE_CODE),
+		goauth.Protected("User move files into directory", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/file/make-dir",
 		func(c *gin.Context, rail miso.Rail, req MakeDirReq) (any, error) {
 			return MakeDir(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User make directory", MANAGE_FILE_CODE),
+		goauth.Protected("User make directory", ManageFileResCode),
 	)
 
 	miso.Get("/open/api/file/dir/list",
 		func(c *gin.Context, rail miso.Rail) (any, error) {
 			return ListDirs(rail, miso.GetMySQL(), common.GetUser(rail))
 		},
-		goauth.Protected("User list directories", MANAGE_FILE_CODE),
+		goauth.Protected("User list directories", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/file/list",
 		func(c *gin.Context, rail miso.Rail, req ListFileReq) (any, error) {
 			return ListFiles(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User list files", MANAGE_FILE_CODE),
+		goauth.Protected("User list files", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/file/delete",
 		func(c *gin.Context, rail miso.Rail, req DeleteFileReq) (any, error) {
 			return nil, DeleteFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User delete file", MANAGE_FILE_CODE),
+		goauth.Protected("User delete file", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/file/create",
 		func(c *gin.Context, rail miso.Rail, req CreateFileReq) (any, error) {
 			return nil, CreateFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User create file", MANAGE_FILE_CODE),
+		goauth.Protected("User create file", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/file/info/update",
 		func(c *gin.Context, rail miso.Rail, req UpdateFileReq) (any, error) {
 			return nil, UpdateFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User update file", MANAGE_FILE_CODE),
+		goauth.Protected("User update file", ManageFileResCode),
 	)
 
 	miso.Get("/open/api/file/tag/list/all",
 		func(c *gin.Context, rail miso.Rail) (any, error) {
 			return ListAllTags(rail, miso.GetMySQL(), common.GetUser(rail))
 		},
-		goauth.Protected("User list all file tags", MANAGE_FILE_CODE),
+		goauth.Protected("User list all file tags", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/file/tag/list-for-file",
 		func(c *gin.Context, rail miso.Rail, req ListFileTagReq) (any, error) {
 			return ListFileTags(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User list tags of file", MANAGE_FILE_CODE),
+		goauth.Protected("User list tags of file", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/file/tag",
@@ -100,7 +100,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			user := common.GetUser(rail)
 			return nil, TagFile(rail, miso.GetMySQL(), req, user)
 		},
-		goauth.Protected("User tag file", MANAGE_FILE_CODE),
+		goauth.Protected("User tag file", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/file/untag",
@@ -108,42 +108,42 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			user := common.GetUser(rail)
 			return nil, UntagFile(rail, miso.GetMySQL(), req, user)
 		},
-		goauth.Protected("User untag file", MANAGE_FILE_CODE),
+		goauth.Protected("User untag file", ManageFileResCode),
 	)
 
 	miso.Get("/open/api/vfolder/brief/owned",
 		func(c *gin.Context, rail miso.Rail) (any, error) {
 			return ListVFolderBrief(rail, miso.GetMySQL(), common.GetUser(rail))
 		},
-		goauth.Protected("User list virtual folder briefs", MANAGE_FILE_CODE),
+		goauth.Protected("User list virtual folder briefs", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/vfolder/list",
 		func(c *gin.Context, rail miso.Rail, req ListVFolderReq) (any, error) {
 			return ListVFolders(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User list virtual folders", MANAGE_FILE_CODE),
+		goauth.Protected("User list virtual folders", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/vfolder/create",
 		func(c *gin.Context, rail miso.Rail, req CreateVFolderReq) (any, error) {
 			return CreateVFolder(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User create virtual folder", MANAGE_FILE_CODE),
+		goauth.Protected("User create virtual folder", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/vfolder/file/add",
 		func(c *gin.Context, rail miso.Rail, req AddFileToVfolderReq) (any, error) {
 			return nil, AddFileToVFolder(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User add file to virtual folder", MANAGE_FILE_CODE),
+		goauth.Protected("User add file to virtual folder", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/vfolder/file/remove",
 		func(c *gin.Context, rail miso.Rail, req RemoveFileFromVfolderReq) (any, error) {
 			return nil, RemoveFileFromVFolder(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User remove file from virtual folder", MANAGE_FILE_CODE),
+		goauth.Protected("User remove file from virtual folder", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/vfolder/share",
@@ -155,28 +155,28 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			}
 			return nil, ShareVFolder(rail, miso.GetMySQL(), sharedTo, req.FolderNo, common.GetUser(rail))
 		},
-		goauth.Protected("Share access to virtual folder", MANAGE_FILE_CODE),
+		goauth.Protected("Share access to virtual folder", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/vfolder/access/remove",
 		func(c *gin.Context, rail miso.Rail, req RemoveGrantedFolderAccessReq) (any, error) {
 			return nil, RemoveVFolderAccess(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("Remove granted access to virtual folder", MANAGE_FILE_CODE),
+		goauth.Protected("Remove granted access to virtual folder", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/vfolder/granted/list",
 		func(c *gin.Context, rail miso.Rail, req ListGrantedFolderAccessReq) (any, error) {
 			return ListGrantedFolderAccess(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("List granted access to virtual folder", MANAGE_FILE_CODE),
+		goauth.Protected("List granted access to virtual folder", ManageFileResCode),
 	)
 
 	miso.IPost("/open/api/file/token/generate",
 		func(c *gin.Context, rail miso.Rail, req GenerateTempTokenReq) (any, error) {
 			return GenTempToken(rail, miso.GetMySQL(), req, common.GetUser(rail))
 		},
-		goauth.Protected("User generate temporary token", MANAGE_FILE_CODE),
+		goauth.Protected("User generate temporary token", ManageFileResCode),
 	)
 
 	// ---------------------------------------------- internal endpoints ------------------------------------------

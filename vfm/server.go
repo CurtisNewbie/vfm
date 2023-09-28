@@ -46,8 +46,8 @@ func PrepareEventBus(rail miso.Rail) error {
 func PrepareGoAuthReport(rail miso.Rail) error {
 	// report goauth resources and paths
 	goauth.ReportResourcesOnBootstrapped(rail, []goauth.AddResourceReq{
-		{Name: MANAGE_FILE_NAME, Code: MANAGE_FILE_CODE},
-		{Name: ADMIN_FS_NAME, Code: ADMIN_FS_CODE},
+		{Name: ManageFileResName, Code: ManageFileResCode},
+		{Name: AdminFsResName, Code: AdminFsResCode},
 	})
 	goauth.ReportPathsOnBootstrapped(rail)
 	return nil
