@@ -21,11 +21,13 @@ CREATE TABLE IF NOT EXISTS file_info (
   `parent_file` varchar(64) NOT NULL DEFAULT '' COMMENT 'parent file uuid',
   `fstore_file_id` VARCHAR(32) NOT NULL DEFAULT '' COMMENT 'mini-fstore file id',
   `thumbnail` VARCHAR(32) NOT NULL DEFAULT '' COMMENT 'thumbnail, mini-fstore file id',
+  `uploader_no` varchar(32) NOT NULL DEFAULT '' COMMENT 'user no of uploader',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid_uk` (`uuid`),
   KEY `parent_file_type_idx` (`parent_file`,`file_type`),
   KEY `uploader_id_idx` (`uploader_id`),
-  KEY `name` (`name`(128))
+  KEY `name` (`name`(128)),
+  KEY `uploader_no_idx` (`uploader_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS file_tag (
@@ -54,19 +56,6 @@ CREATE TABLE IF NOT EXISTS tag (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_tag` (`user_id`,`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='tag';
-
-CREATE TABLE IF NOT EXISTS file_sharing (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `file_id` int NOT NULL COMMENT 'id of file_info',
-  `user_id` int NOT NULL COMMENT 'user who now have access to the file',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'when the record is created',
-  `create_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who created this record',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'when the record is updated',
-  `update_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who updated this record',
-  `is_del` tinyint NOT NULL DEFAULT '0' COMMENT 'is deleted, 0: normal, 1: deleted',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `file_id` (`file_id`,`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='file''s sharing information';
 
 CREATE TABLE IF NOT EXISTS vfolder (
   `id` int NOT NULL AUTO_INCREMENT,

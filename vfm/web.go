@@ -196,9 +196,18 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 
 	// ---------------------------------- endpoints used to compensate --------------------------------------
 
+	// Compensate image compressions, those that are images (guessed by names) are compressed to generate thumbnail
 	miso.Post("/compensate/image/compression",
 		func(c *gin.Context, rail miso.Rail) (any, error) {
 			return nil, CompensateImageCompression(rail, miso.GetMySQL())
 		})
+
+	// update file_info records that do not have uploader_no
+	miso.Post("/compensate/file/uploaderno",
+		func(c *gin.Context, rail miso.Rail) (any, error) {
+			return nil, CompensateFileUploaderNo(rail, miso.GetMySQL())
+		},
+	)
+
 	return nil
 }

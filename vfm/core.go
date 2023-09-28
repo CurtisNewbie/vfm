@@ -150,10 +150,18 @@ type ParentFileInfo struct {
 type FileDownloadInfo struct {
 	FileId         int
 	Name           string
-	UploaderId     int
 	IsLogicDeleted int
 	FileType       string
 	FstoreFileId   string
+	UploaderNo     string
+}
+
+func (f *FileDownloadInfo) Deleted() bool {
+	return f.IsLogicDeleted == FILE_LDEL_Y
+}
+
+func (f *FileDownloadInfo) IsFile() bool {
+	return f.FileType == FILE_TYPE_FILE
 }
 
 type FileInfo struct {
@@ -166,6 +174,7 @@ type FileInfo struct {
 	IsPhysicDeleted  int
 	SizeInBytes      int64
 	UploaderId       int
+	UploaderNo       string // uploader's user_no
 	UploaderName     string
 	UploadTime       miso.ETime
 	LogicDeleteTime  miso.ETime
@@ -613,17 +622,17 @@ func MoveFileToDir(rail miso.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.
 }
 
 func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error {
-	userId := user.UserId
 	uname := user.Username
 	now := miso.Now()
 
 	f.IsLogicDeleted = FILE_LDEL_N
 	f.IsPhysicDeleted = FILE_PDEL_N
-	f.UploaderId = userId
+	f.UploaderId = user.UserId
 	f.UploaderName = uname
 	f.CreateBy = uname
 	f.UploadTime = now
 	f.CreateTime = now
+	f.UploaderNo = user.UserNo
 
 	return tx.Table("file_info").
 		Omit("id", "update_time", "update_by").
@@ -1349,35 +1358,36 @@ func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 	})
 }
 
-func validateFileAccess(rail miso.Rail, tx *gorm.DB, fileKey string, userId int, userNo string) (bool, FileDownloadInfo, error) {
+func validateFileAccess(rail miso.Rail, tx *gorm.DB, fileKey string, userNo string) (FileDownloadInfo, error) {
 	var f FileDownloadInfo
-	e := tx.
-		Select("fi.id 'file_id', fi.fstore_file_id, fi.name, fi.uploader_id, fi.is_logic_deleted, fi.file_type").
+
+	t := tx.
+		Select("fi.id 'file_id', fi.fstore_file_id, fi.name, fi.is_logic_deleted, fi.file_type, fi.uploader_no").
 		Table("file_info fi").
 		Where("fi.uuid = ? AND fi.is_del = 0", fileKey).
 		Limit(1).
-		Scan(&f).Error
-	if e != nil {
-		return false, f, e
+		Scan(&f)
+	if t.Error != nil {
+		return f, t.Error
+	}
+	if t.RowsAffected < 1 {
+		return f, miso.NewErr("File not found")
+	}
+	if f.Deleted() {
+		return f, miso.NewErr("File deleted")
+	}
+	if !f.IsFile() {
+		return f, miso.NewErr("Downloading a directory is not supported")
 	}
 
-	if f.FileId < 1 {
-		return false, f, miso.NewErr("File not found")
-	}
-	if f.IsLogicDeleted == FILE_LDEL_Y {
-		return false, f, miso.NewErr("File deleted")
-	}
-	if f.FileType != FILE_TYPE_FILE {
-		return false, f, miso.NewErr("Downloading a directory is not supported")
-	}
+	// is uploader of the file
+	permitted := f.UploaderNo == userNo
 
-	permitted := f.UploaderId == userId // owner of the file
-
-	// user may have access to the vfolder, which contains thefile
+	// user may have access to the vfolder, which contains the file
 	if !permitted {
 		var uvid int
 		e := tx.
-			Select("uv.id").
+			Select("ifnull(uv.id, 0) as id").
 			Table("file_info fi").
 			Joins("LEFT JOIN file_vfolder fv ON (fi.uuid = fv.uuid AND fv.is_del = 0)").
 			Joins("LEFT JOIN user_vfolder uv ON (uv.user_no = ? AND uv.folder_no = fv.folder_no AND uv.is_del = 0)", userNo).
@@ -1385,11 +1395,16 @@ func validateFileAccess(rail miso.Rail, tx *gorm.DB, fileKey string, userId int,
 			Limit(1).
 			Scan(&uvid).Error
 		if e != nil {
-			return false, f, fmt.Errorf("failed to query user folder relation for file, id: %v, %v", f.FileId, e)
+			return f, fmt.Errorf("failed to query user folder relation for file, id: %v, %v", f.FileId, e)
 		}
 		permitted = uvid > 0 // granted access to a folder that contains this file
 	}
-	return permitted, f, nil
+
+	if !permitted {
+		return f, miso.NewErr("You are not permitted to access this file")
+	}
+
+	return f, nil
 }
 
 type GenerateTempTokenReq struct {
@@ -1397,23 +1412,17 @@ type GenerateTempTokenReq struct {
 }
 
 func GenTempToken(rail miso.Rail, tx *gorm.DB, r GenerateTempTokenReq, user common.User) (string, error) {
-	// TODO: get rid of userId
-	ok, f, e := validateFileAccess(rail, tx, r.FileKey, user.UserId, user.UserNo)
-	if e != nil {
-		return "", e
+	f, err := validateFileAccess(rail, tx, r.FileKey, user.UserNo)
+	if err != nil {
+		return "", err
 	}
-	if !ok {
-		return "", miso.NewErr("Not permitted")
-	}
+
 	if f.FstoreFileId == "" {
+		rail.Errorf("File %v doesn't have mini-fstore file_id", r.FileKey)
 		return "", miso.NewErr("File cannot be downloaded, please contact system administrator")
 	}
 
-	t, e := GetFstoreTmpToken(rail, f.FstoreFileId, f.Name)
-	if e != nil {
-		return "", e
-	}
-	return t, nil
+	return GetFstoreTmpToken(rail, f.FstoreFileId, f.Name)
 }
 
 type ListFilesInDirReq struct {
@@ -1450,7 +1459,8 @@ type FileInfoResp struct {
 	Name         string `json:"name"`
 	Uuid         string `json:"uuid"`
 	SizeInBytes  int64  `json:"sizeInBytes"`
-	UploaderId   int    `json:"uploaderId"`
+	UploaderId   int    `json:"uploaderId"` // deprecated
+	UploaderNo   string `json:"uploaderNo"`
 	UploaderName string `json:"uploaderName"`
 	IsDeleted    bool   `json:"isDeleted"`
 	FileType     string `json:"fileType"`
@@ -1474,6 +1484,7 @@ func FetchFileInfoInternal(rail miso.Rail, tx *gorm.DB, req FetchFileInfoReq) (F
 	fir.Uuid = f.Uuid
 	fir.SizeInBytes = f.SizeInBytes
 	fir.UploaderId = f.UploaderId
+	fir.UploaderNo = f.UploaderNo
 	fir.UploaderName = f.UploaderName
 	fir.IsDeleted = f.IsLogicDeleted == FILE_LDEL_Y
 	fir.FileType = f.FileType
@@ -1526,6 +1537,8 @@ type FileCompressInfo struct {
 }
 
 func CompensateImageCompression(rail miso.Rail, tx *gorm.DB) error {
+	rail.Info("CompensateImageCompression start")
+	defer miso.TimeOp(rail, time.Now(), "CompensateImageCompression")
 
 	limit := 500
 	minId := 0
@@ -1550,14 +1563,73 @@ func CompensateImageCompression(rail miso.Rail, tx *gorm.DB) error {
 		}
 
 		for _, f := range files {
-			if isImage(f.Name) {
-				if e := miso.PubEventBus(rail, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
-					rail.Errorf("Failed to send CompressImageEvent, uuid: %v, %v", f.Uuid, e)
-				}
+			if !isImage(f.Name) {
+				continue
+			}
+			if e := miso.PubEventBus(rail, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
+				rail.Errorf("Failed to send CompressImageEvent, minId: %v, uuid: %v, %v", minId, f.Uuid, e)
+				return e
 			}
 		}
 
 		minId = files[len(files)-1].Id
 		rail.Infof("CompensateImageCompression, minId: %v", minId)
 	}
+}
+
+type FileUplNoInf struct {
+	Id         int
+	UploaderId int
+}
+
+func CompensateFileUploaderNo(rail miso.Rail, tx *gorm.DB) error {
+	rail.Info("CompensateFileUploaderNo start")
+	defer miso.TimeOp(rail, time.Now(), "CompensateFileUploaderNo")
+
+	limit := 500
+	minId := 0
+
+	for {
+		var files []FileUplNoInf
+		t := tx.
+			Raw(`SELECT id, uploader_id
+			FROM file_info
+			WHERE id > ?
+			AND uploader_no = ''
+			AND uploader_id > 0
+			ORDER BY id ASC
+			LIMIT ?`, minId, limit).
+			Scan(&files)
+		if t.Error != nil {
+			return t.Error
+		}
+		if t.RowsAffected < 1 || len(files) < 1 {
+			return nil // the end
+		}
+
+		for i := range files {
+			f := files[i]
+
+			if err := UpdateUploaderNo(rail, tx, f); err != nil {
+				rail.Errorf("failed to UpdateUploaderNo, f.id: %v, f.uploader_id: %v, %v", f.Id, f.UploaderId, err)
+				return err
+			}
+		}
+
+		minId = files[len(files)-1].Id
+		rail.Infof("CompensateFileUploaderNo, minId: %v", minId)
+	}
+}
+
+func UpdateUploaderNo(rail miso.Rail, tx *gorm.DB, f FileUplNoInf) error {
+	u, err := CachedFindUser(rail, f.UploaderId)
+	if err != nil {
+		return fmt.Errorf("failed to find user, %v", err)
+	}
+	if u.UserNo == "" {
+		rail.Warnf("User doesn't have userNo, uploader_id: %v", f.UploaderId)
+		return nil
+	}
+
+	return tx.Exec(`UPDATE file_info SET uploader_no = ? WHERE id = ?`, u.UserNo, f.Id).Error
 }
