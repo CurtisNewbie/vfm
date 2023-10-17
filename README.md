@@ -8,10 +8,10 @@ See [CurtisNewbie/system-overview](https://github.com/CurtisNewbie/system-overvi
 
 ## Requirements
 
-- [auth-service >= v1.1.6](https://github.com/CurtisNewbie/auth-service)
-- [goauth >= v1.0.0](https://github.com/CurtisNewbie/goauth) (optional)
-- [mini-fstore >= v0.0.2](https://github.com/CurtisNewbie/mini-fstore)
-- [hammer >= v0.0.1](https://github.com/CurtisNewbie/hammer)
+- [user-vault](https://github.com/CurtisNewbie/user-vault)
+- [goauth](https://github.com/CurtisNewbie/goauth)
+- [mini-fstore](https://github.com/CurtisNewbie/mini-fstore)
+- [hammer](https://github.com/CurtisNewbie/hammer)
 - MySQL
 - Consul
 - Redis
