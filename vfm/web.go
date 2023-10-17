@@ -11,96 +11,74 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 
 	miso.BaseRoute("/open/api/file").
 		Group(
-			miso.IGet("/upload/duplication/preflight",
-				DupPreflightCheckEp,
-				goauth.Protected("User - preflight check for duplicate file uploads", ManageFileResCode)),
+			miso.IGet("/upload/duplication/preflight", DupPreflightCheckEp).
+				Extra(goauth.Protected("User - preflight check for duplicate file uploads", ManageFileResCode)),
 
-			miso.IGet("/parent",
-				GetParentFileEp,
-				goauth.Protected("User fetch parent file info", ManageFileResCode)),
+			miso.IGet("/parent", GetParentFileEp).
+				Extra(goauth.Protected("User fetch parent file info", ManageFileResCode)),
 
-			miso.IPost("/move-to-dir",
-				MoveFileToDirEp,
-				goauth.Protected("User move files into directory", ManageFileResCode)),
+			miso.IPost("/move-to-dir", MoveFileToDirEp).
+				Extra(goauth.Protected("User move files into directory", ManageFileResCode)),
 
-			miso.IPost("/make-dir",
-				MakeDirEp,
-				goauth.Protected("User make directory", ManageFileResCode)),
+			miso.IPost("/make-dir", MakeDirEp).
+				Extra(goauth.Protected("User make directory", ManageFileResCode)),
 
-			miso.Get("/dir/list",
-				ListDirEp,
-				goauth.Protected("User list directories", ManageFileResCode)),
+			miso.Get("/dir/list", ListDirEp).
+				Extra(goauth.Protected("User list directories", ManageFileResCode)),
 
-			miso.IPost("/list",
-				ListFilesEp,
-				goauth.Protected("User list files", ManageFileResCode)),
+			miso.IPost("/list", ListFilesEp).
+				Extra(goauth.Protected("User list files", ManageFileResCode)),
 
-			miso.IPost("/delete",
-				DeleteFileEp,
-				goauth.Protected("User delete file", ManageFileResCode)),
+			miso.IPost("/delete", DeleteFileEp).
+				Extra(goauth.Protected("User delete file", ManageFileResCode)),
 
-			miso.IPost("/create",
-				CreateFileEp,
-				goauth.Protected("User create file", ManageFileResCode)),
+			miso.IPost("/create", CreateFileEp).
+				Extra(goauth.Protected("User create file", ManageFileResCode)),
 
-			miso.IPost("/info/update",
-				UpdateFileEp,
-				goauth.Protected("User update file", ManageFileResCode)),
+			miso.IPost("/info/update", UpdateFileEp).
+				Extra(goauth.Protected("User update file", ManageFileResCode)),
 
-			miso.Get("/tag/list/all",
-				ListAllFileTagsEp,
-				goauth.Protected("User list all file tags", ManageFileResCode)),
+			miso.Get("/tag/list/all", ListAllFileTagsEp).
+				Extra(goauth.Protected("User list all file tags", ManageFileResCode)),
 
-			miso.IPost("/tag/list-for-file",
-				ListTagsOfFileEp,
-				goauth.Protected("User list tags of file", ManageFileResCode)),
+			miso.IPost("/tag/list-for-file", ListTagsOfFileEp).
+				Extra(goauth.Protected("User list tags of file", ManageFileResCode)),
 
-			miso.IPost("/tag",
-				TagFileEp,
-				goauth.Protected("User tag file", ManageFileResCode)),
+			miso.IPost("/tag", TagFileEp).
+				Extra(goauth.Protected("User tag file", ManageFileResCode)),
 
-			miso.IPost("/untag",
-				UntagFileEp,
-				goauth.Protected("User untag file", ManageFileResCode)),
+			miso.IPost("/untag", UntagFileEp).
+				Extra(goauth.Protected("User untag file", ManageFileResCode)),
 
-			miso.IPost("/token/generate",
-				GenFileTknEp,
-				goauth.Protected("User generate temporary token", ManageFileResCode)),
+			miso.IPost("/token/generate", GenFileTknEp).
+				Extra(goauth.Protected("User generate temporary token", ManageFileResCode)),
 		)
 
 	miso.BaseRoute("/open/api/vfolder").
 		Group(
-			miso.Get("/brief/owned",
-				ListVFolderBriefEp,
-				goauth.Protected("User list virtual folder briefs", ManageFileResCode)),
+			miso.Get("/brief/owned", ListVFolderBriefEp).
+				Extra(goauth.Protected("User list virtual folder briefs", ManageFileResCode)),
 
-			miso.IPost("/list",
-				ListVFoldersEp,
-				goauth.Protected("User list virtual folders", ManageFileResCode)),
+			miso.IPost("/list", ListVFoldersEp).
+				Extra(goauth.Protected("User list virtual folders", ManageFileResCode)),
 
-			miso.IPost("/create",
-				CreateVFolderEp,
-				goauth.Protected("User create virtual folder", ManageFileResCode)),
+			miso.IPost("/create", CreateVFolderEp).
+				Extra(goauth.Protected("User create virtual folder", ManageFileResCode)),
 
-			miso.IPost("/file/add",
-				VFolderAddFileEp,
-				goauth.Protected("User add file to virtual folder", ManageFileResCode)),
+			miso.IPost("/file/add", VFolderAddFileEp).
+				Extra(goauth.Protected("User add file to virtual folder", ManageFileResCode)),
 
-			miso.IPost("/file/remove",
-				VFolderRemoveFileEp,
-				goauth.Protected("User remove file from virtual folder", ManageFileResCode)),
+			miso.IPost("/file/remove", VFolderRemoveFileEp).
+				Extra(goauth.Protected("User remove file from virtual folder", ManageFileResCode)),
 
-			miso.IPost("/share",
-				ShareVFolderEp,
-				goauth.Protected("Share access to virtual folder", ManageFileResCode)),
+			miso.IPost("/share", ShareVFolderEp).
+				Extra(goauth.Protected("Share access to virtual folder", ManageFileResCode)),
 
-			miso.IPost("/access/remove",
-				RemoveVFolderAccessEp,
-				goauth.Protected("Remove granted access to virtual folder", ManageFileResCode)),
+			miso.IPost("/access/remove", RemoveVFolderAccessEp).
+				Extra(goauth.Protected("Remove granted access to virtual folder", ManageFileResCode)),
 
-			miso.IPost("/granted/list",
-				ListVFolderAccessEp,
-				goauth.Protected("List granted access to virtual folder", ManageFileResCode)),
+			miso.IPost("/granted/list", ListVFolderAccessEp).
+				Extra(goauth.Protected("List granted access to virtual folder", ManageFileResCode)),
 		)
 
 	// ---------------------------------------------- internal endpoints ------------------------------------------
