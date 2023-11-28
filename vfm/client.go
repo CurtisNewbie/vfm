@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	userIdInfoCache = miso.NewLazyORCache("vfm:user:info:userid", 1*time.Minute,
+	userIdInfoCache = miso.NewLazyORCache("vfm:user:info:userid",
 		func(rail miso.Rail, key string) (UserInfo, error) {
 			userId, err := strconv.Atoi(key)
 			if err != nil {
@@ -24,6 +24,10 @@ var (
 				UserId: &userId,
 			})
 			return fui, errFind
+		},
+		miso.RCacheConfig{
+			Exp:    1 * time.Minute,
+			NoSync: true,
 		},
 	)
 )

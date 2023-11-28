@@ -10,8 +10,11 @@ import (
 func preClientTest(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
 	_, e := miso.GetConsulClient()
-	miso.TestIsNil(t, e)
-	miso.PollServiceListInstances()
+	if e != nil {
+		t.Log(e)
+		t.FailNow()
+	}
+	miso.PollServiceListInstances(miso.EmptyRail())
 }
 
 func TestFindUserId(t *testing.T) {
@@ -19,7 +22,11 @@ func TestFindUserId(t *testing.T) {
 
 	rail := miso.EmptyRail()
 	id, e := FindUserId(rail, "zhuangyongj")
-	miso.TestIsNil(t, e)
+	if e != nil {
+		t.Log(e)
+		t.FailNow()
+	}
+
 	if id < 1 {
 		t.Fatalf("id < 1")
 	}
