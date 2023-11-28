@@ -71,7 +71,7 @@ type FetchUsernamesRes struct {
 func FindUserId(rail miso.Rail, username string) (int, error) {
 	var r miso.GnResp[int]
 	err := miso.NewDynTClient(rail, "/remote/user/id", "user-vault").
-		EnableTracing().
+		Require2xx().
 		AddQueryParams("username", username).
 		Get().
 		Json(&r)
@@ -84,7 +84,7 @@ func FindUserId(rail miso.Rail, username string) (int, error) {
 func FindUser(rail miso.Rail, req FindUserReq) (UserInfo, error) {
 	var r miso.GnResp[UserInfo]
 	err := miso.NewDynTClient(rail, "/remote/user/info", "user-vault").
-		EnableTracing().
+		Require2xx().
 		PostJson(req).
 		Json(&r)
 	if err != nil {
@@ -101,7 +101,7 @@ func CachedFindUser(rail miso.Rail, userId int) (UserInfo, error) {
 func FetchUsernames(rail miso.Rail, req FetchUsernamesReq) (FetchUsernamesRes, error) {
 	var r miso.GnResp[FetchUsernamesRes]
 	err := miso.NewDynTClient(rail, "/remote/user/userno/username", "user-vault").
-		EnableTracing().
+		Require2xx().
 		PostJson(req).
 		Json(&r)
 	if err != nil {
@@ -113,7 +113,7 @@ func FetchUsernames(rail miso.Rail, req FetchUsernamesReq) (FetchUsernamesRes, e
 func FetchFstoreFileInfo(rail miso.Rail, fileId string, uploadFileId string) (FstoreFile, error) {
 	var r miso.GnResp[FstoreFile]
 	err := miso.NewDynTClient(rail, "/file/info", "fstore").
-		EnableTracing().
+		Require2xx().
 		AddQueryParams("fileId", fileId).
 		AddQueryParams("uploadFileId", uploadFileId).
 		Get().
@@ -127,7 +127,7 @@ func FetchFstoreFileInfo(rail miso.Rail, fileId string, uploadFileId string) (Fs
 func DeleteFstoreFile(rail miso.Rail, fileId string) error {
 	var r miso.GnResp[any]
 	err := miso.NewDynTClient(rail, "/file", "fstore").
-		EnableTracing().
+		Require2xx().
 		AddQueryParams("fileId", fileId).
 		Delete().
 		Json(&r)
@@ -148,7 +148,7 @@ func DeleteFstoreFile(rail miso.Rail, fileId string) error {
 func GetFstoreTmpToken(rail miso.Rail, fileId string, filename string) (string, error) {
 	var r miso.GnResp[string]
 	err := miso.NewDynTClient(rail, "/file/key", "fstore").
-		EnableTracing().
+		Require2xx().
 		AddQueryParams("fileId", fileId).
 		AddQueryParams("filename", url.QueryEscape(filename)).
 		Get().
