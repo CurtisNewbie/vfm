@@ -100,6 +100,8 @@ type ListedFile struct {
 	UpdateTime     miso.ETime `json:"updateTime"`
 	ParentFileName string     `json:"parentFileName"`
 	SensitiveMode  string     `json:"sensitiveMode"`
+	ThumbnailToken string     `json:"thumbnailToken"`
+	Thumbnail      string     `json:"-"`
 	ParentFile     string     `json:"-"`
 	UploaderId     int        `json:"-"`
 }
@@ -135,11 +137,6 @@ type ListVFolderRes struct {
 type ShareVfolderReq struct {
 	FolderNo string `json:"folderNo"`
 	Username string `json:"username"`
-}
-
-type ListFilesRes struct {
-	Page    miso.Paging  `json:"pagingVo"`
-	Payload []ListedFile `json:"payload"`
 }
 
 type ParentFileInfo struct {
@@ -233,39 +230,21 @@ type UserVFolder struct {
 	UpdateBy   string
 }
 
-func newListFilesInVFolderQuery(rail miso.Rail, tx *gorm.DB, req ListFileReq, userNo string) *gorm.DB {
-	return tx.Table("file_info fi").
-		Joins("LEFT JOIN file_vfolder fv ON (fi.uuid = fv.uuid AND fv.is_del = 0)").
-		Joins("LEFT JOIN user_vfolder uv ON (fv.folder_no = uv.folder_no AND uv.is_del = 0)").
-		Where("uv.user_no = ? AND uv.folder_no = ?", userNo, req.FolderNo)
-}
-
-func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
-	offset := req.Page.GetOffset()
-	limit := req.Page.GetLimit()
-
-	var files []ListedFile
-
-	t := newListFilesInVFolderQuery(rail, tx, req, user.UserNo).
-		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
-			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time`).
-		Offset(offset).
-		Limit(limit).
-		Scan(&files)
-
-	if t.Error != nil {
-		return ListFilesRes{}, fmt.Errorf("failed to list files in vfolder, %v", t.Error)
+func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (miso.PageRes[ListedFile], error) {
+	qpp := miso.QueryPageParam[ListedFile]{
+		ReqPage: req.Page,
+		AddSelectQuery: func(tx *gorm.DB) *gorm.DB {
+			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
+			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.thumbnail`)
+		},
+		GetBaseQuery: func(tx *gorm.DB) *gorm.DB {
+			return tx.Table("file_info fi").
+				Joins("LEFT JOIN file_vfolder fv ON (fi.uuid = fv.uuid AND fv.is_del = 0)").
+				Joins("LEFT JOIN user_vfolder uv ON (fv.folder_no = uv.folder_no AND uv.is_del = 0)").
+				Where("uv.user_no = ? AND uv.folder_no = ?", user.UserNo, req.FolderNo)
+		},
 	}
-
-	var total int
-	t = newListFilesInVFolderQuery(rail, tx, req, user.UserNo).
-		Select("COUNT(fi.id)").
-		Scan(&total)
-	if t.Error != nil {
-		return ListFilesRes{}, fmt.Errorf("failed to count files in vfolder, %v", t.Error)
-	}
-
-	return ListFilesRes{Payload: files, Page: miso.RespPage(req.Page, total)}, nil
+	return qpp.ExecPageQuery(rail, tx)
 }
 
 type FileKeyName struct {
@@ -299,8 +278,8 @@ type ListFileReq struct {
 	Sensitive  *bool       `json:"sensitive"`
 }
 
-func ListFiles(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
-	var res ListFilesRes
+func ListFiles(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (miso.PageRes[ListedFile], error) {
+	var res miso.PageRes[ListedFile]
 	var e error
 
 	if req.FolderNo != nil && *req.FolderNo != "" {
@@ -332,35 +311,56 @@ func ListFiles(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (
 			}
 		}
 	}
+
+	for i, f := range res.Payload {
+		if f.Thumbnail != "" {
+			tkn, err := GetFstoreTmpToken(rail, f.Thumbnail, "")
+			if err != nil {
+				rail.Errorf("failed to generate file token for thumbnail: %v, %v", f.Thumbnail, err)
+			} else {
+				res.Payload[i].ThumbnailToken = tkn
+			}
+		}
+
+	}
+
 	return res, e
 }
 
-func listFilesForTags(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
-	var files []ListedFile
-	t := newListFilesForTagsQuery(rail, tx, req, user.UserId).
-		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
-			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.sensitive_mode`).
-		Order("fi.id desc").
-		Offset(req.Page.GetOffset()).
-		Limit(req.Page.GetLimit()).
-		Scan(&files)
-	if t.Error != nil {
-		return ListFilesRes{}, fmt.Errorf("failed to list files, %v", t.Error)
+func listFilesForTags(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (miso.PageRes[ListedFile], error) {
+	qpp := miso.QueryPageParam[ListedFile]{
+		AddSelectQuery: func(tx *gorm.DB) *gorm.DB {
+			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
+			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.sensitive_mode, fi.thumbnail`)
+		},
+		GetBaseQuery: func(t *gorm.DB) *gorm.DB {
+			t = t.Table("file_info fi").
+				Joins("LEFT JOIN file_tag ft ON (ft.user_id = ? AND fi.id = ft.file_id)", user.UserId).
+				Joins("LEFT JOIN tag t ON (ft.tag_id = t.id)").
+				Order("fi.id desc")
+
+			if req.Filename != nil && *req.Filename != "" {
+				t = t.Where("fi.name LIKE ?", "%"+*req.Filename+"%")
+			}
+
+			if req.Sensitive != nil && *req.Sensitive {
+				t = t.Where("fi.sensitive_mode = 'N'")
+			}
+
+			t = t.Where("fi.uploader_id = ?", user.UserId).
+				Where("fi.file_type = 'FILE'").
+				Where("fi.is_del = 0").
+				Where("fi.is_logic_deleted = 0").
+				Where("ft.is_del = 0").
+				Where("t.is_del = 0").
+				Where("t.name = ?", *req.TagName)
+			return t
+		},
 	}
-
-	var total int
-	t = newListFilesForTagsQuery(rail, tx, req, user.UserId).
-		Select("COUNT(*)").
-		Scan(&total)
-
-	if t.Error != nil {
-		return ListFilesRes{}, fmt.Errorf("failed to count files, %v", t.Error)
-	}
-
-	return ListFilesRes{Payload: files, Page: miso.RespPage(req.Page, total)}, nil
+	return qpp.ExecPageQuery(rail, tx)
 }
 
-func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
+func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (miso.PageRes[ListedFile], error) {
 	/*
 	   If parentFile is empty, and filename are not searched, then we only return the top level file or dir.
 	   The query for tags will ignore parent_file param, so it's working fine
@@ -371,77 +371,39 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 		req.ParentFile = &pf // top-level file/dir
 	}
 
-	var files []ListedFile
-	t := newListFilesSelectiveQuery(rail, tx, req, user.UserId).
-		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
-			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.sensitive_mode`).
-		Order("fi.file_type asc, fi.id desc").
-		Offset(req.Page.GetOffset()).
-		Limit(req.Page.GetLimit()).
-		Scan(&files)
-	if t.Error != nil {
-		return ListFilesRes{}, fmt.Errorf("failed to list files, %v", t.Error)
+	qpq := miso.QueryPageParam[ListedFile]{
+		ReqPage: req.Page,
+		AddSelectQuery: func(tx *gorm.DB) *gorm.DB {
+			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
+			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.sensitive_mode, fi.thumbnail`)
+		},
+		GetBaseQuery: func(tx *gorm.DB) *gorm.DB {
+			tx = tx.Table("file_info fi").
+				Where("fi.uploader_id = ?", user.UserId).
+				Where("fi.is_logic_deleted = 0 AND fi.is_del = 0").
+				Order("fi.file_type asc, fi.id desc")
+
+			if req.ParentFile != nil {
+				tx = tx.Where("fi.parent_file = ?", *req.ParentFile)
+			}
+
+			if req.Filename != nil && *req.Filename != "" {
+				tx = tx.Where("fi.name LIKE ?", "%"+*req.Filename+"%")
+			}
+
+			if req.FileType != nil && *req.FileType != "" {
+				tx = tx.Where("fi.file_type = ?", *req.FileType)
+			}
+
+			if req.Sensitive != nil && *req.Sensitive {
+				tx = tx.Where("fi.sensitive_mode = 'N'")
+			}
+
+			return tx
+		},
 	}
 
-	var total int
-	t = newListFilesSelectiveQuery(rail, tx, req, user.UserId).
-		Select("count(*)").
-		Scan(&total)
-	if t.Error != nil {
-		return ListFilesRes{}, fmt.Errorf("failed to count files, %v", t.Error)
-	}
-
-	return ListFilesRes{Payload: files, Page: miso.RespPage(req.Page, total)}, nil
-}
-
-func newListFilesSelectiveQuery(rail miso.Rail, tx *gorm.DB, req ListFileReq, userId int) *gorm.DB {
-
-	tx = tx.Table("file_info fi").
-		Where("fi.uploader_id = ?", userId).
-		Where("fi.is_logic_deleted = 0 AND fi.is_del = 0")
-
-	if req.ParentFile != nil {
-		tx = tx.Where("fi.parent_file = ?", *req.ParentFile)
-	}
-
-	if req.Filename != nil && *req.Filename != "" {
-		tx = tx.Where("fi.name LIKE ?", "%"+*req.Filename+"%")
-	}
-
-	if req.FileType != nil && *req.FileType != "" {
-		tx = tx.Where("fi.file_type = ?", *req.FileType)
-	}
-
-	if req.Sensitive != nil && *req.Sensitive {
-		tx = tx.Where("fi.sensitive_mode = 'N'")
-	}
-
-	return tx
-}
-
-func newListFilesForTagsQuery(rail miso.Rail, t *gorm.DB, req ListFileReq, userId int) *gorm.DB {
-
-	t = t.Table("file_info fi").
-		Joins("LEFT JOIN file_tag ft ON (ft.user_id = ? AND fi.id = ft.file_id)", userId).
-		Joins("LEFT JOIN tag t ON (ft.tag_id = t.id)")
-
-	if req.Filename != nil && *req.Filename != "" {
-		t = t.Where("fi.name LIKE ?", "%"+*req.Filename+"%")
-	}
-
-	if req.Sensitive != nil && *req.Sensitive {
-		t = t.Where("fi.sensitive_mode = 'N'")
-	}
-
-	t = t.Where("fi.uploader_id = ?", userId).
-		Where("fi.file_type = 'FILE'").
-		Where("fi.is_del = 0").
-		Where("fi.is_logic_deleted = 0").
-		Where("ft.is_del = 0").
-		Where("t.is_del = 0").
-		Where("t.name = ?", *req.TagName)
-
-	return t
+	return qpq.ExecPageQuery(rail, tx)
 }
 
 type PreflightCheckReq struct {
