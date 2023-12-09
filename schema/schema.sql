@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS file_info (
   `fstore_file_id` varchar(32) NOT NULL DEFAULT '' COMMENT 'mini-fstore file id',
   `thumbnail` varchar(32) NOT NULL DEFAULT '' COMMENT 'thumbnail, mini-fstore file id',
   `uploader_no` varchar(32) NOT NULL DEFAULT '' COMMENT 'user no of uploader',
+  `sensitive_mode` varchar(1) NOT NULL DEFAULT 'N' COMMENT 'sensitive file, Y/N',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid_uk` (`uuid`),
   KEY `parent_file_type_idx` (`parent_file`,`file_type`),

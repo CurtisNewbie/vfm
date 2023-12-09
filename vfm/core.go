@@ -99,6 +99,7 @@ type ListedFile struct {
 	FileType       string     `json:"fileType"`
 	UpdateTime     miso.ETime `json:"updateTime"`
 	ParentFileName string     `json:"parentFileName"`
+	SensitiveMode  string     `json:"sensitiveMode"`
 	ParentFile     string     `json:"-"`
 	UploaderId     int        `json:"-"`
 }
@@ -295,6 +296,7 @@ type ListFileReq struct {
 	FolderNo   *string     `json:"folderNo"`
 	FileType   *string     `json:"fileType"`
 	ParentFile *string     `json:"parentFile"`
+	Sensitive  *bool       `json:"sensitive"`
 }
 
 func ListFiles(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (ListFilesRes, error) {
@@ -337,7 +339,7 @@ func listFilesForTags(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.
 	var files []ListedFile
 	t := newListFilesForTagsQuery(rail, tx, req, user.UserId).
 		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
-			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time`).
+			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.sensitive_mode`).
 		Order("fi.id desc").
 		Offset(req.Page.GetOffset()).
 		Limit(req.Page.GetLimit()).
@@ -372,7 +374,7 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 	var files []ListedFile
 	t := newListFilesSelectiveQuery(rail, tx, req, user.UserId).
 		Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
-			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time`).
+			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.sensitive_mode`).
 		Order("fi.file_type asc, fi.id desc").
 		Offset(req.Page.GetOffset()).
 		Limit(req.Page.GetLimit()).
@@ -410,6 +412,10 @@ func newListFilesSelectiveQuery(rail miso.Rail, tx *gorm.DB, req ListFileReq, us
 		tx = tx.Where("fi.file_type = ?", *req.FileType)
 	}
 
+	if req.Sensitive != nil && *req.Sensitive {
+		tx = tx.Where("fi.sensitive_mode = 'N'")
+	}
+
 	return tx
 }
 
@@ -421,6 +427,10 @@ func newListFilesForTagsQuery(rail miso.Rail, t *gorm.DB, req ListFileReq, userI
 
 	if req.Filename != nil && *req.Filename != "" {
 		t = t.Where("fi.name LIKE ?", "%"+*req.Filename+"%")
+	}
+
+	if req.Sensitive != nil && *req.Sensitive {
+		t = t.Where("fi.sensitive_mode = 'N'")
 	}
 
 	t = t.Where("fi.uploader_id = ?", userId).
@@ -1064,8 +1074,9 @@ func newListGrantedFolderAccessQuery(rail miso.Rail, tx *gorm.DB, r ListGrantedF
 }
 
 type UpdateFileReq struct {
-	Id   int    `json:"id" validation:"positive"`
-	Name string `json:"name"`
+	Id            int `json:"id" validation:"positive"`
+	Name          string
+	SensitiveMode string
 }
 
 func UpdateFile(rail miso.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) error {
@@ -1086,9 +1097,12 @@ func UpdateFile(rail miso.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) 
 	if r.Name == "" {
 		return miso.NewErr("Name can't be empty")
 	}
+	if r.SensitiveMode != "Y" && r.SensitiveMode != "N" {
+		r.SensitiveMode = "N"
+	}
 
 	return tx.
-		Exec("UPDATE file_info SET name = ? WHERE id = ? AND is_logic_deleted = 0 AND is_del = 0", r.Name, r.Id).
+		Exec("UPDATE file_info SET name = ?, sensitive_mode = ? WHERE id = ? AND is_logic_deleted = 0 AND is_del = 0", r.Name, r.SensitiveMode, r.Id).
 		Error
 }
 
