@@ -79,6 +79,9 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 
 			miso.IPost("/granted/list", ListVFolderAccessEp).
 				Extra(goauth.Protected("List granted access to virtual folder", ManageFileResCode)),
+
+			miso.IPost("/remove", RemoveVFolderEp).
+				Extra(goauth.Protected("Remove virtual folder", ManageFileResCode)),
 		)
 
 	// ---------------------------------------------- internal endpoints ------------------------------------------
@@ -226,4 +229,8 @@ func FetchFileInfoItnEp(c *gin.Context, rail miso.Rail, req FetchFileInfoReq) (a
 
 func ValidateOwnerEp(c *gin.Context, rail miso.Rail, req ValidateFileOwnerReq) (any, error) {
 	return ValidateFileOwner(rail, miso.GetMySQL(), req)
+}
+
+func RemoveVFolderEp(c *gin.Context, rail miso.Rail, req RemoveVFolderReq) (any, error) {
+	return nil, RemoveVFolder(rail, miso.GetMySQL(), common.GetUser(rail), req)
 }

@@ -787,7 +787,8 @@ func RemoveVFolderAccess(rail miso.Rail, tx *gorm.DB, req RemoveGrantedFolderAcc
 			return miso.NewErr("Operation not permitted")
 		}
 		return tx.
-			Exec("DELETE FROM user_vfolder WHERE folder_no = ? AND user_no = ? AND ownership = 'GRANTED'", req.FolderNo, req.UserNo).
+			Exec("UPDATE user_vfolder SET is_del = 1, update_by = ? WHERE folder_no = ? AND user_no = ? AND ownership = 'GRANTED'",
+				user.Username, req.FolderNo, req.UserNo).
 			Error
 	})
 }
@@ -816,8 +817,12 @@ type AddFileToVfolderEvent struct {
 	FileKeys []string
 }
 
+func NewVFolderLock(rail miso.Rail, folderNo string) *miso.RLock {
+	return miso.NewRLock(rail, "vfolder:"+folderNo)
+}
+
 func HandleAddFileToVFolderEvent(rail miso.Rail, tx *gorm.DB, evt AddFileToVfolderEvent) error {
-	lock := miso.NewRLock(rail, "vfolder:"+evt.FolderNo)
+	lock := NewVFolderLock(rail, evt.FolderNo)
 	if err := lock.Lock(); err != nil {
 		return err
 	}
@@ -850,6 +855,7 @@ func HandleAddFileToVFolderEvent(rail miso.Rail, tx *gorm.DB, evt AddFileToVfold
 		err = tx.Select("id").
 			Table("file_vfolder").
 			Where("folder_no = ? AND uuid = ?", folderNo, fk).
+			Where("is_del = 0").
 			Scan(&id).
 			Error
 		if err != nil {
@@ -1147,7 +1153,8 @@ func UpdateFile(rail miso.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) 
 	}
 
 	return tx.
-		Exec("UPDATE file_info SET name = ?, sensitive_mode = ? WHERE id = ? AND is_logic_deleted = 0 AND is_del = 0", r.Name, r.SensitiveMode, r.Id).
+		Exec("UPDATE file_info SET name = ?, sensitive_mode = ?, update_by = ? WHERE id = ? AND is_logic_deleted = 0 AND is_del = 0",
+			r.Name, r.SensitiveMode, user.Username, r.Id).
 		Error
 }
 
@@ -1573,4 +1580,45 @@ func ValidateFileOwner(rail miso.Rail, tx *gorm.DB, q ValidateFileOwnerReq) (boo
 		Limit(1).
 		Scan(&id).Error
 	return id > 0, e
+}
+
+type RemoveVFolderReq struct {
+	FolderNo string
+}
+
+func RemoveVFolder(rail miso.Rail, tx *gorm.DB, user common.User, req RemoveVFolderReq) error {
+	lock := NewVFolderLock(rail, req.FolderNo)
+	if err := lock.Lock(); err != nil {
+		return err
+	}
+	defer lock.Unlock()
+
+	var vfo VFolderWithOwnership
+	var e error
+	if vfo, e = findVFolder(rail, tx, req.FolderNo, user.UserNo); e != nil {
+		return fmt.Errorf("failed to findVFolder, folderNo: %v, userNo: %v, %v", req.FolderNo, user.UserNo, e)
+	}
+	if !vfo.IsOwner() {
+		return miso.NewErr("Operation not permitted")
+	}
+	if err := tx.Transaction(func(tx *gorm.DB) error {
+		err := tx.Exec(`UPDATE vfolder SET is_del = 1, update_by = ? WHERE folder_no = ?`, user.Username, req.FolderNo).Error
+		if err != nil {
+			return fmt.Errorf("failed to update vfolder, folderNo: %v, %v", req.FolderNo, err)
+		}
+		err = tx.Exec(`UPDATE user_vfolder SET is_del = 1, update_by = ? WHERE folder_no = ?`, user.Username, req.FolderNo).Error
+		if err != nil {
+			return fmt.Errorf("failed to update user_vfolder, folderNo: %v, %v", req.FolderNo, err)
+		}
+		err = tx.Exec(`UPDATE file_vfolder SET is_del = 1, update_by = ? WHERE folder_no = ?`, user.Username, req.FolderNo).Error
+		if err != nil {
+			return fmt.Errorf("failed to update file_vfolder, folderNo: %v, %v", req.FolderNo, err)
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	rail.Infof("VFolder %v deleted by %v", req.FolderNo, user.Username)
+	return nil
 }
