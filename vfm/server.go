@@ -34,12 +34,16 @@ func PrepareEventBus(rail miso.Rail) error {
 	if err := miso.NewEventBus(notifyFantahseaFileDeletedEventBus); err != nil {
 		return err
 	}
+	if err := miso.NewEventBus(addFileToVFolderEventBus); err != nil {
+		return err
+	}
 
 	// subscribe to event bus
 	miso.SubEventBus(comprImgNotifyEventBus, 2, OnImageCompressed)
 	miso.SubEventBus(fileSavedEventBus, 2, OnFileSaved)
 	miso.SubEventBus(thumbnailUpdatedEventBus, 2, OnThumbnailUpdated)
 	miso.SubEventBus(fileLDeletedEventBus, 2, OnFileDeleted)
+	miso.SubEventBus(addFileToVFolderEventBus, 2, OnAddFileToVfolderEvent)
 	return nil
 }
 

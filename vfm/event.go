@@ -220,3 +220,7 @@ func OnFileDeleted(rail miso.Rail, evt StreamEvent) error {
 	}
 	return nil
 }
+
+func OnAddFileToVfolderEvent(rail miso.Rail, evt AddFileToVfolderEvent) error {
+	return HandleAddFileToVFolderEvent(rail, miso.GetMySQL(), evt)
+}

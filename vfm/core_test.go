@@ -211,6 +211,7 @@ func TestAddFileToVFolder(t *testing.T) {
 		AddFileToVfolderReq{
 			FolderNo: "hfKh3QZSsWjKufZWflqu8jb0n",
 			FileKeys: []string{"ZZZ687250481528832971813"},
+			Sync:     true,
 		}, testUser())
 	if e != nil {
 		t.Fatal(e)

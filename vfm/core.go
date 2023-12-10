@@ -22,6 +22,8 @@ const (
 
 	VFOWNERSHIP_OWNER   = "OWNER"   // owner of the vfolder
 	VFOWNERSHIP_GRANTED = "GRANTED" // granted access to the vfolder
+
+	addFileToVFolderEventBus = "vfm.file.vfolder.add"
 )
 
 var (
@@ -803,6 +805,121 @@ func ListVFolderBrief(rail miso.Rail, tx *gorm.DB, user common.User) ([]VFolderB
 type AddFileToVfolderReq struct {
 	FolderNo string   `json:"folderNo"`
 	FileKeys []string `json:"fileKeys"`
+	Sync     bool     `json:"-"`
+}
+
+type AddFileToVfolderEvent struct {
+	UserId   int
+	Username string
+	UserNo   string
+	FolderNo string
+	FileKeys []string
+}
+
+func HandleAddFileToVFolderEvent(rail miso.Rail, tx *gorm.DB, evt AddFileToVfolderEvent) error {
+	lock := miso.NewRLock(rail, "vfolder:"+evt.FolderNo)
+	if err := lock.Lock(); err != nil {
+		return err
+	}
+	defer lock.Unlock()
+
+	var vfo VFolderWithOwnership
+	var e error
+	if vfo, e = findVFolder(rail, tx, evt.FolderNo, evt.UserNo); e != nil {
+		return fmt.Errorf("failed to findVFolder, folderNo: %v, userNo: %v, %v", evt.FolderNo, evt.UserNo, e)
+	}
+	if !vfo.IsOwner() {
+		return miso.NewErr("Operation not permitted")
+	}
+
+	distinct := miso.NewSet[string]()
+	for _, fk := range evt.FileKeys {
+		distinct.Add(fk)
+	}
+
+	filtered := miso.Distinct(evt.FileKeys)
+	if len(filtered) < 1 {
+		return nil
+	}
+
+	now := miso.Now()
+	username := evt.Username
+	doAddFileToVfolder := func(rail miso.Rail, folderNo string, fk string) error {
+		var id int
+		var err error
+		err = tx.Select("id").
+			Table("file_vfolder").
+			Where("folder_no = ? AND uuid = ?", folderNo, fk).
+			Scan(&id).
+			Error
+		if err != nil {
+			return fmt.Errorf("failed to query file_vfolder record, %v", err)
+		}
+		if id > 0 {
+			return nil
+		}
+
+		fvf := FileVFolder{FolderNo: folderNo, Uuid: fk, CreateTime: now, CreateBy: username}
+		if err = tx.Table("file_vfolder").Omit("id", "update_by", "update_time").Create(&fvf).Error; err != nil {
+			return fmt.Errorf("failed to save file_vfolder record, %v", err)
+		}
+		rail.Infof("added file.uuid: %v to vfolder: %v by %v", fk, folderNo, username)
+		return nil
+	}
+
+	// add files to vfolder
+	dirs := []FileInfo{}
+	for fk := range distinct.Keys {
+		var f FileInfo
+		var e error
+
+		f, e = findFile(rail, tx, fk)
+		if e != nil {
+			return e
+		}
+		if f.IsZero() || f.UploaderId != evt.UserId {
+			continue
+		}
+		if f.FileType != FILE_TYPE_FILE {
+			dirs = append(dirs, f)
+			continue
+		}
+		if e = doAddFileToVfolder(rail, evt.FolderNo, fk); e != nil {
+			return fmt.Errorf("failed to doAddFileToVfolder, file.uuid: %v, %v", fk, e)
+		}
+	}
+
+	// add files in dir to vfolder, but we only go one layer deep
+	for _, dir := range dirs {
+		var filesInDir []string
+		var err error
+		var page int = 1
+
+		for {
+			if filesInDir, err = ListFilesInDir(rail, tx, ListFilesInDirReq{
+				FileKey: dir.Uuid,
+				Limit:   500,
+				Page:    page,
+			}); err != nil {
+				return fmt.Errorf("failed to list files in dir, dir.uuid: %v, %v", dir.Uuid, err)
+			}
+
+			if len(filesInDir) < 1 {
+				break
+			}
+
+			for _, fk := range filesInDir {
+				if !distinct.Add(fk) {
+					continue
+				}
+				if err = doAddFileToVfolder(rail, evt.FolderNo, fk); err != nil {
+					return fmt.Errorf("failed to doAddFileToVfolder, file.uuid: %v, %v", fk, e)
+				}
+			}
+			page += 1
+		}
+	}
+	return nil
 }
 
 func AddFileToVFolder(rail miso.Rail, tx *gorm.DB, req AddFileToVfolderReq, user common.User) error {
@@ -811,60 +928,26 @@ func AddFileToVFolder(rail miso.Rail, tx *gorm.DB, req AddFileToVfolderReq, user
 		return nil
 	}
 
-	return _lockFolderExec(rail, req.FolderNo, func() error {
+	vfo, e := findVFolder(rail, tx, req.FolderNo, user.UserNo)
+	if e != nil {
+		return e
+	}
+	if !vfo.IsOwner() {
+		return miso.NewErr("Operation not permitted")
+	}
 
-		vfo, e := findVFolder(rail, tx, req.FolderNo, user.UserNo)
-		if e != nil {
-			return e
-		}
-		if !vfo.IsOwner() {
-			return miso.NewErr("Operation not permitted")
-		}
-
-		filtered := miso.Distinct(req.FileKeys)
-		if len(filtered) < 1 {
-			return nil
-		}
-		userId := user.UserId
-		now := miso.Now()
-		username := user.Username
-		for _, fk := range filtered {
-			f, e := findFile(rail, tx, fk)
-			if e != nil {
-				return e
-			}
-			if f.IsZero() {
-				continue // file not found
-			}
-			if f.UploaderId != userId {
-				continue // not the uploader of the file
-			}
-
-			if f.FileType != FILE_TYPE_FILE {
-				continue // not a file type, may be a dir
-			}
-
-			var id int
-			e = tx.Select("id").
-				Table("file_vfolder").
-				Where("folder_no = ? AND uuid = ?", req.FolderNo, fk).
-				Scan(&id).
-				Error
-			if e != nil {
-				return fmt.Errorf("failed to query file_vfolder record, %v", e)
-			}
-			if id > 0 {
-				continue // file already in vfolder
-			}
-
-			fvf := FileVFolder{FolderNo: req.FolderNo, Uuid: fk, CreateTime: now, CreateBy: username}
-			e = tx.Table("file_vfolder").Omit("id", "update_by", "update_time").Create(&fvf).Error
-			if e != nil {
-				return fmt.Errorf("failed to save file_vfolder record, %v", e)
-			}
-		}
-		return nil
-	})
+	evt := AddFileToVfolderEvent{
+		UserId:   user.UserId,
+		Username: user.Username,
+		UserNo:   user.UserNo,
+		FolderNo: req.FolderNo,
+		FileKeys: req.FileKeys,
+	}
+	err := miso.PubEventBus(rail, evt, addFileToVFolderEventBus)
+	if err != nil {
+		return fmt.Errorf("failed to publish AddFileToVfolderEvent, %+v, %v", evt, err)
+	}
+	return nil
 }
 
 type RemoveFileFromVfolderReq struct {
