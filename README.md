@@ -42,3 +42,7 @@ curl -X POST "http://localhost:8086/compensate/image/compression"
     - Users can only share files using `vfolder`, field `file_info.user_group` and table `file_sharing` are deprecated.
     - Uploaders's user no can be updated (compensated) using: `curl -X POST "http://localhost:8086/compensate/file/uploaderno"`.
 
+## Doc
+
+- [File-Service Migration](./migration/file-service-migration.md)
+- [Fantahsea Migration](./migration/fantahsea-migration.md)
