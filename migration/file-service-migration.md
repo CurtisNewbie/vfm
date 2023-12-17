@@ -1,5 +1,10 @@
 # File-service migration
 
+vfm was originally developed as a lightweight replacement for [file-service v1.2.7](https://github.com/CurtisNewbie/file-server/tree/v1.2.7). It runs using the schema originally created by `file-service v1.2.7` (of course the schema changed in the following releases).
+
+Unlike file-service, vfm doesn't manage the actual file storage. The file storage is managed by [mini-fstore](https://github.com/CurtisNewbie/mini-fstore), a light-weight and simple solution designed for general usage.
+
+
 ## Difference between vfm and file-service
 
 | Feature/Functionality                               | vfm                                                       | file-service |
