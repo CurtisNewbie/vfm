@@ -41,6 +41,7 @@ curl -X POST "http://localhost:8086/compensate/image/compression"
 - Since v0.0.8
     - Users can only share files using `vfolder`, field `file_info.user_group` and table `file_sharing` are deprecated.
     - Uploaders's user no can be updated (compensated) using: `curl -X POST "http://localhost:8086/compensate/file/uploaderno"`.
+- Since v0.1.3, [fantahsea](https://github.com/curtisnewbie/fantahsea) has been merged into vfm codebase, see [Fantahsea Migration](./migration/fantahsea-migration.md).
 
 ## Doc
 
