@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	FS_STATUS_NORMAL = "NORMAL" // file.status - normal
+	FileStatusNormal = "NORMAL" // file.status - normal
 )
 
 var (

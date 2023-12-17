@@ -74,7 +74,7 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 		return nil // file already deleted
 	}
 
-	if f.FileType != FILE_TYPE_FILE {
+	if f.FileType != FileTypeFile {
 		rail.Infof("file is dir, %v", uuid)
 		return nil // a directory
 	}
@@ -155,7 +155,7 @@ func OnThumbnailUpdated(rail miso.Rail, evt StreamEvent) error {
 	if err != nil {
 		return err
 	}
-	if f.IsZero() || f.FileType != FILE_TYPE_FILE {
+	if f.IsZero() || f.FileType != FileTypeFile {
 		return nil
 	}
 

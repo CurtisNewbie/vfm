@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS gallery (
   PRIMARY KEY (`id`),
   UNIQUE KEY `gallery_no_uniq` (`gallery_no`),
   KEY `idx_dir_file_key` (`dir_file_key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Gallery'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Gallery';
 
 CREATE TABLE IF NOT EXISTS gallery_image (
   `id` int NOT NULL AUTO_INCREMENT,

@@ -24,7 +24,6 @@ func PrepareServer(rail miso.Rail) error {
 }
 
 func PrepareEventBus(rail miso.Rail) error {
-	// declare event bus
 	if err := miso.NewEventBus(comprImgProcEventBus); err != nil {
 		return err
 	}
@@ -38,17 +37,17 @@ func PrepareEventBus(rail miso.Rail) error {
 		return err
 	}
 
-	// subscribe to event bus
 	miso.SubEventBus(comprImgNotifyEventBus, 2, OnImageCompressed)
 	miso.SubEventBus(fileSavedEventBus, 2, OnFileSaved)
 	miso.SubEventBus(thumbnailUpdatedEventBus, 2, OnThumbnailUpdated)
 	miso.SubEventBus(fileLDeletedEventBus, 2, OnFileDeleted)
 	miso.SubEventBus(addFileToVFolderEventBus, 2, OnAddFileToVfolderEvent)
+	miso.SubEventBus(addFantahseaDirGalleryImgEventBus, 2, OnCreateGalleryImgEvent)
+	miso.SubEventBus(notifyFantahseaFileDeletedEventBus, 2, OnNotifyFileDeletedEvent)
 	return nil
 }
 
 func PrepareGoAuthReport(rail miso.Rail) error {
-	// report goauth resources and paths
 	goauth.ReportResourcesOnBootstrapped(rail, []goauth.AddResourceReq{
 		{Name: ManageFileResName, Code: ManageFileResCode},
 		{Name: AdminFsResName, Code: AdminFsResCode},

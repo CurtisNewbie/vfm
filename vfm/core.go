@@ -11,17 +11,17 @@ import (
 )
 
 const (
-	FILE_TYPE_FILE = "FILE" // file
-	FILE_TYPE_DIR  = "DIR"  // directory
+	FileTypeFile = "FILE" // file
+	FileTypeDir  = "DIR"  // directory
 
-	FILE_LDEL_N = 0 // normal file
-	FILE_LDEL_Y = 1 // file marked deleted
+	LDelN = 0 // normal file
+	LDelY = 1 // file marked deleted
 
-	FILE_PDEL_N = 0 // file marked deleted, the actual deletion is not yet processed
-	FILE_PDEL_Y = 1 // file finally deleted, may be removed from disk or move to somewhere else
+	PDelN = 0 // file marked deleted, the actual deletion is not yet processed
+	PDelY = 1 // file finally deleted, may be removed from disk or move to somewhere else
 
-	VFOWNERSHIP_OWNER   = "OWNER"   // owner of the vfolder
-	VFOWNERSHIP_GRANTED = "GRANTED" // granted access to the vfolder
+	VfolderOwner   = "OWNER"   // owner of the vfolder
+	VfolderGranted = "GRANTED" // granted access to the vfolder
 
 	addFileToVFolderEventBus = "vfm.file.vfolder.add"
 )
@@ -157,11 +157,11 @@ type FileDownloadInfo struct {
 }
 
 func (f *FileDownloadInfo) Deleted() bool {
-	return f.IsLogicDeleted == FILE_LDEL_Y
+	return f.IsLogicDeleted == LDelY
 }
 
 func (f *FileDownloadInfo) IsFile() bool {
-	return f.FileType == FILE_TYPE_FILE
+	return f.FileType == FileTypeFile
 }
 
 type FileInfo struct {
@@ -206,7 +206,7 @@ type VFolderWithOwnership struct {
 }
 
 func (f *VFolderWithOwnership) IsOwner() bool {
-	return f.Ownership == VFOWNERSHIP_OWNER
+	return f.Ownership == VfolderOwner
 }
 
 type VFolder struct {
@@ -420,8 +420,8 @@ func FileExists(c miso.Rail, tx *gorm.DB, req PreflightCheckReq, user common.Use
 		Where("parent_file = ?", req.ParentFileKey).
 		Where("name = ?", req.Filename).
 		Where("uploader_id = ?", user.UserId).
-		Where("file_type = ?", FILE_TYPE_FILE).
-		Where("is_logic_deleted = ?", FILE_LDEL_N).
+		Where("file_type = ?", FileTypeFile).
+		Where("is_logic_deleted = ?", LDelN).
 		Where("is_del = ?", common.IS_DEL_N).
 		Limit(1).
 		Scan(&id)
@@ -470,7 +470,7 @@ func newListFileTagsQuery(c miso.Rail, tx *gorm.DB, r ListFileTagReq, userId int
 		Where("t.user_id = ? AND ft.file_id = ? AND ft.is_del = 0 AND t.is_del = 0", userId, r.FileId)
 }
 
-func findFile(c miso.Rail, tx *gorm.DB, fileKey string) (FileInfo, error) {
+func findFile(rail miso.Rail, tx *gorm.DB, fileKey string) (FileInfo, error) {
 	var f FileInfo
 	t := tx.Raw("SELECT * FROM file_info WHERE uuid = ? AND is_del = 0", fileKey).
 		Scan(&f)
@@ -535,7 +535,7 @@ func MakeDir(rail miso.Rail, tx *gorm.DB, req MakeDirReq, user common.User) (str
 	dir.Name = req.Name
 	dir.Uuid = miso.GenIdP("ZZZ")
 	dir.SizeInBytes = 0
-	dir.FileType = FILE_TYPE_DIR
+	dir.FileType = FileTypeDir
 
 	if e := _saveFile(rail, tx, dir, user); e != nil {
 		return "", e
@@ -589,11 +589,11 @@ func MoveFileToDir(rail miso.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.
 			return miso.NewErr("You are not the owner of this directory")
 		}
 
-		if pr.FileType != FILE_TYPE_DIR {
+		if pr.FileType != FileTypeDir {
 			return miso.NewErr("Target file is not a directory")
 		}
 
-		if pr.IsLogicDeleted != FILE_LDEL_N {
+		if pr.IsLogicDeleted != LDelN {
 			return miso.NewErr("Target file deleted")
 		}
 	}
@@ -607,8 +607,8 @@ func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error 
 	uname := user.Username
 	now := miso.Now()
 
-	f.IsLogicDeleted = FILE_LDEL_N
-	f.IsPhysicDeleted = FILE_PDEL_N
+	f.IsLogicDeleted = LDelN
+	f.IsPhysicDeleted = PDelN
 	f.UploaderId = user.UserId
 	f.UploaderName = uname
 	f.CreateBy = uname
@@ -667,7 +667,7 @@ func CreateVFolder(rail miso.Rail, tx *gorm.DB, r CreateVFolderReq, user common.
 				FolderNo:   folderNo,
 				UserNo:     userNo,
 				Username:   user.Username,
-				Ownership:  VFOWNERSHIP_OWNER,
+				Ownership:  VfolderOwner,
 				GrantedBy:  userNo,
 				CreateTime: ctime,
 				CreateBy:   user.Username}
@@ -756,7 +756,7 @@ func ShareVFolder(rail miso.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo strin
 			FolderNo:   folderNo,
 			UserNo:     sharedTo.UserNo,
 			Username:   sharedTo.Username,
-			Ownership:  VFOWNERSHIP_GRANTED,
+			Ownership:  VfolderGranted,
 			GrantedBy:  user.Username,
 			CreateTime: miso.Now(),
 			CreateBy:   user.Username,
@@ -886,7 +886,7 @@ func HandleAddFileToVFolderEvent(rail miso.Rail, tx *gorm.DB, evt AddFileToVfold
 		if f.IsZero() || f.UploaderId != evt.UserId {
 			continue
 		}
-		if f.FileType != FILE_TYPE_FILE {
+		if f.FileType != FileTypeFile {
 			dirs = append(dirs, f)
 			continue
 		}
@@ -993,7 +993,7 @@ func RemoveFileFromVFolder(rail miso.Rail, tx *gorm.DB, req RemoveFileFromVfolde
 			if f.UploaderId != user.UserId {
 				continue // not the uploader of the file
 			}
-			if f.FileType != FILE_TYPE_FILE {
+			if f.FileType != FileTypeFile {
 				continue // not a file type, may be a dir
 			}
 
@@ -1328,7 +1328,7 @@ func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) 
 	if e != nil {
 		return fmt.Errorf("failed to fetch file info from fstore, %v", e)
 	}
-	if fsf.IsZero() || fsf.Status != FS_STATUS_NORMAL {
+	if fsf.IsZero() || fsf.Status != FileStatusNormal {
 		return miso.NewErr("File not found or deleted")
 	}
 
@@ -1337,7 +1337,7 @@ func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) 
 	f.Uuid = miso.GenIdP("ZZZ")
 	f.FstoreFileId = fsf.FileId
 	f.SizeInBytes = fsf.Size
-	f.FileType = FILE_TYPE_FILE
+	f.FileType = FileTypeFile
 
 	if e := _saveFile(rail, tx, f, user); e != nil {
 		return e
@@ -1392,11 +1392,11 @@ func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 		return miso.NewErr("Not permitted")
 	}
 
-	if f.IsLogicDeleted == FILE_LDEL_Y {
+	if f.IsLogicDeleted == LDelY {
 		return nil // deleted already
 	}
 
-	if f.FileType == FILE_TYPE_DIR { // if it's dir make sure it's empty
+	if f.FileType == FileTypeDir { // if it's dir make sure it's empty
 		var anyId int
 		e := tx.Select("id").
 			Table("file_info").
@@ -1556,7 +1556,7 @@ func FetchFileInfoInternal(rail miso.Rail, tx *gorm.DB, req FetchFileInfoReq) (F
 	fir.UploaderId = f.UploaderId
 	fir.UploaderNo = f.UploaderNo
 	fir.UploaderName = f.UploaderName
-	fir.IsDeleted = f.IsLogicDeleted == FILE_LDEL_Y
+	fir.IsDeleted = f.IsLogicDeleted == LDelY
 	fir.FileType = f.FileType
 	fir.ParentFile = f.ParentFile
 	fir.LocalPath = "" // files are managed by the mini-fstore, this field will no longer contain any value in it
