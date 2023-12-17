@@ -83,21 +83,21 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			miso.Get("/gallery/brief/owned",
 				func(c *gin.Context, rail miso.Rail) (any, error) {
 					user := common.GetUser(rail)
-					return ListOwnedGalleryBriefs(rail, user)
+					return ListOwnedGalleryBriefs(rail, user, miso.GetMySQL())
 				}).
 				Extra(goauth.Protected("List owned gallery brief info", ManageFileResCode)),
 
 			miso.IPost("/gallery/new",
 				func(c *gin.Context, rail miso.Rail, cmd CreateGalleryCmd) (any, error) {
 					user := common.GetUser(rail)
-					return CreateGallery(rail, cmd, user)
+					return CreateGallery(rail, cmd, user, miso.GetMySQL())
 				}).
 				Extra(goauth.Protected("Create new gallery", ManageFileResCode)),
 
 			miso.IPost("/gallery/update",
 				func(c *gin.Context, rail miso.Rail, cmd UpdateGalleryCmd) (any, error) {
 					user := common.GetUser(rail)
-					e := UpdateGallery(rail, cmd, user)
+					e := UpdateGallery(rail, cmd, user, miso.GetMySQL())
 					return nil, e
 				}).
 				Extra(goauth.Protected("Update gallery", ManageFileResCode)),
@@ -105,7 +105,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			miso.IPost("/gallery/delete",
 				func(c *gin.Context, rail miso.Rail, cmd DeleteGalleryCmd) (any, error) {
 					user := common.GetUser(rail)
-					e := DeleteGallery(rail, cmd, user)
+					e := DeleteGallery(rail, miso.GetMySQL(), cmd, user)
 					return nil, e
 				}).
 				Extra(goauth.Protected("Delete gallery", ManageFileResCode)),
@@ -113,14 +113,14 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			miso.IPost("/gallery/list",
 				func(c *gin.Context, rail miso.Rail, cmd ListGalleriesCmd) (any, error) {
 					user := common.GetUser(rail)
-					return ListGalleries(rail, cmd, user)
+					return ListGalleries(rail, cmd, user, miso.GetMySQL())
 				}).
 				Extra(goauth.Protected("List galleries", ManageFileResCode)),
 
 			miso.IPost("/gallery/access/grant",
 				func(c *gin.Context, rail miso.Rail, cmd PermitGalleryAccessCmd) (any, error) {
 					user := common.GetUser(rail)
-					e := GrantGalleryAccessToUser(rail, cmd, user)
+					e := GrantGalleryAccessToUser(rail, miso.GetMySQL(), cmd, user)
 					return nil, e
 				}).
 				Extra(goauth.Protected("Grant access to the galleries", ManageFileResCode)),
@@ -143,14 +143,14 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			miso.IPost("/gallery/images",
 				func(c *gin.Context, rail miso.Rail, cmd ListGalleryImagesCmd) (any, error) {
 					user := common.GetUser(rail)
-					return ListGalleryImages(rail, cmd, user)
+					return ListGalleryImages(rail, miso.GetMySQL(), cmd, user)
 				}).
 				Extra(goauth.Protected("List images of gallery", ManageFileResCode)),
 
 			miso.IPost("/gallery/image/transfer",
 				func(c *gin.Context, rail miso.Rail, cmd TransferGalleryImageReq) (any, error) {
 					user := common.GetUser(rail)
-					return BatchTransferAsync(rail, cmd, user)
+					return BatchTransferAsync(rail, cmd, user, miso.GetMySQL())
 				}).
 				Extra(goauth.Protected("Host selected images on gallery", ManageFileResCode)),
 		)

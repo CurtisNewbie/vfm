@@ -6,6 +6,7 @@ import (
 
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/miso/miso"
+	"gorm.io/gorm"
 )
 
 // GalleryImage.status (doesn't really matter anymore)
@@ -87,13 +88,13 @@ type CreateGalleryImageCmd struct {
 	FileKey   string `json:"fileKey"`
 }
 
-func DeleteGalleryImage(rail miso.Rail, fileKey string) error {
-	return miso.GetMySQL().Exec("delete from gallery_image where file_key = ?", fileKey).Error
+func DeleteGalleryImage(rail miso.Rail, tx *gorm.DB, fileKey string) error {
+	return tx.Exec("delete from gallery_image where file_key = ?", fileKey).Error
 }
 
 // Create a gallery image record
-func CreateGalleryImage(rail miso.Rail, cmd CreateGalleryImageCmd, userNo string, username string) error {
-	creator, err := FindGalleryCreator(rail, cmd.GalleryNo)
+func CreateGalleryImage(rail miso.Rail, cmd CreateGalleryImageCmd, userNo string, username string, tx *gorm.DB) error {
+	creator, err := FindGalleryCreator(rail, cmd.GalleryNo, tx)
 	if err != nil {
 		return err
 	}
@@ -102,7 +103,7 @@ func CreateGalleryImage(rail miso.Rail, cmd CreateGalleryImageCmd, userNo string
 		return miso.NewErr("You are not allowed to upload image to this gallery")
 	}
 
-	if isCreated, e := isImgCreatedAlready(rail, cmd.GalleryNo, cmd.FileKey); isCreated || e != nil {
+	if isCreated, e := isImgCreatedAlready(rail, tx, cmd.GalleryNo, cmd.FileKey); isCreated || e != nil {
 		if e != nil {
 			return e
 		}
@@ -115,7 +116,7 @@ func CreateGalleryImage(rail miso.Rail, cmd CreateGalleryImageCmd, userNo string
 			insert into gallery_image (gallery_no, image_no, name, file_key, create_by)
 			values (?, ?, ?, ?, ?)
 		`
-	return miso.GetMySQL().Exec(sql, cmd.GalleryNo, imageNo, cmd.Name, cmd.FileKey, username).Error
+	return tx.Exec(sql, cmd.GalleryNo, imageNo, cmd.Name, cmd.FileKey, username).Error
 }
 
 type FstoreTmpToken struct {
@@ -124,12 +125,12 @@ type FstoreTmpToken struct {
 }
 
 // List gallery images
-func ListGalleryImages(rail miso.Rail, cmd ListGalleryImagesCmd, user common.User) (*ListGalleryImagesResp, error) {
+func ListGalleryImages(rail miso.Rail, tx *gorm.DB, cmd ListGalleryImagesCmd, user common.User) (*ListGalleryImagesResp, error) {
 	rail.Infof("ListGalleryImages, cmd: %+v", cmd)
 
-	if hasAccess, err := HasAccessToGallery(user.UserNo, cmd.GalleryNo); err != nil || !hasAccess {
+	if hasAccess, err := HasAccessToGallery(rail, tx, user.UserNo, cmd.GalleryNo); err != nil || !hasAccess {
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("check HasAccessToGallery failed, %v", err)
 		}
 		return nil, miso.NewErr("You are not allowed to access this gallery")
 	}
@@ -141,9 +142,9 @@ func ListGalleryImages(rail miso.Rail, cmd ListGalleryImagesCmd, user common.Use
 		limit ?, ?
 	`
 	var galleryImages []GalleryImage
-	tx := miso.GetMySQL().Raw(selectSql, cmd.GalleryNo, cmd.Paging.GetOffset(), cmd.Paging.GetLimit()).Scan(&galleryImages)
-	if tx.Error != nil {
-		return nil, tx.Error
+	t := tx.Raw(selectSql, cmd.GalleryNo, cmd.Paging.GetOffset(), cmd.Paging.GetLimit()).Scan(&galleryImages)
+	if t.Error != nil {
+		return nil, fmt.Errorf("select gallery_image failed, %v", t.Error)
 	}
 
 	if galleryImages == nil {
@@ -153,10 +154,12 @@ func ListGalleryImages(rail miso.Rail, cmd ListGalleryImagesCmd, user common.Use
 	// count total asynchronoulsy (normally, when the SELECT is successful, the COUNT doesn't really fail)
 	countFuture := miso.RunAsync(func() (int, error) {
 		var total int
-		tx = miso.GetMySQL().
-			Raw(`select count(*) from gallery_image where gallery_no = ?`, cmd.GalleryNo).
+		t := tx.Raw(`select count(*) from gallery_image where gallery_no = ?`, cmd.GalleryNo).
 			Scan(&total)
-		return total, tx.Error
+		if t.Error == nil {
+			return total, nil
+		}
+		return total, fmt.Errorf("failed to count gallery_image, %v", t.Error)
 	})
 
 	// generate temp tokens for the actual files and the thumbnail, these are served by mini-fstore
@@ -166,9 +169,9 @@ func ListGalleryImages(rail miso.Rail, cmd ListGalleryImagesCmd, user common.Use
 		genTknFutures := []miso.Future[FstoreTmpToken]{}
 
 		for _, img := range galleryImages {
-			r, e := findFile(rail, miso.GetMySQL(), img.FileKey)
+			r, e := findFile(rail, tx, img.FileKey)
 			if e != nil {
-				rail.Errorf("GetFileInfo failed, fileKey: %v, %v", img.FileKey, e)
+				rail.Errorf("findFile failed, fileKey: %v, %v", img.FileKey, e)
 				continue
 			}
 			fstoreFileId := r.FstoreFileId
@@ -233,14 +236,14 @@ func ListGalleryImages(rail miso.Rail, cmd ListGalleryImagesCmd, user common.Use
 	return &ListGalleryImagesResp{Images: images, Paging: miso.RespPage(cmd.Paging, total)}, nil
 }
 
-func BatchTransferAsync(rail miso.Rail, cmd TransferGalleryImageReq, user common.User) (any, error) {
+func BatchTransferAsync(rail miso.Rail, cmd TransferGalleryImageReq, user common.User, tx *gorm.DB) (any, error) {
 	if cmd.Images == nil || len(cmd.Images) < 1 {
 		return nil, nil
 	}
 
 	// validate the keys first
 	for _, img := range cmd.Images {
-		if isValid, e := ValidateFileOwner(rail, miso.GetMySQL(), ValidateFileOwnerReq{
+		if isValid, e := ValidateFileOwner(rail, tx, ValidateFileOwnerReq{
 			FileKey: img.FileKey,
 			UserId:  user.UserId,
 		}); e != nil || !isValid {
@@ -254,7 +257,7 @@ func BatchTransferAsync(rail miso.Rail, cmd TransferGalleryImageReq, user common
 	// start transferring
 	go func(rail miso.Rail, images []CreateGalleryImageCmd) {
 		for _, cmd := range images {
-			fi, er := findFile(rail, miso.GetMySQL(), cmd.FileKey)
+			fi, er := findFile(rail, tx, cmd.FileKey)
 			if er != nil {
 				rail.Errorf("Failed to fetch file info while transferring selected images, fi's fileKey: %s, error: %v", cmd.FileKey, er)
 				continue
@@ -267,7 +270,7 @@ func BatchTransferAsync(rail miso.Rail, cmd TransferGalleryImageReq, user common
 
 				if GuessIsImage(rail, fi) {
 					nc := CreateGalleryImageCmd{GalleryNo: cmd.GalleryNo, Name: fi.Name, FileKey: fi.Uuid}
-					if err := CreateGalleryImage(rail, nc, user.UserNo, user.Username); err != nil {
+					if err := CreateGalleryImage(rail, nc, user.UserNo, user.Username, tx); err != nil {
 						rail.Errorf("Failed to create gallery image, fi's fileKey: %s, error: %v", cmd.FileKey, err)
 						continue
 					}
@@ -277,7 +280,7 @@ func BatchTransferAsync(rail miso.Rail, cmd TransferGalleryImageReq, user common
 					GalleryNo: cmd.GalleryNo,
 					FileKey:   cmd.FileKey,
 				}
-				if err := TransferImagesInDir(rail, treq, user); err != nil {
+				if err := TransferImagesInDir(rail, treq, user, tx); err != nil {
 					rail.Errorf("Failed to transfer images in directory, fi's fileKey: %s, error: %v", cmd.FileKey, err)
 					continue
 				}
@@ -289,8 +292,8 @@ func BatchTransferAsync(rail miso.Rail, cmd TransferGalleryImageReq, user common
 }
 
 // Transfer images in dir
-func TransferImagesInDir(rail miso.Rail, cmd TransferGalleryImageInDirReq, user common.User) error {
-	fi, e := findFile(rail, miso.GetMySQL(), cmd.FileKey)
+func TransferImagesInDir(rail miso.Rail, cmd TransferGalleryImageInDirReq, user common.User, tx *gorm.DB) error {
+	fi, e := findFile(rail, tx, cmd.FileKey)
 	if e != nil {
 		return e
 	}
@@ -314,7 +317,7 @@ func TransferImagesInDir(rail miso.Rail, cmd TransferGalleryImageInDirReq, user 
 	page := 1
 	for {
 		// dirFileKey, 100, page
-		res, err := ListFilesInDir(rail, miso.GetMySQL(), ListFilesInDirReq{
+		res, err := ListFilesInDir(rail, tx, ListFilesInDirReq{
 			FileKey: dirFileKey,
 			Limit:   100,
 			Page:    page,
@@ -330,7 +333,7 @@ func TransferImagesInDir(rail miso.Rail, cmd TransferGalleryImageInDirReq, user 
 		// starts fetching file one by one
 		for i := 0; i < len(res); i++ {
 			fk := res[i]
-			fi, er := findFile(rail, miso.GetMySQL(), fk)
+			fi, er := findFile(rail, tx, fk)
 			if er != nil {
 				rail.Errorf("Failed to fetch file info while looping files in dir, fi's fileKey: %s, error: %v", fk, er)
 				continue
@@ -338,7 +341,7 @@ func TransferImagesInDir(rail miso.Rail, cmd TransferGalleryImageInDirReq, user 
 
 			if GuessIsImage(rail, fi) {
 				cmd := CreateGalleryImageCmd{GalleryNo: galleryNo, Name: fi.Name, FileKey: fi.Uuid}
-				if err := CreateGalleryImage(rail, cmd, user.UserNo, user.Username); err != nil {
+				if err := CreateGalleryImage(rail, cmd, user.UserNo, user.Username, tx); err != nil {
 					rail.Errorf("Failed to create gallery image, fi's fileKey: %s, error: %v", fk, err)
 				}
 			}
@@ -370,11 +373,9 @@ func GuessIsImage(rail miso.Rail, f FileInfo) bool {
 // check whether the gallery image is created already
 //
 // return isImgCreated, error
-func isImgCreatedAlready(rail miso.Rail, galleryNo string, fileKey string) (bool, error) {
-	db := miso.GetMySQL()
-
+func isImgCreatedAlready(rail miso.Rail, tx *gorm.DB, galleryNo string, fileKey string) (bool, error) {
 	var id int
-	tx := db.Raw(`
+	tx = tx.Raw(`
 		SELECT id FROM gallery_image
 		WHERE gallery_no = ?
 		AND file_key = ?

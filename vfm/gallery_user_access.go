@@ -34,9 +34,9 @@ func (GalleryUserAccess) TableName() string {
 }
 
 /* Check if user has access to the gallery */
-func HasAccessToGallery(userNo string, galleryNo string) (bool, error) {
+func HasAccessToGallery(rail miso.Rail, tx *gorm.DB, userNo string, galleryNo string) (bool, error) {
 
-	gallery, e := FindGallery(galleryNo)
+	gallery, e := FindGallery(rail, tx, galleryNo)
 	if e != nil {
 		return false, e
 	}
@@ -46,7 +46,7 @@ func HasAccessToGallery(userNo string, galleryNo string) (bool, error) {
 	}
 
 	// check if the user has access to the gallery
-	userAccess, err := findGalleryAccess(userNo, galleryNo)
+	userAccess, err := findGalleryAccess(rail, tx, userNo, galleryNo)
 	if err != nil {
 		return false, err
 	}
@@ -59,10 +59,10 @@ func HasAccessToGallery(userNo string, galleryNo string) (bool, error) {
 }
 
 // Assign user access to the gallery
-func CreateGalleryAccess(userNo string, galleryNo string, operator string) error {
+func CreateGalleryAccess(rail miso.Rail, tx *gorm.DB, userNo string, galleryNo string, operator string) error {
 
 	// check if the user has access to the gallery
-	userAccess, err := findGalleryAccess(userNo, galleryNo)
+	userAccess, err := findGalleryAccess(rail, tx, userNo, galleryNo)
 	if err != nil {
 		return err
 	}
@@ -73,9 +73,9 @@ func CreateGalleryAccess(userNo string, galleryNo string, operator string) error
 
 	var e error
 	if userAccess == nil {
-		e = createUserAccess(userNo, galleryNo, operator)
+		e = createUserAccess(rail, tx, userNo, galleryNo, operator)
 	} else {
-		e = updateUserAccessIsDelFlag(&UpdateGUAIsDelCmd{
+		e = updateUserAccessIsDelFlag(rail, tx, &UpdateGUAIsDelCmd{
 			UserNo:    userNo,
 			GalleryNo: galleryNo,
 			IsDelFrom: common.IS_DEL_N,
@@ -88,21 +88,18 @@ func CreateGalleryAccess(userNo string, galleryNo string, operator string) error
 }
 
 /* find GalleryUserAccess, is_del flag is ignored */
-func findGalleryAccess(userNo string, galleryNo string) (*GalleryUserAccess, error) {
-
-	db := miso.GetMySQL()
-
+func findGalleryAccess(rail miso.Rail, tx *gorm.DB, userNo string, galleryNo string) (*GalleryUserAccess, error) {
 	// check if the user has access to the gallery
 	var userAccess *GalleryUserAccess = &GalleryUserAccess{}
 
-	tx := db.Raw(`
+	tx = tx.Raw(`
 		SELECT * FROM gallery_user_access
 		WHERE gallery_no = ?
 		AND user_no = ? AND is_del = 0`, galleryNo, userNo).Scan(&userAccess)
 
 	if e := tx.Error; e != nil || tx.RowsAffected < 1 {
 		if e != nil {
-			return nil, e
+			return nil, fmt.Errorf("failed to find gallery_user_access, %v", e)
 		}
 		return nil, nil
 	}
@@ -111,12 +108,8 @@ func findGalleryAccess(userNo string, galleryNo string) (*GalleryUserAccess, err
 }
 
 // Insert a new gallery_user_access record
-func createUserAccess(userNo string, galleryNo string, createdBy string) error {
-
-	db := miso.GetMySQL()
-
-	tx := db.Exec(`INSERT INTO gallery_user_access (gallery_no, user_no, create_by) VALUES (?, ?, ?)`, galleryNo, userNo, createdBy)
-
+func createUserAccess(rail miso.Rail, tx *gorm.DB, userNo string, galleryNo string, createdBy string) error {
+	tx = tx.Exec(`INSERT INTO gallery_user_access (gallery_no, user_no, create_by) VALUES (?, ?, ?)`, galleryNo, userNo, createdBy)
 	if e := tx.Error; e != nil {
 		return e
 	}
@@ -125,9 +118,8 @@ func createUserAccess(userNo string, galleryNo string, createdBy string) error {
 }
 
 // Update is_del of the record
-func updateUserAccessIsDelFlag(cmd *UpdateGUAIsDelCmd) error {
-
-	tx := miso.GetMySQL().Exec(`
+func updateUserAccessIsDelFlag(rail miso.Rail, tx *gorm.DB, cmd *UpdateGUAIsDelCmd) error {
+	tx = tx.Exec(`
 	UPDATE gallery_user_access SET is_del = ?, update_by = ?
 	WHERE gallery_no = ? AND user_no = ? AND is_del = ?`, cmd.IsDelTo, cmd.UpdateBy, cmd.GalleryNo, cmd.UserNo, cmd.IsDelFrom)
 
@@ -162,7 +154,7 @@ type PermitGalleryAccessCmd struct {
 }
 
 func ListedGrantedGalleryAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedGalleryAccessCmd, user common.User) (miso.PageRes[ListedGalleryAccessRes], error) {
-	gallery, e := FindGallery(req.GalleryNo)
+	gallery, e := FindGallery(rail, tx, req.GalleryNo)
 	if e != nil {
 		return miso.PageRes[ListedGalleryAccessRes]{}, e
 	}
@@ -205,7 +197,7 @@ func ListedGrantedGalleryAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedGall
 }
 
 func RemoveGalleryAccess(rail miso.Rail, tx *gorm.DB, cmd RemoveGalleryAccessCmd, user common.User) error {
-	gallery, e := FindGallery(cmd.GalleryNo)
+	gallery, e := FindGallery(rail, tx, cmd.GalleryNo)
 	if e != nil {
 		return e
 	}
@@ -223,8 +215,8 @@ func RemoveGalleryAccess(rail miso.Rail, tx *gorm.DB, cmd RemoveGalleryAccessCmd
 }
 
 // Grant user's access to the gallery, only the owner can do so
-func GrantGalleryAccessToUser(rail miso.Rail, cmd PermitGalleryAccessCmd, user common.User) error {
-	gallery, e := FindGallery(cmd.GalleryNo)
+func GrantGalleryAccessToUser(rail miso.Rail, tx *gorm.DB, cmd PermitGalleryAccessCmd, user common.User) error {
+	gallery, e := FindGallery(rail, tx, cmd.GalleryNo)
 	if e != nil {
 		return e
 	}
@@ -244,5 +236,5 @@ func GrantGalleryAccessToUser(rail miso.Rail, cmd PermitGalleryAccessCmd, user c
 		return miso.NewErr("You are not allowed to grant access to this gallery")
 	}
 
-	return CreateGalleryAccess(toUser.UserNo, cmd.GalleryNo, user.Username)
+	return CreateGalleryAccess(rail, tx, toUser.UserNo, cmd.GalleryNo, user.Username)
 }
