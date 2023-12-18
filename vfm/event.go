@@ -1,6 +1,9 @@
 package vfm
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/curtisnewbie/miso/miso"
 	"gorm.io/gorm"
 )
@@ -13,6 +16,7 @@ const (
 	fileLDeletedEventBus               = "vfm.file.logic.deleted"
 	addFantahseaDirGalleryImgEventBus  = "fantahsea.dir.gallery.image.add"
 	notifyFantahseaFileDeletedEventBus = "fantahsea.notify.file.deleted"
+	calcDirSizeEventBus                = "vfm.dir.size.calc"
 )
 
 type NotifyFileDeletedEvent struct {
@@ -40,6 +44,10 @@ type CreateFantahseaImgEvt struct {
 	DirName      string `json:"dirName"`
 	ImageName    string `json:"imageName"`
 	ImageFileKey string `json:"imageFileKey"`
+}
+
+type CalcDirSizeEvt struct {
+	FileKey string
 }
 
 // event-pump send binlog event when a file_info record is saved.
@@ -223,4 +231,9 @@ func OnFileDeleted(rail miso.Rail, evt StreamEvent) error {
 
 func OnAddFileToVfolderEvent(rail miso.Rail, evt AddFileToVfolderEvent) error {
 	return HandleAddFileToVFolderEvent(rail, miso.GetMySQL(), evt)
+}
+
+func OnCalcDirSizeEvt(rail miso.Rail, evt CalcDirSizeEvt) error {
+	defer miso.TimeOp(rail, time.Now(), fmt.Sprintf("Process CalcDirSizeEvt: %+v", evt))
+	return CalcDirSize(rail, evt.FileKey, miso.GetMySQL())
 }

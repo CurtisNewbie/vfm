@@ -555,7 +555,7 @@ type MoveIntoDirReq struct {
 	ParentFileUuid string `json:"parentFileUuid"`
 }
 
-func MoveFileToDir(rail miso.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.User) error {
+func MoveFileToDir(rail miso.Rail, db *gorm.DB, req MoveIntoDirReq, user common.User) error {
 	if req.Uuid == "" || req.Uuid == req.ParentFileUuid {
 		return nil
 	}
@@ -567,40 +567,70 @@ func MoveFileToDir(rail miso.Rail, tx *gorm.DB, req MoveIntoDirReq, user common.
 	}
 	defer flock.Unlock()
 
-	// lock directory if necessary, if parentFileUuid is empty, the file is moved out of a directory
-	if req.ParentFileUuid != "" {
-		pflock := fileLock(rail, req.ParentFileUuid)
-		if err := pflock.Lock(); err != nil {
-			return err
-		}
-		defer pflock.Unlock()
-
-		pr, e := findFile(rail, tx, req.ParentFileUuid)
-		if e != nil {
-			return fmt.Errorf("failed to find parentFile, %v", e)
-		}
-		rail.Debugf("parentFile: %+v", pr)
-
-		if pr.IsZero() {
-			return fmt.Errorf("perentFile not found, parentFileKey: %v", req.ParentFileUuid)
-		}
-
-		if pr.UploaderId != user.UserId {
-			return miso.NewErr("You are not the owner of this directory")
-		}
-
-		if pr.FileType != FileTypeDir {
-			return miso.NewErr("Target file is not a directory")
-		}
-
-		if pr.IsLogicDeleted != LDelN {
-			return miso.NewErr("Target file deleted")
-		}
+	fi, err := findFile(rail, db, req.Uuid)
+	if err != nil {
+		return miso.NewErr("File not found", "failed to find file, uuid: %v, %v", req.Uuid, err)
+	}
+	if fi.ParentFile == req.ParentFileUuid {
+		return nil
 	}
 
-	return tx.Exec("UPDATE file_info SET parent_file = ?, update_by = ?, update_time = ? WHERE uuid = ?",
-		req.ParentFileUuid, user.Username, time.Now(), req.Uuid).
-		Error
+	return db.Transaction(func(tx *gorm.DB) error {
+
+		// lock directory if necessary, if parentFileUuid is empty, the file is moved out of a directory
+		if req.ParentFileUuid != "" {
+			pflock := fileLock(rail, req.ParentFileUuid)
+			if err := pflock.Lock(); err != nil {
+				return err
+			}
+			defer pflock.Unlock()
+
+			pr, e := findFile(rail, tx, req.ParentFileUuid)
+			if e != nil {
+				return fmt.Errorf("failed to find parentFile, %v", e)
+			}
+			rail.Debugf("parentFile: %+v", pr)
+
+			if pr.IsZero() {
+				return fmt.Errorf("perentFile not found, parentFileKey: %v", req.ParentFileUuid)
+			}
+
+			if pr.UploaderNo != user.UserNo {
+				return miso.NewErr("You are not the owner of this directory")
+			}
+
+			if pr.FileType != FileTypeDir {
+				return miso.NewErr("Target file is not a directory")
+			}
+
+			if pr.IsLogicDeleted != LDelN {
+				return miso.NewErr("Target file deleted")
+			}
+
+			newSize := pr.SizeInBytes + fi.SizeInBytes
+			err := tx.Exec("UPDATE file_info SET size_in_bytes = ?, update_by = ?, update_time = ? WHERE uuid = ?",
+				newSize, user.Username, time.Now(), req.ParentFileUuid).Error
+			if err != nil {
+				return fmt.Errorf("failed to updated dir's size, dir: %v, %v", req.ParentFileUuid, err)
+			}
+			rail.Infof("updated dir %v size to %v", req.ParentFileUuid, newSize)
+
+		}
+
+		if !miso.IsBlankStr(fi.ParentFile) {
+
+			// calculate the dir size asynchronously
+			if err := miso.PubEventBus(rail, CalcDirSizeEvt{
+				FileKey: fi.ParentFile,
+			}, calcDirSizeEventBus); err != nil {
+				rail.Errorf("failed to send CalcDirSizeEvt, fileKey: %v, %v", fi.ParentFile, err)
+			}
+		}
+
+		return tx.Exec("UPDATE file_info SET parent_file = ?, update_by = ?, update_time = ? WHERE uuid = ?",
+			req.ParentFileUuid, user.Username, time.Now(), req.Uuid).
+			Error
+	})
 }
 
 func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error {
@@ -1670,7 +1700,6 @@ func CalcDirSize(rail miso.Rail, fk string, db *gorm.DB) error {
 	}
 	defer lock.Unlock()
 
-	// TODO: this may be slow, blocking other opertions that acquire the same lock
 	var size int64
 	err := db.Raw("SELECT IFNULL(SUM(size_in_bytes),0) FROM file_info WHERE parent_file = ? AND is_del = 0 AND is_logic_deleted = 0", fk).
 		Scan(&size).

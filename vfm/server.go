@@ -27,18 +27,11 @@ func PrepareServer(rail miso.Rail) error {
 }
 
 func PrepareEventBus(rail miso.Rail) error {
-	if err := miso.NewEventBus(comprImgProcEventBus); err != nil {
-		return err
-	}
-	if err := miso.NewEventBus(addFantahseaDirGalleryImgEventBus); err != nil {
-		return err
-	}
-	if err := miso.NewEventBus(notifyFantahseaFileDeletedEventBus); err != nil {
-		return err
-	}
-	if err := miso.NewEventBus(addFileToVFolderEventBus); err != nil {
-		return err
-	}
+	miso.NewEventBus(comprImgProcEventBus)
+	miso.NewEventBus(addFantahseaDirGalleryImgEventBus)
+	miso.NewEventBus(notifyFantahseaFileDeletedEventBus)
+	miso.NewEventBus(addFileToVFolderEventBus)
+	miso.NewEventBus(calcDirSizeEventBus)
 
 	miso.SubEventBus(comprImgNotifyEventBus, 2, OnImageCompressed)
 	miso.SubEventBus(fileSavedEventBus, 2, OnFileSaved)
@@ -47,6 +40,7 @@ func PrepareEventBus(rail miso.Rail) error {
 	miso.SubEventBus(addFileToVFolderEventBus, 2, OnAddFileToVfolderEvent)
 	miso.SubEventBus(addFantahseaDirGalleryImgEventBus, 2, OnCreateGalleryImgEvent)
 	miso.SubEventBus(notifyFantahseaFileDeletedEventBus, 2, OnNotifyFileDeletedEvent)
+	miso.SubEventBus(calcDirSizeEventBus, 1, OnCalcDirSizeEvt)
 	return nil
 }
 

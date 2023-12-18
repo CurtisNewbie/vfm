@@ -33,6 +33,12 @@ func corePreTest(t *testing.T) {
 	if _, e := miso.InitRedisFromProp(rail); e != nil {
 		t.Fatal(e)
 	}
+
+	miso.SetProp(miso.PropRabbitMqUsername, "guest")
+	miso.SetProp(miso.PropRabbitMqPassword, "guest")
+	if e := miso.StartRabbitMqClient(rail); e != nil {
+		t.Fatal(e)
+	}
 	logrus.SetLevel(logrus.DebugLevel)
 }
 
@@ -130,8 +136,9 @@ func TestMoveFileToDir(t *testing.T) {
 	corePreTest(t)
 	c := miso.EmptyRail()
 	req := MoveIntoDirReq{
-		Uuid:           "ZZZ687238965264384971813",
-		ParentFileUuid: "ZZZ718222444658688014704",
+		Uuid: "eb6bc04f-15c5-4f85-a84d-be3d5a7236d8",
+		// ParentFileUuid: "5ddf49ca-dec9-4ecf-962d-47b0f3eab90c",
+		ParentFileUuid: "",
 	}
 	e := MoveFileToDir(c, miso.GetMySQL(), req, testUser())
 	if e != nil {
