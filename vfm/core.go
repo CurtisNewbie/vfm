@@ -1622,3 +1622,66 @@ func RemoveVFolder(rail miso.Rail, tx *gorm.DB, user common.User, req RemoveVFol
 	rail.Infof("VFolder %v deleted by %v", req.FolderNo, user.Username)
 	return nil
 }
+
+func BatchCalcDirSize(rail miso.Rail, db *gorm.DB) error {
+	defer miso.TimeOp(rail, time.Now(), "BatchCalcDirSize")
+	var limit int = 100
+	var minId int = 0
+
+	type TempFile struct {
+		Id   int
+		Uuid string
+	}
+	var files []TempFile
+
+	for {
+		t := db.Table("file_info").
+			Select("uuid", "id").
+			Where("file_type = 'DIR' AND is_del = 0 AND is_logic_deleted = 0").
+			Where("id > ?", minId).
+			Order("id asc").
+			Scan(&files)
+		if t.Error != nil {
+			return fmt.Errorf("failed to list dir files, minId: %v, limit: %v, %v", minId, limit, t.Error)
+		}
+
+		if t.RowsAffected < 1 || len(files) < 1 {
+			rail.Infof("BatchCalcDirSize finished, minId: %v, limit: %v", minId, limit)
+			return nil
+		}
+
+		for _, f := range files {
+			start := time.Now()
+			if err := CalcDirSize(rail, f.Uuid, db); err != nil {
+				return fmt.Errorf("failed to CalcDirSize for file: %v, %v", f.Uuid, err)
+			}
+			miso.TimeOp(rail, start, fmt.Sprintf("CalcDirSize, uuid: %v, id: %v", f.Uuid, f.Id))
+		}
+
+		minId = files[len(files)-1].Id
+		rail.Infof("minId: %v", minId)
+	}
+}
+
+func CalcDirSize(rail miso.Rail, fk string, db *gorm.DB) error {
+	lock := fileLock(rail, fk)
+	if err := lock.Lock(); err != nil {
+		return fmt.Errorf("failed to lock, fileKey: %v, %w", fk, err)
+	}
+	defer lock.Unlock()
+
+	// TODO: this may be slow, blocking other opertions that acquire the same lock
+	var size int64
+	err := db.Raw("SELECT IFNULL(SUM(size_in_bytes),0) FROM file_info WHERE parent_file = ? AND is_del = 0 AND is_logic_deleted = 0", fk).
+		Scan(&size).
+		Error
+	if err != nil {
+		return fmt.Errorf("failed to calculate dir size, fileKey: %v, %v", fk, err)
+	}
+
+	if err := db.Exec(`UPDATE file_info SET size_in_bytes = ? WHERE uuid = ?`, size, fk).Error; err != nil {
+		return fmt.Errorf("failed to update dir's size, fileKey: %v, %v", fk, err)
+	}
+
+	return nil
+}

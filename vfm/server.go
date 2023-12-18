@@ -20,6 +20,9 @@ func PrepareServer(rail miso.Rail) error {
 	if err := RegisterHttpRoutes(rail); err != nil {
 		return err
 	}
+	if err := ScheduleJobs(rail); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -53,5 +56,21 @@ func PrepareGoAuthReport(rail miso.Rail) error {
 		{Name: AdminFsResName, Code: AdminFsResCode},
 	})
 	goauth.ReportPathsOnBootstrapped(rail)
+	return nil
+}
+
+func ScheduleJobs(rail miso.Rail) error {
+	err := miso.ScheduleDistributedTask(miso.Job{
+		Name:            "CalcDirSizeJob",
+		Cron:            "0/15 * * * ?",
+		CronWithSeconds: false,
+		LogJobExec:      true,
+		Run: func(r miso.Rail) error {
+			return BatchCalcDirSize(r, miso.GetMySQL())
+		},
+	})
+	if err != nil {
+		return err
+	}
 	return nil
 }
