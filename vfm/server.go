@@ -56,7 +56,7 @@ func PrepareGoAuthReport(rail miso.Rail) error {
 func ScheduleJobs(rail miso.Rail) error {
 	err := miso.ScheduleDistributedTask(miso.Job{
 		Name:            "CalcDirSizeJob",
-		Cron:            "0/15 * * * ?",
+		Cron:            "0/30 * * * ?",
 		CronWithSeconds: false,
 		LogJobExec:      true,
 		Run: func(r miso.Rail) error {
