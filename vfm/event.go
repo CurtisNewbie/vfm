@@ -9,14 +9,14 @@ import (
 )
 
 const (
-	comprImgProcEventBus               = "hammer.image.compress.processing"
-	comprImgNotifyEventBus             = "hammer.image.compress.notification"
-	fileSavedEventBus                  = "vfm.file.saved"
-	thumbnailUpdatedEventBus           = "vfm.file.thumbnail.updated"
-	fileLDeletedEventBus               = "vfm.file.logic.deleted"
-	addFantahseaDirGalleryImgEventBus  = "fantahsea.dir.gallery.image.add"
-	notifyFantahseaFileDeletedEventBus = "fantahsea.notify.file.deleted"
-	calcDirSizeEventBus                = "vfm.dir.size.calc"
+	comprImgProcEventBus               = "event.bus.hammer.image.compress.processing"
+	comprImgNotifyEventBus             = "event.bus.hammer.image.compress.notification"
+	fileSavedEventBus                  = "event.bus.vfm.file.saved"
+	thumbnailUpdatedEventBus           = "event.bus.vfm.file.thumbnail.updated"
+	fileLDeletedEventBus               = "event.bus.vfm.file.logic.deleted"
+	addFantahseaDirGalleryImgEventBus  = "event.bus.fantahsea.dir.gallery.image.add"
+	notifyFantahseaFileDeletedEventBus = "event.bus.fantahsea.notify.file.deleted"
+	calcDirSizeEventBus                = "event.bus.vfm.dir.size.calc"
 )
 
 type NotifyFileDeletedEvent struct {
