@@ -22,15 +22,11 @@ server:
   web.enabled: true
   host: "0.0.0.0"
   port: 8086
-  gracefulShutdownTimeSec: 5
 
 consul:
   enabled: true
   consulAddress: consul:8500
   healthCheckUrl: /health
-  healthCheckInterval: 120s
-  healthCheckTimeout: 120s
-  healthCheckFailedDeregisterAfter: 5s
 
 rabbitmq:
   enabled: true
@@ -39,9 +35,6 @@ rabbitmq:
   username: "${rabbitmqusername}"
   password: "${rabbitmqpassword}"
   vhost: "/"
-
-# tracing.propagation.keys:
-#  -
 
 logging:
   rolling.file: "/usr/src/logs/vfm.log"

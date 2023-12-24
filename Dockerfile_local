@@ -12,4 +12,4 @@ COPY vfm_build ./app_vfm
 
 ENV TZ=Asia/Shanghai
 
-CMD ["./app_vfm", "configFile=/usr/src/config/app-conf-prod.yml"]
+CMD ["./app_vfm", "configFile=/usr/src/config/conf.yml"]
