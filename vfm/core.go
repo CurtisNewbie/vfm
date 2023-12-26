@@ -22,8 +22,6 @@ const (
 
 	VfolderOwner   = "OWNER"   // owner of the vfolder
 	VfolderGranted = "GRANTED" // granted access to the vfolder
-
-	addFileToVFolderEventBus = "vfm.file.vfolder.add"
 )
 
 var (

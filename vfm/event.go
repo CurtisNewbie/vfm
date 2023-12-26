@@ -17,6 +17,7 @@ const (
 	addFantahseaDirGalleryImgEventBus  = "event.bus.fantahsea.dir.gallery.image.add"
 	notifyFantahseaFileDeletedEventBus = "event.bus.fantahsea.notify.file.deleted"
 	calcDirSizeEventBus                = "event.bus.vfm.dir.size.calc"
+	addFileToVFolderEventBus           = "event.bus.vfm.file.vfolder.add"
 )
 
 type NotifyFileDeletedEvent struct {
