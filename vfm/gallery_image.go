@@ -20,6 +20,10 @@ const (
 	IMAGE_SIZE_THRESHOLD int64 = 40 * 1048576
 )
 
+var (
+	fstoreTokenPool = miso.NewAsyncPool(500, 100)
+)
+
 type TransferGalleryImageReq struct {
 	Images []CreateGalleryImageCmd
 }
@@ -124,6 +128,20 @@ type FstoreTmpToken struct {
 	TempKey string
 }
 
+func GenFstoreTknAsync(rail miso.Rail, fileId string, name string) miso.Future[FstoreTmpToken] {
+	return miso.RunAsyncPool[FstoreTmpToken](fstoreTokenPool,
+		func() (FstoreTmpToken, error) {
+			tkn, err := GetFstoreTmpToken(rail.NextSpan(), fileId, name)
+			if err != nil {
+				return FstoreTmpToken{FileId: fileId}, err
+			}
+			return FstoreTmpToken{
+				FileId:  fileId,
+				TempKey: tkn,
+			}, nil
+		})
+}
+
 // List gallery images
 func ListGalleryImages(rail miso.Rail, tx *gorm.DB, cmd ListGalleryImagesCmd, user common.User) (*ListGalleryImagesResp, error) {
 	rail.Infof("ListGalleryImages, cmd: %+v", cmd)
@@ -175,32 +193,13 @@ func ListGalleryImages(rail miso.Rail, tx *gorm.DB, cmd ListGalleryImagesCmd, us
 				continue
 			}
 			fstoreFileId := r.FstoreFileId
-
-			genTknFutures = append(genTknFutures, miso.RunAsync[FstoreTmpToken](func() (FstoreTmpToken, error) {
-				tkn, err := GetFstoreTmpToken(rail.NextSpan(), fstoreFileId, r.Name)
-				if err != nil {
-					return FstoreTmpToken{FileId: fstoreFileId}, err
-				}
-				return FstoreTmpToken{
-					FileId:  fstoreFileId,
-					TempKey: tkn,
-				}, nil
-			}))
+			genTknFutures = append(genTknFutures, GenFstoreTknAsync(rail, fstoreFileId, r.Name))
 
 			thumbnailFileId := r.Thumbnail
 			if thumbnailFileId == "" {
 				thumbnailFileId = fstoreFileId
 			} else {
-				genTknFutures = append(genTknFutures, miso.RunAsync[FstoreTmpToken](func() (FstoreTmpToken, error) {
-					tkn, err := GetFstoreTmpToken(rail.NextSpan(), thumbnailFileId, r.Name)
-					if err != nil {
-						return FstoreTmpToken{FileId: thumbnailFileId}, err
-					}
-					return FstoreTmpToken{
-						FileId:  thumbnailFileId,
-						TempKey: tkn,
-					}, nil
-				}))
+				genTknFutures = append(genTknFutures, GenFstoreTknAsync(rail, thumbnailFileId, r.Name))
 			}
 
 			images = append(images, ImageInfo{ImageFileId: fstoreFileId, ThumbnailFileId: thumbnailFileId})

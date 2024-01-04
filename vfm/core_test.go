@@ -23,11 +23,18 @@ func corePreTest(t *testing.T) {
 	pw := ""
 	db := "fileserver"
 	host := "localhost"
-	port := "3306"
-	connParam := "charset=utf8mb4&parseTime=True&loc=Local&readTimeout=30s&writeTimeout=30s&timeout=3s"
+	port := 3306
 	rail := miso.EmptyRail()
 
-	if e := miso.InitMySQL(user, pw, db, host, port, connParam); e != nil {
+	p := miso.MySQLConnParam{
+		User:     user,
+		Password: pw,
+		Schema:   db,
+		Host:     host,
+		Port:     port,
+	}
+
+	if e := miso.InitMySQL(rail, p); e != nil {
 		t.Fatal(e)
 	}
 	if _, e := miso.InitRedisFromProp(rail); e != nil {
