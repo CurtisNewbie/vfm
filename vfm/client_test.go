@@ -9,7 +9,7 @@ import (
 
 func preClientTest(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
-	_, e := miso.GetConsulClient()
+	e := miso.GetConsulClient()
 	if e != nil {
 		t.Log(e)
 		t.FailNow()
