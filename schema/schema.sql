@@ -1,4 +1,6 @@
-CREATE TABLE IF NOT EXISTS file_info (
+create database if not exists vfm;
+
+CREATE TABLE IF NOT EXISTS vfm.file_info (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL COMMENT 'name of the file',
   `uuid` varchar(64) NOT NULL COMMENT 'file''s uuid',
@@ -31,7 +33,7 @@ CREATE TABLE IF NOT EXISTS file_info (
   KEY `uploader_no_idx` (`uploader_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS file_tag (
+CREATE TABLE IF NOT EXISTS vfm.file_tag (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
   `file_id` int unsigned NOT NULL COMMENT 'id of file_info',
   `tag_id` int unsigned NOT NULL COMMENT 'id of tag',
@@ -43,9 +45,9 @@ CREATE TABLE IF NOT EXISTS file_tag (
   `is_del` tinyint NOT NULL DEFAULT '0' COMMENT '0-normal, 1-deleted',
   PRIMARY KEY (`id`),
   KEY `user_id_file_id_idx` (`user_id`,`file_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='join table between file_info and tag'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='join table between file_info and tag';
 
-CREATE TABLE IF NOT EXISTS tag (
+CREATE TABLE IF NOT EXISTS vfm.tag (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
   `name` varchar(50) NOT NULL COMMENT 'name of tag',
   `user_id` int unsigned NOT NULL COMMENT 'user who owns this tag (tags are isolated between different users)',
@@ -58,7 +60,7 @@ CREATE TABLE IF NOT EXISTS tag (
   UNIQUE KEY `uk_user_tag` (`user_id`,`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='tag';
 
-CREATE TABLE IF NOT EXISTS vfolder (
+CREATE TABLE IF NOT EXISTS vfm.vfolder (
   `id` int NOT NULL AUTO_INCREMENT,
   `folder_no` varchar(64) NOT NULL COMMENT 'folder no',
   `name` varchar(255) NOT NULL COMMENT 'name of the folder',
@@ -71,7 +73,7 @@ CREATE TABLE IF NOT EXISTS vfolder (
   UNIQUE KEY `folder_no_uk` (`folder_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Virtual folder';
 
-CREATE TABLE IF NOT EXISTS user_vfolder (
+CREATE TABLE IF NOT EXISTS vfm.user_vfolder (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_no` varchar(64) NOT NULL COMMENT 'user no',
   `username` varchar(50) DEFAULT '' COMMENT 'username',
@@ -87,7 +89,7 @@ CREATE TABLE IF NOT EXISTS user_vfolder (
   UNIQUE KEY `user_folder_uk` (`user_no`,`folder_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User and Virtual folder join table';
 
-CREATE TABLE IF NOT EXISTS file_vfolder (
+CREATE TABLE IF NOT EXISTS vfm.file_vfolder (
   `id` int NOT NULL AUTO_INCREMENT,
   `folder_no` varchar(64) NOT NULL COMMENT 'folder no',
   `uuid` varchar(64) NOT NULL COMMENT 'file''s uuid',
@@ -100,7 +102,7 @@ CREATE TABLE IF NOT EXISTS file_vfolder (
   UNIQUE KEY `folder_file_uk` (`folder_no`,`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='File and vfolder join table';
 
-CREATE TABLE IF NOT EXISTS gallery (
+CREATE TABLE IF NOT EXISTS vfm.gallery (
   `id` int NOT NULL AUTO_INCREMENT,
   `gallery_no` varchar(32) NOT NULL DEFAULT '' COMMENT 'gallery no',
   `user_no` varchar(64) NOT NULL DEFAULT '' COMMENT 'user no',
@@ -114,9 +116,9 @@ CREATE TABLE IF NOT EXISTS gallery (
   PRIMARY KEY (`id`),
   UNIQUE KEY `gallery_no_uniq` (`gallery_no`),
   KEY `idx_dir_file_key` (`dir_file_key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Gallery'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Gallery';
 
-CREATE TABLE IF NOT EXISTS gallery_image (
+CREATE TABLE IF NOT EXISTS vfm.gallery_image (
   `id` int NOT NULL AUTO_INCREMENT,
   `gallery_no` varchar(32) NOT NULL DEFAULT '' COMMENT 'gallery no',
   `image_no` varchar(32) NOT NULL DEFAULT '' COMMENT 'image no',
@@ -134,7 +136,7 @@ CREATE TABLE IF NOT EXISTS gallery_image (
   KEY `gallery_no_idx` (`gallery_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Gallery Image';
 
-CREATE TABLE IF NOT EXISTS gallery_user_access (
+CREATE TABLE IF NOT EXISTS vfm.gallery_user_access (
   `id` int NOT NULL AUTO_INCREMENT,
   `gallery_no` varchar(32) NOT NULL DEFAULT '' COMMENT 'gallery no',
   `user_no` varchar(64) NOT NULL DEFAULT '' COMMENT 'user''s no',

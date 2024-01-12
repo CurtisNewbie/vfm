@@ -6,7 +6,7 @@ mysql:
   enabled: true
   user: root
   # password: 123456
-  database: "fileserver"
+  database: "vfm"
   host: localhost
   port: 3306
 
