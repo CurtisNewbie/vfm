@@ -34,4 +34,4 @@ rabbitmq:
   password: guest
   vhost: "/"
 
-goauth.client.enabled: false
+goauth.client.enabled: true
