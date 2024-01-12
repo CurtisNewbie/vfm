@@ -20,6 +20,7 @@ func PrepareServer(rail miso.Rail) error {
 	if err := RegisterHttpRoutes(rail); err != nil {
 		return err
 	}
+
 	if err := ScheduleJobs(rail); err != nil {
 		return err
 	}
@@ -28,10 +29,6 @@ func PrepareServer(rail miso.Rail) error {
 
 func PrepareEventBus(rail miso.Rail) error {
 	miso.NewEventBus(comprImgProcEventBus)
-	miso.NewEventBus(addFantahseaDirGalleryImgEventBus)
-	miso.NewEventBus(notifyFantahseaFileDeletedEventBus)
-	miso.NewEventBus(addFileToVFolderEventBus)
-	miso.NewEventBus(calcDirSizeEventBus)
 
 	miso.SubEventBus(comprImgNotifyEventBus, 2, OnImageCompressed)
 	miso.SubEventBus(fileSavedEventBus, 2, OnFileSaved)
