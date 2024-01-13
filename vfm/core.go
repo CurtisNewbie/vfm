@@ -7,6 +7,7 @@ import (
 
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/miso/miso"
+	vault "github.com/curtisnewbie/user-vault/api"
 	"gorm.io/gorm"
 )
 
@@ -751,7 +752,7 @@ func _lockFolderExec(c miso.Rail, folderNo string, r miso.Runnable) error {
 	return miso.RLockExec(c, "vfolder:"+folderNo, r)
 }
 
-func ShareVFolder(rail miso.Rail, tx *gorm.DB, sharedTo UserInfo, folderNo string, user common.User) error {
+func ShareVFolder(rail miso.Rail, tx *gorm.DB, sharedTo vault.UserInfo, folderNo string, user common.User) error {
 	if user.UserNo == sharedTo.UserNo {
 		return nil
 	}
@@ -1131,7 +1132,7 @@ func ListGrantedFolderAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedFolderA
 	}
 
 	if len(userNos) > 0 { // since v0.0.4 this is not needed anymore, but we keep it here for backward compatibility
-		unr, e := FetchUsernames(rail, FetchUsernamesReq{UserNos: userNos})
+		unr, e := vault.FetchUsernames(rail, vault.FetchUsernameReq{UserNos: userNos})
 		if e != nil {
 			rail.Errorf("Failed to fetch usernames, %v", e)
 		} else {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/miso/miso"
+	vault "github.com/curtisnewbie/user-vault/api"
 	"github.com/sirupsen/logrus"
 )
 
@@ -194,7 +195,7 @@ func TestListDirs(t *testing.T) {
 func TestShareVFolder(t *testing.T) {
 	corePreTest(t)
 	if e := ShareVFolder(miso.EmptyRail(), miso.GetMySQL(),
-		UserInfo{Id: 30, Username: "sharon", UserNo: "UE202205142310074386952"}, "hfKh3QZSsWjKufZWflqu8jb0n", testUser()); e != nil {
+		vault.UserInfo{Id: 30, Username: "sharon", UserNo: "UE202205142310074386952"}, "hfKh3QZSsWjKufZWflqu8jb0n", testUser()); e != nil {
 		t.Fatal(e)
 	}
 }

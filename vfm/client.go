@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/curtisnewbie/miso/miso"
+	vault "github.com/curtisnewbie/user-vault/api"
 )
 
 const (
@@ -15,12 +16,12 @@ const (
 
 var (
 	userIdInfoCache = miso.NewLazyORCache("vfm:user:info:userid",
-		func(rail miso.Rail, key string) (UserInfo, error) {
+		func(rail miso.Rail, key string) (vault.UserInfo, error) {
 			userId, err := strconv.Atoi(key)
 			if err != nil {
-				return UserInfo{}, miso.NewErr("Invalid userId format, %v", err)
+				return vault.UserInfo{}, miso.NewErr("Invalid userId format, %v", err)
 			}
-			fui, errFind := FindUser(rail, FindUserReq{
+			fui, errFind := vault.FindUser(rail, vault.FindUserReq{
 				UserId: &userId,
 			})
 			return fui, errFind
@@ -48,66 +49,9 @@ func (f FstoreFile) IsZero() bool {
 	return f.Id < 1
 }
 
-type FindUserReq struct {
-	UserId   *int    `json:"userId"`
-	UserNo   *string `json:"userNo"`
-	Username *string `json:"username"`
-}
-
-type UserInfo struct {
-	Id       int
-	Username string
-	UserNo   string
-}
-
-type FetchUsernamesReq struct {
-	UserNos []string `json:"userNos"`
-}
-
-type FetchUsernamesRes struct {
-	UserNoToUsername map[string]string `json:"userNoToUsername"`
-}
-
-func FindUserId(rail miso.Rail, username string) (int, error) {
-	var r miso.GnResp[int]
-	err := miso.NewDynTClient(rail, "/remote/user/id", "user-vault").
-		Require2xx().
-		AddQueryParams("username", username).
-		Get().
-		Json(&r)
-	if err != nil {
-		return 0, fmt.Errorf("failed to findUserId (user-vault), %v", err)
-	}
-	return r.Res()
-}
-
-func FindUser(rail miso.Rail, req FindUserReq) (UserInfo, error) {
-	var r miso.GnResp[UserInfo]
-	err := miso.NewDynTClient(rail, "/remote/user/info", "user-vault").
-		Require2xx().
-		PostJson(req).
-		Json(&r)
-	if err != nil {
-		return UserInfo{}, fmt.Errorf("failed to find user (user-vault), %v", err)
-	}
-	return r.Res()
-}
-
-func CachedFindUser(rail miso.Rail, userId int) (UserInfo, error) {
+func CachedFindUser(rail miso.Rail, userId int) (vault.UserInfo, error) {
 	userIdInt := strconv.FormatInt(int64(userId), 10)
 	return userIdInfoCache.Get(rail, userIdInt)
-}
-
-func FetchUsernames(rail miso.Rail, req FetchUsernamesReq) (FetchUsernamesRes, error) {
-	var r miso.GnResp[FetchUsernamesRes]
-	err := miso.NewDynTClient(rail, "/remote/user/userno/username", "user-vault").
-		Require2xx().
-		PostJson(req).
-		Json(&r)
-	if err != nil {
-		return FetchUsernamesRes{}, fmt.Errorf("failed to fetch usernames (user-vault), %v", err)
-	}
-	return r.Res()
 }
 
 func FetchFstoreFileInfo(rail miso.Rail, fileId string, uploadFileId string) (FstoreFile, error) {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/miso/miso"
+	vault "github.com/curtisnewbie/user-vault/api"
 	"gorm.io/gorm"
 )
 
@@ -181,9 +182,9 @@ func ListedGrantedGalleryAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedGall
 
 	if len(res.Payload) > 0 {
 		for i, p := range res.Payload {
-			var toUser UserInfo
+			var toUser vault.UserInfo
 			var err error
-			if toUser, err = FindUser(rail, FindUserReq{
+			if toUser, err = vault.FindUser(rail, vault.FindUserReq{
 				UserNo: &p.UserNo,
 			}); err != nil {
 				return res, err
@@ -221,9 +222,9 @@ func GrantGalleryAccessToUser(rail miso.Rail, tx *gorm.DB, cmd PermitGalleryAcce
 		return e
 	}
 
-	var toUser UserInfo
+	var toUser vault.UserInfo
 	var err error
-	if toUser, err = FindUser(rail, FindUserReq{
+	if toUser, err = vault.FindUser(rail, vault.FindUserReq{
 		Username: &cmd.Username,
 	}); err != nil {
 		return miso.NewErr("Failed to find user", "failed to find user, username: %v, %v", cmd.Username, err)

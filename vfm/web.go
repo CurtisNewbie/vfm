@@ -4,6 +4,7 @@ import (
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/goauth"
 	"github.com/curtisnewbie/miso/miso"
+	vault "github.com/curtisnewbie/user-vault/api"
 	"github.com/gin-gonic/gin"
 )
 
@@ -274,7 +275,7 @@ func VFolderRemoveFileEp(c *gin.Context, rail miso.Rail, req RemoveFileFromVfold
 }
 
 func ShareVFolderEp(c *gin.Context, rail miso.Rail, req ShareVfolderReq) (any, error) {
-	sharedTo, e := FindUser(rail, FindUserReq{Username: &req.Username})
+	sharedTo, e := vault.FindUser(rail, vault.FindUserReq{Username: &req.Username})
 	if e != nil {
 		rail.Warnf("Unable to find user, sharedTo: %s, %v", req.Username, e)
 		return nil, miso.NewErr("Failed to find user")
