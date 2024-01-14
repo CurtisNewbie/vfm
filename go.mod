@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/curtisnewbie/mini-fstore v0.1.4-beta.1
 	github.com/curtisnewbie/miso v0.0.14
 	github.com/curtisnewbie/user-vault v0.0.10
 )

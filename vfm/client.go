@@ -33,6 +33,11 @@ var (
 	)
 )
 
+func CachedFindUser(rail miso.Rail, userId int) (vault.UserInfo, error) {
+	userIdInt := strconv.FormatInt(int64(userId), 10)
+	return userIdInfoCache.Get(rail, userIdInt)
+}
+
 type FstoreFile struct {
 	Id         int64       `json:"id"`
 	FileId     string      `json:"fileId"`
@@ -47,11 +52,6 @@ type FstoreFile struct {
 
 func (f FstoreFile) IsZero() bool {
 	return f.Id < 1
-}
-
-func CachedFindUser(rail miso.Rail, userId int) (vault.UserInfo, error) {
-	userIdInt := strconv.FormatInt(int64(userId), 10)
-	return userIdInfoCache.Get(rail, userIdInt)
 }
 
 func FetchFstoreFileInfo(rail miso.Rail, fileId string, uploadFileId string) (FstoreFile, error) {

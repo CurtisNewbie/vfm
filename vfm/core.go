@@ -1,11 +1,13 @@
 package vfm
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/curtisnewbie/gocommon/common"
+	fstore "github.com/curtisnewbie/mini-fstore/client"
 	"github.com/curtisnewbie/miso/miso"
 	vault "github.com/curtisnewbie/user-vault/api"
 	"gorm.io/gorm"
@@ -1353,12 +1355,17 @@ type CreateFileReq struct {
 }
 
 func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) error {
-	fsf, e := FetchFstoreFileInfo(rail, "", r.FakeFstoreFileId)
+	fsf, e := fstore.FetchFileInfo(rail, fstore.FetchFileInfoReq{
+		UploadFileId: r.FakeFstoreFileId,
+	})
 	if e != nil {
+		if errors.Is(e, fstore.ErrFileNotFound) || errors.Is(e, fstore.ErrFileDeleted) {
+			return miso.NewErr("File not found or deleted")
+		}
 		return fmt.Errorf("failed to fetch file info from fstore, %v", e)
 	}
-	if fsf.IsZero() || fsf.Status != FileStatusNormal {
-		return miso.NewErr("File not found or deleted")
+	if fsf.Status != FileStatusNormal {
+		return miso.NewErr("File is deleted")
 	}
 
 	var f FileInfo
