@@ -11,8 +11,8 @@ require (
 
 require (
 	github.com/curtisnewbie/hammer v0.0.8
-	github.com/curtisnewbie/mini-fstore v0.1.5
-	github.com/curtisnewbie/miso v0.0.14
+	github.com/curtisnewbie/mini-fstore v0.1.6-beta.1
+	github.com/curtisnewbie/miso v0.0.15-beta.1
 	github.com/curtisnewbie/user-vault v0.0.10
 )
 
