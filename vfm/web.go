@@ -10,92 +10,94 @@ import (
 
 func RegisterHttpRoutes(rail miso.Rail) error {
 
-	miso.BaseRoute("/open/api").
-		Group(
-			miso.IGet("/file/upload/duplication/preflight", DupPreflightCheckEp).
+	miso.BaseRoute("/open/api").With(
+		miso.SubPath("/file").Group(
+			miso.IGet("/upload/duplication/preflight", DupPreflightCheckEp).
 				Extra(goauth.Protected("User - preflight check for duplicate file uploads", ManageFileResCode)),
 
-			miso.IGet("/file/parent", GetParentFileEp).
+			miso.IGet("/parent", GetParentFileEp).
 				Extra(goauth.Protected("User fetch parent file info", ManageFileResCode)),
 
-			miso.IPost("/file/move-to-dir", MoveFileToDirEp).
+			miso.IPost("/move-to-dir", MoveFileToDirEp).
 				Extra(goauth.Protected("User move files into directory", ManageFileResCode)),
 
-			miso.IPost("/file/make-dir", MakeDirEp).
+			miso.IPost("/make-dir", MakeDirEp).
 				Extra(goauth.Protected("User make directory", ManageFileResCode)),
 
-			miso.Get("/file/dir/list", ListDirEp).
+			miso.Get("/dir/list", ListDirEp).
 				Extra(goauth.Protected("User list directories", ManageFileResCode)),
 
-			miso.IPost("/file/list", ListFilesEp).
+			miso.IPost("/list", ListFilesEp).
 				Extra(goauth.Protected("User list files", ManageFileResCode)),
 
-			miso.IPost("/file/delete", DeleteFileEp).
+			miso.IPost("/delete", DeleteFileEp).
 				Extra(goauth.Protected("User delete file", ManageFileResCode)),
 
-			miso.IPost("/file/create", CreateFileEp).
+			miso.IPost("/create", CreateFileEp).
 				Extra(goauth.Protected("User create file", ManageFileResCode)),
 
-			miso.IPost("/file/info/update", UpdateFileEp).
+			miso.IPost("/info/update", UpdateFileEp).
 				Extra(goauth.Protected("User update file", ManageFileResCode)),
 
-			miso.Get("/file/tag/list/all", ListAllFileTagsEp).
+			miso.Get("/tag/list/all", ListAllFileTagsEp).
 				Extra(goauth.Protected("User list all file tags", ManageFileResCode)),
 
-			miso.IPost("/file/tag/list-for-file", ListTagsOfFileEp).
+			miso.IPost("/tag/list-for-file", ListTagsOfFileEp).
 				Extra(goauth.Protected("User list tags of file", ManageFileResCode)),
 
-			miso.IPost("/file/tag", TagFileEp).
+			miso.IPost("/tag", TagFileEp).
 				Extra(goauth.Protected("User tag file", ManageFileResCode)),
 
-			miso.IPost("/file/untag", UntagFileEp).
+			miso.IPost("/untag", UntagFileEp).
 				Extra(goauth.Protected("User untag file", ManageFileResCode)),
 
-			miso.IPost("/file/token/generate", GenFileTknEp).
+			miso.IPost("/token/generate", GenFileTknEp).
 				Extra(goauth.Protected("User generate temporary token", ManageFileResCode)),
-
-			miso.Get("/vfolder/brief/owned", ListVFolderBriefEp).
+		),
+		miso.SubPath("/vfolder").Group(
+			miso.Get("/brief/owned", ListVFolderBriefEp).
 				Extra(goauth.Protected("User list virtual folder briefs", ManageFileResCode)),
 
-			miso.IPost("/vfolder/list", ListVFoldersEp).
+			miso.IPost("/list", ListVFoldersEp).
 				Extra(goauth.Protected("User list virtual folders", ManageFileResCode)),
 
-			miso.IPost("/vfolder/create", CreateVFolderEp).
+			miso.IPost("/create", CreateVFolderEp).
 				Extra(goauth.Protected("User create virtual folder", ManageFileResCode)),
 
-			miso.IPost("/vfolder/file/add", VFolderAddFileEp).
+			miso.IPost("/file/add", VFolderAddFileEp).
 				Extra(goauth.Protected("User add file to virtual folder", ManageFileResCode)),
 
-			miso.IPost("/vfolder/file/remove", VFolderRemoveFileEp).
+			miso.IPost("/file/remove", VFolderRemoveFileEp).
 				Extra(goauth.Protected("User remove file from virtual folder", ManageFileResCode)),
 
-			miso.IPost("/vfolder/share", ShareVFolderEp).
+			miso.IPost("/share", ShareVFolderEp).
 				Extra(goauth.Protected("Share access to virtual folder", ManageFileResCode)),
 
-			miso.IPost("/vfolder/access/remove", RemoveVFolderAccessEp).
+			miso.IPost("/access/remove", RemoveVFolderAccessEp).
 				Extra(goauth.Protected("Remove granted access to virtual folder", ManageFileResCode)),
 
-			miso.IPost("/vfolder/granted/list", ListVFolderAccessEp).
+			miso.IPost("/granted/list", ListVFolderAccessEp).
 				Extra(goauth.Protected("List granted access to virtual folder", ManageFileResCode)),
 
-			miso.IPost("/vfolder/remove", RemoveVFolderEp).
+			miso.IPost("/remove", RemoveVFolderEp).
 				Extra(goauth.Protected("Remove virtual folder", ManageFileResCode)),
-
-			miso.Get("/gallery/brief/owned",
+		),
+		miso.SubPath("/gallery").Group(
+			miso.Get("/brief/owned",
 				func(c *gin.Context, rail miso.Rail) (any, error) {
 					user := common.GetUser(rail)
 					return ListOwnedGalleryBriefs(rail, user, miso.GetMySQL())
 				}).
 				Extra(goauth.Protected("List owned gallery brief info", ManageFileResCode)),
 
-			miso.IPost("/gallery/new",
+			miso.IPost("/new",
 				func(c *gin.Context, rail miso.Rail, cmd CreateGalleryCmd) (any, error) {
 					user := common.GetUser(rail)
 					return CreateGallery(rail, cmd, user, miso.GetMySQL())
 				}).
 				Extra(goauth.Protected("Create new gallery", ManageFileResCode)),
 
-			miso.IPost("/gallery/update",
+			miso.IPost("/update",
 				func(c *gin.Context, rail miso.Rail, cmd UpdateGalleryCmd) (any, error) {
 					user := common.GetUser(rail)
 					e := UpdateGallery(rail, cmd, user, miso.GetMySQL())
@@ -103,7 +105,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 				}).
 				Extra(goauth.Protected("Update gallery", ManageFileResCode)),
 
-			miso.IPost("/gallery/delete",
+			miso.IPost("/delete",
 				func(c *gin.Context, rail miso.Rail, cmd DeleteGalleryCmd) (any, error) {
 					user := common.GetUser(rail)
 					e := DeleteGallery(rail, miso.GetMySQL(), cmd, user)
@@ -111,14 +113,14 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 				}).
 				Extra(goauth.Protected("Delete gallery", ManageFileResCode)),
 
-			miso.IPost("/gallery/list",
+			miso.IPost("/list",
 				func(c *gin.Context, rail miso.Rail, cmd ListGalleriesCmd) (any, error) {
 					user := common.GetUser(rail)
 					return ListGalleries(rail, cmd, user, miso.GetMySQL())
 				}).
 				Extra(goauth.Protected("List galleries", ManageFileResCode)),
 
-			miso.IPost("/gallery/access/grant",
+			miso.IPost("/access/grant",
 				func(c *gin.Context, rail miso.Rail, cmd PermitGalleryAccessCmd) (any, error) {
 					user := common.GetUser(rail)
 					e := GrantGalleryAccessToUser(rail, miso.GetMySQL(), cmd, user)
@@ -126,7 +128,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 				}).
 				Extra(goauth.Protected("Grant access to the galleries", ManageFileResCode)),
 
-			miso.IPost("/gallery/access/remove",
+			miso.IPost("/access/remove",
 				func(c *gin.Context, rail miso.Rail, cmd RemoveGalleryAccessCmd) (any, error) {
 					user := common.GetUser(rail)
 					e := RemoveGalleryAccess(rail, miso.GetMySQL(), cmd, user)
@@ -134,26 +136,27 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 				}).
 				Extra(goauth.Protected("Grant access to the galleries", ManageFileResCode)),
 
-			miso.IPost("/gallery/access/list",
+			miso.IPost("/access/list",
 				func(c *gin.Context, rail miso.Rail, cmd ListGrantedGalleryAccessCmd) (any, error) {
 					user := common.GetUser(rail)
 					return ListedGrantedGalleryAccess(rail, miso.GetMySQL(), cmd, user)
 				}).
 				Extra(goauth.Protected("List granted access to the galleries", ManageFileResCode)),
 
-			miso.IPost("/gallery/images",
+			miso.IPost("/images",
 				func(c *gin.Context, rail miso.Rail, cmd ListGalleryImagesCmd) (any, error) {
 					return ListGalleryImages(rail, miso.GetMySQL(), cmd, common.GetUser(rail))
 				}).
 				Extra(goauth.Protected("List images of gallery", ManageFileResCode)),
 
-			miso.IPost("/gallery/image/transfer",
+			miso.IPost("/image/transfer",
 				func(c *gin.Context, rail miso.Rail, cmd TransferGalleryImageReq) (any, error) {
 					user := common.GetUser(rail)
 					return BatchTransferAsync(rail, cmd, user, miso.GetMySQL())
 				}).
 				Extra(goauth.Protected("Host selected images on gallery", ManageFileResCode)),
-		)
+		),
+	)
 
 	// ---------------------------------------------- internal endpoints ------------------------------------------
 
