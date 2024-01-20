@@ -143,8 +143,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 
 			miso.IPost("/gallery/images",
 				func(c *gin.Context, rail miso.Rail, cmd ListGalleryImagesCmd) (any, error) {
-					user := common.GetUser(rail)
-					return ListGalleryImages(rail, miso.GetMySQL(), cmd, user)
+					return ListGalleryImages(rail, miso.GetMySQL(), cmd, common.GetUser(rail))
 				}).
 				Extra(goauth.Protected("List images of gallery", ManageFileResCode)),
 

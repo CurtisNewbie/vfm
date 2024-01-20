@@ -105,7 +105,7 @@ func ListGalleries(rail miso.Rail, cmd ListGalleriesCmd, user common.User, tx *g
 		WHERE (g.user_no = ?
 		OR EXISTS (SELECT * FROM gallery_user_access ga WHERE ga.gallery_no = g.gallery_no AND ga.user_no = ?))
 		AND g.is_del = 0
-		ORDER BY id DESC
+		ORDER BY g.update_time DESC
 		LIMIT ?, ?
 	`
 	var galleries []VGallery

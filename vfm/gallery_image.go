@@ -107,6 +107,12 @@ func CreateGalleryImage(rail miso.Rail, cmd CreateGalleryImageCmd, userNo string
 		return miso.NewErr("You are not allowed to upload image to this gallery")
 	}
 
+	lock := NewGalleryFileLock(rail, cmd.GalleryNo, cmd.FileKey)
+	if err := lock.Lock(); err != nil {
+		return fmt.Errorf("failed to obtain gallery image lock, gallery:%v, fileKey: %v", cmd.GalleryNo, cmd.FileKey)
+	}
+	defer lock.Unlock()
+
 	if isCreated, e := isImgCreatedAlready(rail, tx, cmd.GalleryNo, cmd.FileKey); isCreated || e != nil {
 		if e != nil {
 			return e
@@ -116,11 +122,13 @@ func CreateGalleryImage(rail miso.Rail, cmd CreateGalleryImageCmd, userNo string
 	}
 
 	imageNo := miso.GenNoL("IMG", 25)
-	const sql string = `
-			insert into gallery_image (gallery_no, image_no, name, file_key, create_by)
-			values (?, ?, ?, ?, ?)
-		`
-	return tx.Exec(sql, cmd.GalleryNo, imageNo, cmd.Name, cmd.FileKey, username).Error
+	return tx.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec(`insert into gallery_image (gallery_no, image_no, name, file_key, create_by) values (?, ?, ?, ?, ?)`,
+			cmd.GalleryNo, imageNo, cmd.Name, cmd.FileKey, username).Error; err != nil {
+			return err
+		}
+		return tx.Exec(`update gallery set update_time = ? where gallery_no = ?`, miso.Now(), cmd.GalleryNo).Error
+	})
 }
 
 type FstoreTmpToken struct {
@@ -386,4 +394,8 @@ func isImgCreatedAlready(rail miso.Rail, tx *gorm.DB, galleryNo string, fileKey 
 	}
 
 	return true, nil
+}
+
+func NewGalleryFileLock(rail miso.Rail, galleryNo string, fileKey string) *miso.RLock {
+	return miso.NewRLockf(rail, "gallery:image:%v:%v", galleryNo, fileKey)
 }
