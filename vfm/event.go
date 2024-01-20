@@ -4,20 +4,22 @@ import (
 	"fmt"
 	"time"
 
+	hammer "github.com/curtisnewbie/hammer/api"
 	"github.com/curtisnewbie/miso/miso"
 	"gorm.io/gorm"
 )
 
 const (
-	comprImgProcEventBus               = "event.bus.hammer.image.compress.processing"
-	comprImgNotifyEventBus             = "event.bus.hammer.image.compress.notification"
-	fileSavedEventBus                  = "event.bus.vfm.file.saved"
-	thumbnailUpdatedEventBus           = "event.bus.vfm.file.thumbnail.updated"
-	fileLDeletedEventBus               = "event.bus.vfm.file.logic.deleted"
+	compressImgNotifyEventBus = "vfm.image.compressed.event"
+
+	fileSavedEventBus        = "event.bus.vfm.file.saved"
+	thumbnailUpdatedEventBus = "event.bus.vfm.file.thumbnail.updated"
+	fileLDeletedEventBus     = "event.bus.vfm.file.logic.deleted"
+	calcDirSizeEventBus      = "event.bus.vfm.dir.size.calc"
+	addFileToVFolderEventBus = "event.bus.vfm.file.vfolder.add"
+
 	addFantahseaDirGalleryImgEventBus  = "event.bus.fantahsea.dir.gallery.image.add"
 	notifyFantahseaFileDeletedEventBus = "event.bus.fantahsea.notify.file.deleted"
-	calcDirSizeEventBus                = "event.bus.vfm.dir.size.calc"
-	addFileToVFolderEventBus           = "event.bus.vfm.file.vfolder.add"
 )
 
 type NotifyFileDeletedEvent struct {
@@ -98,36 +100,38 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 		return nil // not an image
 	}
 
-	if e := miso.PubEventBus(rail, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
+	event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: compressImgNotifyEventBus}
+	if e := miso.PubEventBus(rail, event, hammer.CompressImageTriggerEventBus); e != nil {
 		return miso.TraceErrf(e, "Failed to send CompressImageEvent, uuid: %v", f.Uuid)
 	}
 	return nil
 }
 
 // hammer sends event message when the thumbnail image is compressed and saved on mini-fstore
-func OnImageCompressed(rail miso.Rail, evt CompressImageEvent) error {
+func OnImageCompressed(rail miso.Rail, evt hammer.ImageCompressReplyEvent) error {
 	rail.Infof("Received CompressedImageEvent, %+v", evt)
 	return ReactOnImageCompressed(rail, miso.GetMySQL(), evt)
 }
 
-func ReactOnImageCompressed(rail miso.Rail, tx *gorm.DB, evt CompressImageEvent) error {
-	lock := miso.NewRLock(rail, "file:uuid:"+evt.FileKey)
+func ReactOnImageCompressed(rail miso.Rail, tx *gorm.DB, evt hammer.ImageCompressReplyEvent) error {
+	fileKey := evt.Identifier
+	lock := miso.NewRLock(rail, "file:uuid:"+fileKey)
 	if err := lock.Lock(); err != nil {
 		return err
 	}
 	defer lock.Unlock()
 
-	f, e := findFile(rail, tx, evt.FileKey)
+	f, e := findFile(rail, tx, fileKey)
 	if e != nil {
-		rail.Errorf("Unable to find file, uuid: %v, %v", evt.FileKey, e)
+		rail.Errorf("Unable to find file, uuid: %v, %v", fileKey, e)
 		return nil
 	}
 	if f.IsZero() {
-		rail.Errorf("File not found, uuid: %v", evt.FileKey)
+		rail.Errorf("File not found, uuid: %v", fileKey)
 		return nil
 	}
 
-	return tx.Exec("UPDATE file_info SET thumbnail = ? WHERE uuid = ?", evt.FileId, evt.FileKey).
+	return tx.Exec("UPDATE file_info SET thumbnail = ? WHERE uuid = ?", evt.FileId, fileKey).
 		Error
 }
 

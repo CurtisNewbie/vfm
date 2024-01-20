@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	hammer "github.com/curtisnewbie/hammer/api"
 	"github.com/curtisnewbie/miso/miso"
 	"gorm.io/gorm"
 )
@@ -45,7 +46,8 @@ func CompensateImageCompression(rail miso.Rail, tx *gorm.DB) error {
 			if !isImage(f.Name) {
 				continue
 			}
-			if e := miso.PubEventBus(rail, CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcEventBus); e != nil {
+			event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: compressImgNotifyEventBus}
+			if e := miso.PubEventBus(rail, event, hammer.CompressImageTriggerEventBus); e != nil {
 				rail.Errorf("Failed to send CompressImageEvent, minId: %v, uuid: %v, %v", minId, f.Uuid, e)
 				return e
 			}

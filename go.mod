@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/curtisnewbie/hammer v0.0.8
 	github.com/curtisnewbie/mini-fstore v0.1.5
 	github.com/curtisnewbie/miso v0.0.14
 	github.com/curtisnewbie/user-vault v0.0.10
@@ -73,7 +74,7 @@ require (
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -28,9 +28,7 @@ func PrepareServer(rail miso.Rail) error {
 }
 
 func PrepareEventBus(rail miso.Rail) error {
-	miso.NewEventBus(comprImgProcEventBus)
-
-	miso.SubEventBus(comprImgNotifyEventBus, 2, OnImageCompressed)
+	miso.SubEventBus(compressImgNotifyEventBus, 2, OnImageCompressed)
 	miso.SubEventBus(fileSavedEventBus, 2, OnFileSaved)
 	miso.SubEventBus(thumbnailUpdatedEventBus, 2, OnThumbnailUpdated)
 	miso.SubEventBus(fileLDeletedEventBus, 2, OnFileDeleted)

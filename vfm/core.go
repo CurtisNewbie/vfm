@@ -35,11 +35,6 @@ func init() {
 	_imageSuffix.AddAll([]string{"jpeg", "jpg", "gif", "png", "svg", "bmp", "webp", "apng", "avif"})
 }
 
-type CompressImageEvent struct {
-	FileKey string // file key from vfm
-	FileId  string // file id from mini-fstore
-}
-
 type FileTag struct {
 	Id         int
 	FileId     int
