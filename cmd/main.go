@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/curtisnewbie/miso/miso"
-	"github.com/curtisnewbie/vfm/vfm"
+	"github.com/curtisnewbie/vfm/internal/vfm"
 )
 
 func main() {
