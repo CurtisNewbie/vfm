@@ -75,8 +75,8 @@ github.com/curtisnewbie/gocommon v1.1.3 h1:XXCaOWrZskd6tMkZYbBVFV4oR8fGQJqegt0KK
 github.com/curtisnewbie/gocommon v1.1.3/go.mod h1:VDpWMVQqy/1tfTPrcvviGDFK22zqZP/TwdPZwtliah8=
 github.com/curtisnewbie/hammer v0.0.8 h1:vGXrLis+94yJubWdhYXTjFgkT0a+Asr2Lq17NluI/eY=
 github.com/curtisnewbie/hammer v0.0.8/go.mod h1:Cb2UDpEb7CBKu49zXw+avR89FBh3WWi7tfOP/UefDYM=
-github.com/curtisnewbie/mini-fstore v0.1.6 h1:goTgbWtATE0gkXGJNfojfbch5QzXUpnCSCnzEzAV7+w=
-github.com/curtisnewbie/mini-fstore v0.1.6/go.mod h1:o2zSvwqW0cRHzBy8f3C77NwYFUlBSWU1pImI35ud4zg=
+github.com/curtisnewbie/mini-fstore v0.1.7-beta.2 h1:2UQRGGdhSjAbBCnG4+KMNa1CI6pAY/xOTgikIwN/v9A=
+github.com/curtisnewbie/mini-fstore v0.1.7-beta.2/go.mod h1:o2zSvwqW0cRHzBy8f3C77NwYFUlBSWU1pImI35ud4zg=
 github.com/curtisnewbie/miso v0.0.15 h1:R9LWQfkBdUWy3V6RlIhzwzUZzIFxvT8uC+udwtdFIH8=
 github.com/curtisnewbie/miso v0.0.15/go.mod h1:Zi7PRDlKs4OjBucIFBHoupgImuqXZvy0VoNWZdQnT9A=
 github.com/curtisnewbie/user-vault v0.0.10 h1:at0yXgALJ/ZICgMJJTDnP06paiiotwIxVeXdvuGc+hw=

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/curtisnewbie/gocommon/common"
-	fstore "github.com/curtisnewbie/mini-fstore/client"
+	fstore "github.com/curtisnewbie/mini-fstore/api"
 	"github.com/curtisnewbie/miso/miso"
 	vault "github.com/curtisnewbie/user-vault/api"
 	"gorm.io/gorm"
