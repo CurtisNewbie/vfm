@@ -5,22 +5,36 @@ import (
 	"time"
 
 	hammer "github.com/curtisnewbie/hammer/api"
+	fstore "github.com/curtisnewbie/mini-fstore/api"
 	"github.com/curtisnewbie/miso/miso"
 	"gorm.io/gorm"
 )
 
 const (
-	compressImgNotifyEventBus = "vfm.image.compressed.event"
+	VfmFileSavedEventBus         = "event.bus.vfm.file.saved"
+	VfmThumbnailUpdatedEventBus  = "event.bus.vfm.file.thumbnail.updated"
+	VfmFileLDeletedEventBus      = "event.bus.vfm.file.logic.deleted"
+	VfmCalcDirSizeEventBus       = "event.bus.vfm.dir.size.calc"
+	VfmAddFileToVFolderEventBus  = "event.bus.vfm.file.vfolder.add"
+	VfmCompressImgNotifyEventBus = "vfm.image.compressed.event"
+	VfmUnzipResultNotifyEventBus = "vfm.unzip.result.notify.event"
 
-	fileSavedEventBus        = "event.bus.vfm.file.saved"
-	thumbnailUpdatedEventBus = "event.bus.vfm.file.thumbnail.updated"
-	fileLDeletedEventBus     = "event.bus.vfm.file.logic.deleted"
-	calcDirSizeEventBus      = "event.bus.vfm.dir.size.calc"
-	addFileToVFolderEventBus = "event.bus.vfm.file.vfolder.add"
-
-	addFantahseaDirGalleryImgEventBus  = "event.bus.fantahsea.dir.gallery.image.add"
-	notifyFantahseaFileDeletedEventBus = "event.bus.fantahsea.notify.file.deleted"
+	AddFantahseaDirGalleryImgEventBus  = "event.bus.fantahsea.dir.gallery.image.add"
+	NotifyFantahseaFileDeletedEventBus = "event.bus.fantahsea.notify.file.deleted"
 )
+
+func PrepareEventBus(rail miso.Rail) error {
+	miso.SubEventBus(VfmCompressImgNotifyEventBus, 2, OnImageCompressed)
+	miso.SubEventBus(VfmFileSavedEventBus, 2, OnFileSaved)
+	miso.SubEventBus(VfmThumbnailUpdatedEventBus, 2, OnThumbnailUpdated)
+	miso.SubEventBus(VfmFileLDeletedEventBus, 2, OnFileDeleted)
+	miso.SubEventBus(VfmAddFileToVFolderEventBus, 2, OnAddFileToVfolderEvent)
+	miso.SubEventBus(AddFantahseaDirGalleryImgEventBus, 2, OnCreateGalleryImgEvent)
+	miso.SubEventBus(NotifyFantahseaFileDeletedEventBus, 2, OnNotifyFileDeletedEvent)
+	miso.SubEventBus(VfmCalcDirSizeEventBus, 1, OnCalcDirSizeEvt)
+	miso.SubEventBus(VfmUnzipResultNotifyEventBus, 2, OnUnzipFileReplyEvent)
+	return nil
+}
 
 type NotifyFileDeletedEvent struct {
 	FileKey string `json:"fileKey"`
@@ -47,10 +61,6 @@ type CreateFantahseaImgEvt struct {
 	DirName      string `json:"dirName"`
 	ImageName    string `json:"imageName"`
 	ImageFileKey string `json:"imageFileKey"`
-}
-
-type CalcDirSizeEvt struct {
-	FileKey string
 }
 
 // event-pump send binlog event when a file_info record is saved.
@@ -100,7 +110,7 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 		return nil // not an image
 	}
 
-	event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: compressImgNotifyEventBus}
+	event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: VfmCompressImgNotifyEventBus}
 	if e := miso.PubEventBus(rail, event, hammer.CompressImageTriggerEventBus); e != nil {
 		return miso.TraceErrf(e, "Failed to send CompressImageEvent, uuid: %v", f.Uuid)
 	}
@@ -198,7 +208,7 @@ func OnThumbnailUpdated(rail miso.Rail, evt StreamEvent) error {
 		ImageName:    f.Name,
 		ImageFileKey: f.Uuid,
 	}
-	return miso.PubEventBus(rail, cfi, addFantahseaDirGalleryImgEventBus)
+	return miso.PubEventBus(rail, cfi, AddFantahseaDirGalleryImgEventBus)
 }
 
 // event-pump send binlog event when a file_info is deleted (is_logic_deleted changed)
@@ -228,17 +238,34 @@ func OnFileDeleted(rail miso.Rail, evt StreamEvent) error {
 
 	rail.Infof("File logically deleted, %v", uuid)
 
-	if e := miso.PubEventBus(rail, NotifyFileDeletedEvent{FileKey: uuid}, notifyFantahseaFileDeletedEventBus); e != nil {
+	if e := miso.PubEventBus(rail, NotifyFileDeletedEvent{FileKey: uuid}, NotifyFantahseaFileDeletedEventBus); e != nil {
 		return miso.TraceErrf(e, "Failed to send NotifyFileDeletedEvent, uuid: %v", uuid)
 	}
 	return nil
+}
+
+type AddFileToVfolderEvent struct {
+	UserId   int
+	Username string
+	UserNo   string
+	FolderNo string
+	FileKeys []string
 }
 
 func OnAddFileToVfolderEvent(rail miso.Rail, evt AddFileToVfolderEvent) error {
 	return HandleAddFileToVFolderEvent(rail, miso.GetMySQL(), evt)
 }
 
+type CalcDirSizeEvt struct {
+	FileKey string
+}
+
 func OnCalcDirSizeEvt(rail miso.Rail, evt CalcDirSizeEvt) error {
 	defer miso.TimeOp(rail, time.Now(), fmt.Sprintf("Process CalcDirSizeEvt: %+v", evt))
 	return CalcDirSize(rail, evt.FileKey, miso.GetMySQL())
+}
+
+func OnUnzipFileReplyEvent(rail miso.Rail, evt fstore.UnzipFileReplyEvent) error {
+	rail.Infof("received UnzipFileReplyEvent: %+v", evt)
+	return HandleZipUnpackResult(rail, miso.GetMySQL(), evt)
 }

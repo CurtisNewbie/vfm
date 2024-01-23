@@ -46,7 +46,7 @@ func CompensateImageCompression(rail miso.Rail, tx *gorm.DB) error {
 			if !isImage(f.Name) {
 				continue
 			}
-			event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: compressImgNotifyEventBus}
+			event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: VfmCompressImgNotifyEventBus}
 			if e := miso.PubEventBus(rail, event, hammer.CompressImageTriggerEventBus); e != nil {
 				rail.Errorf("Failed to send CompressImageEvent, minId: %v, uuid: %v, %v", minId, f.Uuid, e)
 				return e

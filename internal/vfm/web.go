@@ -13,7 +13,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 	miso.BaseRoute("/open/api").With(
 		miso.SubPath("/file").Group(
 			miso.IGet("/upload/duplication/preflight", DupPreflightCheckEp).
-				Extra(goauth.Protected("User - preflight check for duplicate file uploads", ManageFileResCode)),
+				Extra(goauth.Protected("Preflight check for duplicate file uploads", ManageFileResCode)),
 
 			miso.IGet("/parent", GetParentFileEp).
 				Extra(goauth.Protected("User fetch parent file info", ManageFileResCode)),
@@ -53,7 +53,11 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 
 			miso.IPost("/token/generate", GenFileTknEp).
 				Extra(goauth.Protected("User generate temporary token", ManageFileResCode)),
+
+			miso.IPost("/unpack", UnpackZipEp).
+				Extra(goauth.Protected("User unpack zip", ManageFileResCode)),
 		),
+
 		miso.SubPath("/vfolder").Group(
 			miso.Get("/brief/owned", ListVFolderBriefEp).
 				Extra(goauth.Protected("User list virtual folder briefs", ManageFileResCode)),
@@ -307,4 +311,9 @@ func ValidateOwnerEp(c *gin.Context, rail miso.Rail, req ValidateFileOwnerReq) (
 
 func RemoveVFolderEp(c *gin.Context, rail miso.Rail, req RemoveVFolderReq) (any, error) {
 	return nil, RemoveVFolder(rail, miso.GetMySQL(), common.GetUser(rail), req)
+}
+
+func UnpackZipEp(c *gin.Context, rail miso.Rail, req UnpackZipReq) (any, error) {
+	err := UnpackZip(rail, miso.GetMySQL(), common.GetUser(rail), req)
+	return nil, err
 }

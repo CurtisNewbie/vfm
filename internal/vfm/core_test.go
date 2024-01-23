@@ -3,6 +3,7 @@ package vfm
 import (
 	"bytes"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/curtisnewbie/gocommon/common"
@@ -22,17 +23,18 @@ func testUser() common.User {
 func corePreTest(t *testing.T) {
 	user := "root"
 	pw := ""
-	db := "fileserver"
+	db := "vfm"
 	host := "localhost"
 	port := 3306
 	rail := miso.EmptyRail()
 
 	p := miso.MySQLConnParam{
-		User:     user,
-		Password: pw,
-		Schema:   db,
-		Host:     host,
-		Port:     port,
+		User:      user,
+		Password:  pw,
+		Schema:    db,
+		Host:      host,
+		Port:      port,
+		ConnParam: strings.Join(miso.GetPropStrSlice(miso.PropMySQLConnParam), "&"),
 	}
 
 	if e := miso.InitMySQL(rail, p); e != nil {
@@ -47,6 +49,9 @@ func corePreTest(t *testing.T) {
 	if e := miso.StartRabbitMqClient(rail); e != nil {
 		t.Fatal(e)
 	}
+	miso.SetProp("client.addr.fstore.host", "localhost")
+	miso.SetProp("client.addr.fstore.port", "8084")
+
 	logrus.SetLevel(logrus.DebugLevel)
 }
 
@@ -375,6 +380,19 @@ func TestBatchClacDirSize(t *testing.T) {
 	corePreTest(t)
 	c := miso.EmptyRail()
 	err := BatchCalcDirSize(c, miso.GetMySQL())
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUnpackZip(t *testing.T) {
+	corePreTest(t)
+	rail := miso.EmptyRail()
+	req := UnpackZipReq{
+		FileKey:       "ZZZ1065471829557248604128",
+		ParentFileKey: "",
+	}
+	err := UnpackZip(rail, miso.GetMySQL(), testUser(), req)
 	if err != nil {
 		t.Fatal(err)
 	}

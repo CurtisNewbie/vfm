@@ -27,18 +27,6 @@ func PrepareServer(rail miso.Rail) error {
 	return nil
 }
 
-func PrepareEventBus(rail miso.Rail) error {
-	miso.SubEventBus(compressImgNotifyEventBus, 2, OnImageCompressed)
-	miso.SubEventBus(fileSavedEventBus, 2, OnFileSaved)
-	miso.SubEventBus(thumbnailUpdatedEventBus, 2, OnThumbnailUpdated)
-	miso.SubEventBus(fileLDeletedEventBus, 2, OnFileDeleted)
-	miso.SubEventBus(addFileToVFolderEventBus, 2, OnAddFileToVfolderEvent)
-	miso.SubEventBus(addFantahseaDirGalleryImgEventBus, 2, OnCreateGalleryImgEvent)
-	miso.SubEventBus(notifyFantahseaFileDeletedEventBus, 2, OnNotifyFileDeletedEvent)
-	miso.SubEventBus(calcDirSizeEventBus, 1, OnCalcDirSizeEvt)
-	return nil
-}
-
 func PrepareGoAuthReport(rail miso.Rail) error {
 	goauth.ReportResourcesOnBootstrapped(rail, []goauth.AddResourceReq{
 		{Name: ManageFileResName, Code: ManageFileResCode},

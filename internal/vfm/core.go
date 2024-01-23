@@ -526,6 +526,7 @@ type MakeDirReq struct {
 }
 
 func MakeDir(rail miso.Rail, tx *gorm.DB, req MakeDirReq, user common.User) (string, error) {
+	rail.Infof("Making dir, req: %+v", req)
 
 	var dir FileInfo
 	dir.Name = req.Name
@@ -618,7 +619,7 @@ func MoveFileToDir(rail miso.Rail, db *gorm.DB, req MoveIntoDirReq, user common.
 			// calculate the dir size asynchronously
 			if err := miso.PubEventBus(rail, CalcDirSizeEvt{
 				FileKey: fi.ParentFile,
-			}, calcDirSizeEventBus); err != nil {
+			}, VfmCalcDirSizeEventBus); err != nil {
 				rail.Errorf("failed to send CalcDirSizeEvt, fileKey: %v, %v", fi.ParentFile, err)
 			}
 		}
@@ -642,9 +643,13 @@ func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error 
 	f.CreateTime = now
 	f.UploaderNo = user.UserNo
 
-	return tx.Table("file_info").
+	err := tx.Table("file_info").
 		Omit("id", "update_time", "update_by").
 		Create(&f).Error
+	if err == nil {
+		rail.Infof("Saved file %+v", f)
+	}
+	return err
 }
 
 func fileLock(rail miso.Rail, fileKey string) *miso.RLock {
@@ -835,14 +840,6 @@ type AddFileToVfolderReq struct {
 	Sync     bool     `json:"-"`
 }
 
-type AddFileToVfolderEvent struct {
-	UserId   int
-	Username string
-	UserNo   string
-	FolderNo string
-	FileKeys []string
-}
-
 func NewVFolderLock(rail miso.Rail, folderNo string) *miso.RLock {
 	return miso.NewRLock(rail, "vfolder:"+folderNo)
 }
@@ -975,7 +972,7 @@ func AddFileToVFolder(rail miso.Rail, tx *gorm.DB, req AddFileToVfolderReq, user
 		FolderNo: req.FolderNo,
 		FileKeys: req.FileKeys,
 	}
-	err := miso.PubEventBus(rail, evt, addFileToVFolderEventBus)
+	err := miso.PubEventBus(rail, evt, VfmAddFileToVFolderEventBus)
 	if err != nil {
 		return fmt.Errorf("failed to publish AddFileToVfolderEvent, %+v, %v", evt, err)
 	}
@@ -1343,10 +1340,9 @@ func _lockFileTagExec(rail miso.Rail, userId int, tagName string, run miso.Runna
 }
 
 type CreateFileReq struct {
-	Filename         string   `json:"filename"`
-	FakeFstoreFileId string   `json:"fstoreFileId"`
-	Tags             []string `json:"tags"`
-	ParentFile       string   `json:"parentFile"`
+	Filename         string `json:"filename"`
+	FakeFstoreFileId string `json:"fstoreFileId"`
+	ParentFile       string `json:"parentFile"`
 }
 
 func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) error {
@@ -1363,11 +1359,27 @@ func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) 
 		return miso.NewErr("File is deleted")
 	}
 
+	return SaveFileRecord(rail, tx, SaveFileReq{
+		Filename:   r.Filename,
+		Size:       fsf.Size,
+		FileId:     fsf.FileId,
+		ParentFile: r.ParentFile,
+	}, user)
+}
+
+type SaveFileReq struct {
+	Filename   string
+	FileId     string
+	Size       int64
+	ParentFile string
+}
+
+func SaveFileRecord(rail miso.Rail, tx *gorm.DB, r SaveFileReq, user common.User) error {
 	var f FileInfo
 	f.Name = r.Filename
 	f.Uuid = miso.GenIdP("ZZZ")
-	f.FstoreFileId = fsf.FileId
-	f.SizeInBytes = fsf.Size
+	f.FstoreFileId = r.FileId
+	f.SizeInBytes = r.Size
 	f.FileType = FileTypeFile
 
 	if e := _saveFile(rail, tx, f, user); e != nil {
@@ -1379,14 +1391,6 @@ func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) 
 			return e
 		}
 	}
-
-	// TODO: Since v0.0.4, this is based on event-pump binlog event
-	// if isImage(f.Name) {
-	// 	if e := bus.SendToEventBus(CompressImageEvent{FileKey: f.Uuid, FileId: f.FstoreFileId}, comprImgProcBus); e != nil {
-	// 		c.Errorf("Failed to send CompressImageEvent, uuid: %v, %v", f.Uuid, e)
-	// 	}
-	// }
-
 	return nil
 }
 
@@ -1714,4 +1718,100 @@ func CalcDirSize(rail miso.Rail, fk string, db *gorm.DB) error {
 	}
 
 	return nil
+}
+
+type UnpackZipReq struct {
+	FileKey       string // file key of the zip file
+	ParentFileKey string // file key of current directory (not where the zip entries will be saved)
+}
+
+type UnpackZipExtra struct {
+	FileKey       string // file key of the zip file
+	ParentFileKey string // file key of the target directory
+	UserId        int
+	UserNo        string
+	Username      string
+}
+
+func UnpackZip(rail miso.Rail, db *gorm.DB, user common.User, req UnpackZipReq) error {
+	flock := fileLock(rail, req.FileKey)
+	if err := flock.Lock(); err != nil {
+		return err
+	}
+	defer flock.Unlock()
+
+	fi, err := findFile(rail, db, req.FileKey)
+	if err != nil {
+		return miso.NewErr("File not found", "failed to find file, uuid: %v, %v", req.FileKey, err)
+	}
+	if fi.IsZero() {
+		return miso.NewErr("File not found")
+	}
+
+	if fi.IsLogicDeleted == LDelY {
+		return miso.NewErr("File is deleted")
+	}
+
+	if !strings.HasSuffix(strings.ToLower(fi.Name), ".zip") {
+		return miso.NewErr("File is not a zip")
+	}
+
+	dir, err := MakeDir(rail, db, MakeDirReq{
+		Name:       fi.Name + " unpacked " + time.Now().Format("20060102_150405"),
+		ParentFile: req.ParentFileKey,
+	}, user)
+	if err != nil {
+		return fmt.Errorf("failed to make directory before unpacking zip, %w", err)
+	}
+
+	extra, err := miso.WriteJson(UnpackZipExtra{
+		FileKey:       req.FileKey,
+		ParentFileKey: dir,
+		UserId:        user.UserId,
+		UserNo:        user.UserNo,
+		Username:      user.Username,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to write json as extra, %w", err)
+	}
+
+	err = fstore.TriggerFileUnzip(rail, fstore.UnzipFileReq{
+		FileId:          fi.FstoreFileId,
+		ReplyToEventBus: VfmUnzipResultNotifyEventBus,
+		Extra:           string(extra),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to TriggerFileUnZip, %w", err)
+	}
+	return nil
+}
+
+func HandleZipUnpackResult(rail miso.Rail, db *gorm.DB, evt fstore.UnzipFileReplyEvent) error {
+	var extra UnpackZipExtra
+	if err := miso.ParseJson([]byte(evt.Extra), &extra); err != nil {
+		return fmt.Errorf("failed to unmarshal from extra, %v", err)
+	}
+
+	if len(evt.ZipEntries) < 1 {
+		return nil
+	}
+
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, ze := range evt.ZipEntries {
+			err := SaveFileRecord(rail, tx, SaveFileReq{
+				Filename:   ze.Name,
+				FileId:     ze.FileId,
+				Size:       ze.Size,
+				ParentFile: extra.ParentFileKey,
+			}, common.User{
+				UserId:   extra.UserId,
+				UserNo:   extra.UserNo,
+				Username: extra.Username,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to save zip entry, entry: %v, %w", ze, err)
+			}
+		}
+		return nil
+	})
 }
