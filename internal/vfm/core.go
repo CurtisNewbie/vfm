@@ -1462,6 +1462,15 @@ func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 		Error
 	if err == nil {
 		rail.Infof("Deleted file %v", f.Uuid)
+
+		// calculate the dir size asynchronously
+		if f.ParentFile != "" {
+			if err := miso.PubEventBus(rail, CalcDirSizeEvt{
+				FileKey: f.ParentFile,
+			}, VfmCalcDirSizeEventBus); err != nil {
+				rail.Errorf("failed to send CalcDirSizeEvt, fileKey: %v, %v", f.ParentFile, err)
+			}
+		}
 	}
 	return err
 }
