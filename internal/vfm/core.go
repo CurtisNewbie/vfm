@@ -1519,7 +1519,7 @@ type GenerateTempTokenReq struct {
 func GenTempToken(rail miso.Rail, tx *gorm.DB, r GenerateTempTokenReq, user common.User) (string, error) {
 	f, err := validateFileAccess(rail, tx, r.FileKey, user.UserNo)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to validate file access, user: %+v, %w", user, err)
 	}
 
 	if f.FstoreFileId == "" {
