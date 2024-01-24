@@ -33,6 +33,9 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			miso.IPost("/delete", DeleteFileEp).
 				Extra(goauth.Protected("User delete file", ManageFileResCode)),
 
+			miso.IPost("/delete/batch", BatchDeleteFileEp).
+				Extra(goauth.Protected("User delete file in batch", ManageFileResCode)),
+
 			miso.IPost("/create", CreateFileEp).
 				Extra(goauth.Protected("User create file", ManageFileResCode)),
 
@@ -228,6 +231,23 @@ func ListFilesEp(c *gin.Context, rail miso.Rail, req ListFileReq) (any, error) {
 
 func DeleteFileEp(c *gin.Context, rail miso.Rail, req DeleteFileReq) (any, error) {
 	return nil, DeleteFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
+}
+
+type BatchDeleteFileReq struct {
+	FileKeys []string
+}
+
+func BatchDeleteFileEp(c *gin.Context, rail miso.Rail, req BatchDeleteFileReq) (any, error) {
+	for i := range req.FileKeys {
+		fk := req.FileKeys[i]
+		vfmPool.Go(func() {
+			rrail := rail.NextSpan()
+			if err := DeleteFile(rrail, miso.GetMySQL(), DeleteFileReq{fk}, common.GetUser(rrail)); err != nil {
+				rrail.Errorf("failed to delete file, fileKey: %v, %v", fk, err)
+			}
+		})
+	}
+	return nil, nil
 }
 
 func CreateFileEp(c *gin.Context, rail miso.Rail, req CreateFileReq) (any, error) {
