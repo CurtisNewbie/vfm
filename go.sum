@@ -71,8 +71,8 @@ github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGX
 github.com/cncf/udpa/go v0.0.0-20200629203442-efcf912fb354/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
 github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
-github.com/curtisnewbie/gocommon v1.1.5-beta.3 h1:0E8hPL8wSLRV6KE6LtubHlURsvvC9H5QlxUakOE00CI=
-github.com/curtisnewbie/gocommon v1.1.5-beta.3/go.mod h1:MqdP12Lf5rq37HMg7lcnMuVMD1JWPHwdD6fC9GkNtIg=
+github.com/curtisnewbie/gocommon v1.1.5 h1:TenUy9tfwvIDbjNYRmlfyxkzvUow8Ogg0jvYxMDAuK4=
+github.com/curtisnewbie/gocommon v1.1.5/go.mod h1:MqdP12Lf5rq37HMg7lcnMuVMD1JWPHwdD6fC9GkNtIg=
 github.com/curtisnewbie/hammer v0.0.8 h1:vGXrLis+94yJubWdhYXTjFgkT0a+Asr2Lq17NluI/eY=
 github.com/curtisnewbie/hammer v0.0.8/go.mod h1:Cb2UDpEb7CBKu49zXw+avR89FBh3WWi7tfOP/UefDYM=
 github.com/curtisnewbie/mini-fstore v0.1.7-beta.4 h1:26u2KsxyAwUp8rva12AW3DsUM3FUm6tWM41/GHeOQc0=
