@@ -5,7 +5,6 @@ app.name: "vfm"
 mysql:
   enabled: true
   user: root
-  # password: 123456
   database: "vfm"
   host: localhost
   port: 3306
@@ -34,4 +33,6 @@ rabbitmq:
   password: guest
   vhost: "/"
 
-goauth.client.enabled: true
+goauth:
+  client:
+    enabled: true

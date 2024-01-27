@@ -8,160 +8,161 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	ManageFilesResource = "manage-files"
+)
+
 func RegisterHttpRoutes(rail miso.Rail) error {
+
+	goauth.ReportOnBoostrapped(rail, []goauth.AddResourceReq{
+		{Code: ManageFilesResource, Name: "Manage files"},
+	})
 
 	miso.BaseRoute("/open/api").With(
 		miso.SubPath("/file").Group(
 			miso.IGet("/upload/duplication/preflight", DupPreflightCheckEp).
-				Extra(goauth.Protected("Preflight check for duplicate file uploads", ManageFileResCode)),
+				Resource(ManageFilesResource).
+				Desc("Preflight check for duplicate file uploads"),
 
 			miso.IGet("/parent", GetParentFileEp).
-				Extra(goauth.Protected("User fetch parent file info", ManageFileResCode)),
+				Resource(ManageFilesResource).
+				Desc("User fetch parent file info"),
 
 			miso.IPost("/move-to-dir", MoveFileToDirEp).
-				Extra(goauth.Protected("User move files into directory", ManageFileResCode)),
+				Resource(ManageFilesResource).
+				Desc("User move files into directory"),
 
 			miso.IPost("/make-dir", MakeDirEp).
-				Extra(goauth.Protected("User make directory", ManageFileResCode)),
+				Resource(ManageFilesResource).
+				Desc("User make directory"),
 
 			miso.Get("/dir/list", ListDirEp).
-				Extra(goauth.Protected("User list directories", ManageFileResCode)),
+				Resource(ManageFilesResource).
+				Desc("User list directoriesUser list directories"),
 
 			miso.IPost("/list", ListFilesEp).
-				Extra(goauth.Protected("User list files", ManageFileResCode)),
+				Desc("User list files").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/delete", DeleteFileEp).
-				Extra(goauth.Protected("User delete file", ManageFileResCode)),
+				Desc("User delete file").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/delete/batch", BatchDeleteFileEp).
-				Extra(goauth.Protected("User delete file in batch", ManageFileResCode)),
+				Desc("User delete file in batch").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/create", CreateFileEp).
-				Extra(goauth.Protected("User create file", ManageFileResCode)),
+				Desc("User create file").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/info/update", UpdateFileEp).
-				Extra(goauth.Protected("User update file", ManageFileResCode)),
+				Desc("User update file").
+				Resource(ManageFilesResource),
 
 			miso.Get("/tag/list/all", ListAllFileTagsEp).
-				Extra(goauth.Protected("User list all file tags", ManageFileResCode)),
+				Desc("User list all file tags").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/tag/list-for-file", ListTagsOfFileEp).
-				Extra(goauth.Protected("User list tags of file", ManageFileResCode)),
+				Desc("User list tags of file").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/tag", TagFileEp).
-				Extra(goauth.Protected("User tag file", ManageFileResCode)),
+				Desc("User tag file").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/untag", UntagFileEp).
-				Extra(goauth.Protected("User untag file", ManageFileResCode)),
+				Desc("User untag file").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/token/generate", GenFileTknEp).
-				Extra(goauth.Protected("User generate temporary token", ManageFileResCode)),
+				Desc("User generate temporary token").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/unpack", UnpackZipEp).
-				Extra(goauth.Protected("User unpack zip", ManageFileResCode)),
+				Desc("User unpack zip").
+				Resource(ManageFilesResource),
 		),
 
 		miso.SubPath("/vfolder").Group(
 			miso.Get("/brief/owned", ListVFolderBriefEp).
-				Extra(goauth.Protected("User list virtual folder briefs", ManageFileResCode)),
+				Desc("User list virtual folder briefs").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/list", ListVFoldersEp).
-				Extra(goauth.Protected("User list virtual folders", ManageFileResCode)),
+				Desc("User list virtual folders").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/create", CreateVFolderEp).
-				Extra(goauth.Protected("User create virtual folder", ManageFileResCode)),
+				Desc("User create virtual folder").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/file/add", VFolderAddFileEp).
-				Extra(goauth.Protected("User add file to virtual folder", ManageFileResCode)),
+				Desc("User add file to virtual folder").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/file/remove", VFolderRemoveFileEp).
-				Extra(goauth.Protected("User remove file from virtual folder", ManageFileResCode)),
+				Desc("User remove file from virtual folder").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/share", ShareVFolderEp).
-				Extra(goauth.Protected("Share access to virtual folder", ManageFileResCode)),
+				Desc("Share access to virtual folder").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/access/remove", RemoveVFolderAccessEp).
-				Extra(goauth.Protected("Remove granted access to virtual folder", ManageFileResCode)),
+				Desc("Remove granted access to virtual folder").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/granted/list", ListVFolderAccessEp).
-				Extra(goauth.Protected("List granted access to virtual folder", ManageFileResCode)),
+				Desc("List granted access to virtual folder").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/remove", RemoveVFolderEp).
-				Extra(goauth.Protected("Remove virtual folder", ManageFileResCode)),
+				Desc("Remove virtual folder").
+				Resource(ManageFilesResource),
 		),
+
 		miso.SubPath("/gallery").Group(
-			miso.Get("/brief/owned",
-				func(c *gin.Context, rail miso.Rail) (any, error) {
-					user := common.GetUser(rail)
-					return ListOwnedGalleryBriefs(rail, user, miso.GetMySQL())
-				}).
-				Extra(goauth.Protected("List owned gallery brief info", ManageFileResCode)),
+			miso.Get("/brief/owned", ListGalleryBriefsEp).
+				Desc("List owned gallery brief info").
+				Resource(ManageFilesResource),
 
-			miso.IPost("/new",
-				func(c *gin.Context, rail miso.Rail, cmd CreateGalleryCmd) (any, error) {
-					user := common.GetUser(rail)
-					return CreateGallery(rail, cmd, user, miso.GetMySQL())
-				}).
-				Extra(goauth.Protected("Create new gallery", ManageFileResCode)),
+			miso.IPost("/new", CreateGalleryEp).
+				Desc("Create new gallery").
+				Resource(ManageFilesResource),
 
-			miso.IPost("/update",
-				func(c *gin.Context, rail miso.Rail, cmd UpdateGalleryCmd) (any, error) {
-					user := common.GetUser(rail)
-					e := UpdateGallery(rail, cmd, user, miso.GetMySQL())
-					return nil, e
-				}).
-				Extra(goauth.Protected("Update gallery", ManageFileResCode)),
+			miso.IPost("/update", UpdateGalleryEp).
+				Desc("Update gallery").
+				Resource(ManageFilesResource),
 
-			miso.IPost("/delete",
-				func(c *gin.Context, rail miso.Rail, cmd DeleteGalleryCmd) (any, error) {
-					user := common.GetUser(rail)
-					e := DeleteGallery(rail, miso.GetMySQL(), cmd, user)
-					return nil, e
-				}).
-				Extra(goauth.Protected("Delete gallery", ManageFileResCode)),
+			miso.IPost("/delete", DeleteGalleryEp).
+				Desc("Delete gallery").
+				Resource(ManageFilesResource),
 
-			miso.IPost("/list",
-				func(c *gin.Context, rail miso.Rail, cmd ListGalleriesCmd) (any, error) {
-					user := common.GetUser(rail)
-					return ListGalleries(rail, cmd, user, miso.GetMySQL())
-				}).
-				Extra(goauth.Protected("List galleries", ManageFileResCode)),
+			miso.IPost("/list", ListGalleriesEp).
+				Desc("List galleries").
+				Resource(ManageFilesResource),
 
-			miso.IPost("/access/grant",
-				func(c *gin.Context, rail miso.Rail, cmd PermitGalleryAccessCmd) (any, error) {
-					user := common.GetUser(rail)
-					e := GrantGalleryAccessToUser(rail, miso.GetMySQL(), cmd, user)
-					return nil, e
-				}).
-				Extra(goauth.Protected("Grant access to the galleries", ManageFileResCode)),
+			miso.IPost("/access/grant", GranteGalleryAccessEp).
+				Desc("Grant access to the galleries").
+				Resource(ManageFilesResource),
 
-			miso.IPost("/access/remove",
-				func(c *gin.Context, rail miso.Rail, cmd RemoveGalleryAccessCmd) (any, error) {
-					user := common.GetUser(rail)
-					e := RemoveGalleryAccess(rail, miso.GetMySQL(), cmd, user)
-					return nil, e
-				}).
-				Extra(goauth.Protected("Grant access to the galleries", ManageFileResCode)),
+			miso.IPost("/access/remove", RemoveGalleryAccessEp).
+				Desc("Remove access to the galleries").
+				Resource(ManageFilesResource),
 
-			miso.IPost("/access/list",
-				func(c *gin.Context, rail miso.Rail, cmd ListGrantedGalleryAccessCmd) (any, error) {
-					user := common.GetUser(rail)
-					return ListedGrantedGalleryAccess(rail, miso.GetMySQL(), cmd, user)
-				}).
-				Extra(goauth.Protected("List granted access to the galleries", ManageFileResCode)),
+			miso.IPost("/access/list", ListGalleryAccessEp).
+				Desc("List granted access to the galleries").
+				Resource(ManageFilesResource),
 
-			miso.IPost("/images",
-				func(c *gin.Context, rail miso.Rail, cmd ListGalleryImagesCmd) (any, error) {
-					return ListGalleryImages(rail, miso.GetMySQL(), cmd, common.GetUser(rail))
-				}).
-				Extra(goauth.Protected("List images of gallery", ManageFileResCode)),
+			miso.IPost("/images", ListGalleryImagesEp).
+				Desc("List images of gallery").
+				Resource(ManageFilesResource),
 
-			miso.IPost("/image/transfer",
-				func(c *gin.Context, rail miso.Rail, cmd TransferGalleryImageReq) (any, error) {
-					user := common.GetUser(rail)
-					return BatchTransferAsync(rail, cmd, user, miso.GetMySQL())
-				}).
-				Extra(goauth.Protected("Host selected images on gallery", ManageFileResCode)),
+			miso.IPost("/image/transfer", TransferGalleryImageEp).
+				Desc("Host selected images on gallery").
+				Resource(ManageFilesResource),
 		),
 	)
 
@@ -336,4 +337,57 @@ func RemoveVFolderEp(c *gin.Context, rail miso.Rail, req RemoveVFolderReq) (any,
 func UnpackZipEp(c *gin.Context, rail miso.Rail, req UnpackZipReq) (any, error) {
 	err := UnpackZip(rail, miso.GetMySQL(), common.GetUser(rail), req)
 	return nil, err
+}
+
+func ListGalleryBriefsEp(c *gin.Context, rail miso.Rail) (any, error) {
+	user := common.GetUser(rail)
+	return ListOwnedGalleryBriefs(rail, user, miso.GetMySQL())
+}
+
+func CreateGalleryEp(c *gin.Context, rail miso.Rail, cmd CreateGalleryCmd) (any, error) {
+	user := common.GetUser(rail)
+	return CreateGallery(rail, cmd, user, miso.GetMySQL())
+}
+
+func UpdateGalleryEp(c *gin.Context, rail miso.Rail, cmd UpdateGalleryCmd) (any, error) {
+	user := common.GetUser(rail)
+	e := UpdateGallery(rail, cmd, user, miso.GetMySQL())
+	return nil, e
+}
+
+func DeleteGalleryEp(c *gin.Context, rail miso.Rail, cmd DeleteGalleryCmd) (any, error) {
+	user := common.GetUser(rail)
+	e := DeleteGallery(rail, miso.GetMySQL(), cmd, user)
+	return nil, e
+}
+
+func ListGalleriesEp(c *gin.Context, rail miso.Rail, cmd ListGalleriesCmd) (any, error) {
+	user := common.GetUser(rail)
+	return ListGalleries(rail, cmd, user, miso.GetMySQL())
+}
+
+func GranteGalleryAccessEp(c *gin.Context, rail miso.Rail, cmd PermitGalleryAccessCmd) (any, error) {
+	user := common.GetUser(rail)
+	e := GrantGalleryAccessToUser(rail, miso.GetMySQL(), cmd, user)
+	return nil, e
+}
+
+func RemoveGalleryAccessEp(c *gin.Context, rail miso.Rail, cmd RemoveGalleryAccessCmd) (any, error) {
+	user := common.GetUser(rail)
+	e := RemoveGalleryAccess(rail, miso.GetMySQL(), cmd, user)
+	return nil, e
+}
+
+func ListGalleryAccessEp(c *gin.Context, rail miso.Rail, cmd ListGrantedGalleryAccessCmd) (any, error) {
+	user := common.GetUser(rail)
+	return ListedGrantedGalleryAccess(rail, miso.GetMySQL(), cmd, user)
+}
+
+func ListGalleryImagesEp(c *gin.Context, rail miso.Rail, cmd ListGalleryImagesCmd) (any, error) {
+	return ListGalleryImages(rail, miso.GetMySQL(), cmd, common.GetUser(rail))
+}
+
+func TransferGalleryImageEp(c *gin.Context, rail miso.Rail, cmd TransferGalleryImageReq) (any, error) {
+	user := common.GetUser(rail)
+	return BatchTransferAsync(rail, cmd, user, miso.GetMySQL())
 }

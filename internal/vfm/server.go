@@ -2,16 +2,11 @@ package vfm
 
 import (
 	"github.com/curtisnewbie/gocommon/common"
-	"github.com/curtisnewbie/gocommon/goauth"
 	"github.com/curtisnewbie/miso/miso"
 )
 
 func PrepareServer(rail miso.Rail) error {
 	common.LoadBuiltinPropagationKeys()
-
-	if err := PrepareGoAuthReport(rail); err != nil {
-		return err
-	}
 
 	if err := PrepareEventBus(rail); err != nil {
 		return err
@@ -24,15 +19,6 @@ func PrepareServer(rail miso.Rail) error {
 	if err := ScheduleJobs(rail); err != nil {
 		return err
 	}
-	return nil
-}
-
-func PrepareGoAuthReport(rail miso.Rail) error {
-	goauth.ReportResourcesOnBootstrapped(rail, []goauth.AddResourceReq{
-		{Name: ManageFileResName, Code: ManageFileResCode},
-		{Name: AdminFsResName, Code: AdminFsResCode},
-	})
-	goauth.ReportPathsOnBootstrapped(rail)
 	return nil
 }
 
