@@ -43,3 +43,7 @@ logging:
 goauth:
   client:
     enabled: true
+
+vfm: 
+  site:
+    host: "https://curtisnewbie.com"

@@ -1,11 +1,17 @@
 package vfm
 
 import (
+	"bytes"
+	"io"
+	"net/http"
+	"net/url"
+
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/gocommon/goauth"
 	"github.com/curtisnewbie/miso/miso"
 	vault "github.com/curtisnewbie/user-vault/api"
 	"github.com/gin-gonic/gin"
+	"github.com/skip2/go-qrcode"
 )
 
 const (
@@ -83,6 +89,10 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			miso.IPost("/unpack", UnpackZipEp).
 				Desc("User unpack zip").
 				Resource(ManageFilesResource),
+
+			miso.RawGet("/token/qrcode", GenFileTknQRCodeEp).
+				Desc("User generate qrcode image for temporary token").
+				Public(),
 		),
 
 		miso.SubPath("/vfolder").Group(
@@ -390,4 +400,30 @@ func ListGalleryImagesEp(c *gin.Context, rail miso.Rail, cmd ListGalleryImagesCm
 func TransferGalleryImageEp(c *gin.Context, rail miso.Rail, cmd TransferGalleryImageReq) (any, error) {
 	user := common.GetUser(rail)
 	return BatchTransferAsync(rail, cmd, user, miso.GetMySQL())
+}
+
+func GenFileTknQRCodeEp(c *gin.Context, rail miso.Rail) {
+	token := c.Query("token")
+	if miso.IsBlankStr(token) {
+		c.String(http.StatusBadRequest, "token is required")
+		return
+	}
+
+	url := miso.GetPropStr(PropVfmSiteHost) + "/fstore/file/raw?key=" + url.QueryEscape(token)
+	png, err := qrcode.Encode(url, qrcode.Medium, 512)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		rail.Errorf("Failed to generate qrcode image, fileKey: %v, %v", token, err)
+		return
+	}
+
+	reader := bytes.NewReader(png)
+	_, err = io.Copy(c.Writer, reader)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		rail.Errorf("Failed to tranfer qrcode image, fileKey: %v, %v", token, err)
+		return
+	}
+
+	c.Status(http.StatusOK)
 }

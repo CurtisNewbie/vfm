@@ -36,3 +36,7 @@ rabbitmq:
 goauth:
   client:
     enabled: true
+  
+vfm: 
+  site:
+    host: "http://localhost:4200"
