@@ -21,24 +21,24 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 	miso.BaseRoute("/open/api").With(
 		miso.SubPath("/file").Group(
 			miso.IGet("/upload/duplication/preflight", DupPreflightCheckEp).
-				Resource(ManageFilesResource).
-				Desc("Preflight check for duplicate file uploads"),
+				Desc("Preflight check for duplicate file uploads").
+				Resource(ManageFilesResource),
 
 			miso.IGet("/parent", GetParentFileEp).
-				Resource(ManageFilesResource).
-				Desc("User fetch parent file info"),
+				Desc("User fetch parent file info").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/move-to-dir", MoveFileToDirEp).
-				Resource(ManageFilesResource).
-				Desc("User move files into directory"),
+				Desc("User move files into directory").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/make-dir", MakeDirEp).
-				Resource(ManageFilesResource).
-				Desc("User make directory"),
+				Desc("User make directory").
+				Resource(ManageFilesResource),
 
 			miso.Get("/dir/list", ListDirEp).
-				Resource(ManageFilesResource).
-				Desc("User list directoriesUser list directories"),
+				Desc("User list directoriesUser list directories").
+				Resource(ManageFilesResource),
 
 			miso.IPost("/list", ListFilesEp).
 				Desc("User list files").
