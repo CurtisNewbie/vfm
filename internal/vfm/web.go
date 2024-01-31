@@ -249,11 +249,24 @@ type BatchDeleteFileReq struct {
 }
 
 func BatchDeleteFileEp(c *gin.Context, rail miso.Rail, req BatchDeleteFileReq) (any, error) {
+	user := common.GetUser(rail)
+	if len(req.FileKeys) < 31 {
+		for i := range req.FileKeys {
+			fk := req.FileKeys[i]
+			if err := DeleteFile(rail, miso.GetMySQL(), DeleteFileReq{fk}, user); err != nil {
+				rail.Errorf("failed to delete file, fileKey: %v, %v", fk, err)
+				return nil, err
+			}
+		}
+		return nil, nil
+	}
+
+	// too many file keys, delete files asynchronously
 	for i := range req.FileKeys {
 		fk := req.FileKeys[i]
 		vfmPool.Go(func() {
 			rrail := rail.NextSpan()
-			if err := DeleteFile(rrail, miso.GetMySQL(), DeleteFileReq{fk}, common.GetUser(rrail)); err != nil {
+			if err := DeleteFile(rrail, miso.GetMySQL(), DeleteFileReq{fk}, user); err != nil {
 				rrail.Errorf("failed to delete file, fileKey: %v, %v", fk, err)
 			}
 		})
