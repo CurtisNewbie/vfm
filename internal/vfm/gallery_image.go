@@ -132,8 +132,21 @@ type FstoreTmpToken struct {
 	TempKey string
 }
 
+func GenFstoreTknBatch(rail miso.Rail, futures *miso.AwaitFutures[FstoreTmpToken], fileId string, name string) {
+	futures.SubmitAsync(func() (FstoreTmpToken, error) {
+		tkn, err := GetFstoreTmpToken(rail.NextSpan(), fileId, name)
+		if err != nil {
+			return FstoreTmpToken{FileId: fileId}, err
+		}
+		return FstoreTmpToken{
+			FileId:  fileId,
+			TempKey: tkn,
+		}, nil
+	})
+}
+
 func GenFstoreTknAsync(rail miso.Rail, fileId string, name string) miso.Future[FstoreTmpToken] {
-	return miso.SubmitAsync[FstoreTmpToken](fstoreTokenPool,
+	return miso.SubmitAsync[FstoreTmpToken](vfmPool,
 		func() (FstoreTmpToken, error) {
 			tkn, err := GetFstoreTmpToken(rail.NextSpan(), fileId, name)
 			if err != nil {
@@ -157,27 +170,20 @@ func ListGalleryImages(rail miso.Rail, tx *gorm.DB, cmd ListGalleryImagesCmd, us
 		return nil, miso.NewErr("You are not allowed to access this gallery")
 	}
 
-	const selectSql string = `
-		select image_no, file_key from gallery_image
-		where gallery_no = ?
-		order by id desc
-		limit ?, ?
-	`
 	var galleryImages []GalleryImage
-	t := tx.Raw(selectSql, cmd.GalleryNo, cmd.Paging.GetOffset(), cmd.Paging.GetLimit()).Scan(&galleryImages)
+	t := tx.Raw(`select image_no, file_key from gallery_image where gallery_no = ? order by id desc limit ?, ?`,
+		cmd.GalleryNo, cmd.Paging.GetOffset(), cmd.Paging.GetLimit()).Scan(&galleryImages)
 	if t.Error != nil {
 		return nil, fmt.Errorf("select gallery_image failed, %v", t.Error)
 	}
-
 	if galleryImages == nil {
 		galleryImages = []GalleryImage{}
 	}
 
 	// count total asynchronoulsy (normally, when the SELECT is successful, the COUNT doesn't really fail)
-	countFuture := miso.RunAsync(func() (int, error) {
+	countFuture := miso.SubmitAsync(vfmPool, func() (int, error) {
 		var total int
-		t := tx.Raw(`select count(*) from gallery_image where gallery_no = ?`, cmd.GalleryNo).
-			Scan(&total)
+		t := tx.Raw(`select count(*) from gallery_image where gallery_no = ?`, cmd.GalleryNo).Scan(&total)
 		if t.Error == nil {
 			return total, nil
 		}
@@ -187,30 +193,28 @@ func ListGalleryImages(rail miso.Rail, tx *gorm.DB, cmd ListGalleryImagesCmd, us
 	// generate temp tokens for the actual files and the thumbnail, these are served by mini-fstore
 	images := []ImageInfo{}
 	if len(galleryImages) > 0 {
-
-		genTknFutures := []miso.Future[FstoreTmpToken]{}
-
+		awaitFutures := miso.NewAwaitFutures[FstoreTmpToken](vfmPool)
 		for _, img := range galleryImages {
 			r, e := findFile(rail, tx, img.FileKey)
 			if e != nil {
 				rail.Errorf("findFile failed, fileKey: %v, %v", img.FileKey, e)
 				continue
 			}
-			fstoreFileId := r.FstoreFileId
-			genTknFutures = append(genTknFutures, GenFstoreTknAsync(rail, fstoreFileId, r.Name))
+			// original
+			GenFstoreTknBatch(rail, awaitFutures, r.FstoreFileId, r.Name)
 
+			// thumbnail
 			thumbnailFileId := r.Thumbnail
 			if thumbnailFileId == "" {
-				thumbnailFileId = fstoreFileId
+				thumbnailFileId = r.FstoreFileId
 			} else {
-				genTknFutures = append(genTknFutures, GenFstoreTknAsync(rail, thumbnailFileId, r.Name))
+				GenFstoreTknBatch(rail, awaitFutures, thumbnailFileId, r.Name)
 			}
-
-			images = append(images, ImageInfo{ImageFileId: fstoreFileId, ThumbnailFileId: thumbnailFileId})
+			images = append(images, ImageInfo{ImageFileId: r.FstoreFileId, ThumbnailFileId: thumbnailFileId})
 		}
 
-		tokens := []FstoreTmpToken{}
-
+		genTknFutures := awaitFutures.Await()
+		tokens := make([]FstoreTmpToken, 0, len(genTknFutures))
 		for i := range genTknFutures {
 			res, err := genTknFutures[i].Get()
 			if err != nil {
