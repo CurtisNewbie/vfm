@@ -15,27 +15,21 @@ const (
 )
 
 var (
-	userIdInfoCache = miso.NewLazyORCache("vfm:user:info:userid",
-		func(rail miso.Rail, key string) (vault.UserInfo, error) {
-			userId, err := strconv.Atoi(key)
-			if err != nil {
-				return vault.UserInfo{}, miso.NewErr("Invalid userId format, %v", err)
-			}
-			fui, errFind := vault.FindUser(rail, vault.FindUserReq{
-				UserId: &userId,
-			})
-			return fui, errFind
-		},
-		miso.RCacheConfig{
-			Exp:    1 * time.Minute,
-			NoSync: true,
-		},
-	)
+	userIdInfoCache = miso.NewRCache[vault.UserInfo]("vfm:user:info:userid", miso.RCacheConfig{Exp: 1 * time.Minute, NoSync: true})
 )
 
 func CachedFindUser(rail miso.Rail, userId int) (vault.UserInfo, error) {
 	userIdInt := strconv.FormatInt(int64(userId), 10)
-	return userIdInfoCache.Get(rail, userIdInt)
+	return userIdInfoCache.Get(rail, userIdInt, func(rail miso.Rail, key string) (vault.UserInfo, error) {
+		userId, err := strconv.Atoi(key)
+		if err != nil {
+			return vault.UserInfo{}, miso.NewErr("Invalid userId format, %v", err)
+		}
+		fui, errFind := vault.FindUser(rail, vault.FindUserReq{
+			UserId: &userId,
+		})
+		return fui, errFind
+	})
 }
 
 type FstoreFile struct {

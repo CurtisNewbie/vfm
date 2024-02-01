@@ -20,10 +20,6 @@ const (
 	IMAGE_SIZE_THRESHOLD int64 = 40 * 1048576
 )
 
-var (
-	fstoreTokenPool = miso.NewAsyncPool(500, 100)
-)
-
 type TransferGalleryImageReq struct {
 	Images []CreateGalleryImageCmd
 }
@@ -137,7 +133,7 @@ type FstoreTmpToken struct {
 }
 
 func GenFstoreTknAsync(rail miso.Rail, fileId string, name string) miso.Future[FstoreTmpToken] {
-	return miso.RunAsyncPool[FstoreTmpToken](fstoreTokenPool,
+	return miso.SubmitAsync[FstoreTmpToken](fstoreTokenPool,
 		func() (FstoreTmpToken, error) {
 			tkn, err := GetFstoreTmpToken(rail.NextSpan(), fileId, name)
 			if err != nil {
