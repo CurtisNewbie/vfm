@@ -32,10 +32,6 @@ rabbitmq:
   username: guest
   password: guest
   vhost: "/"
-
-goauth:
-  client:
-    enabled: true
   
 vfm: 
   site:

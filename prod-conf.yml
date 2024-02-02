@@ -40,10 +40,6 @@ logging:
   rolling.file: "/usr/src/logs/vfm.log"
   level: info
 
-goauth:
-  client:
-    enabled: true
-
 vfm: 
   site:
     host: "https://curtisnewbie.com"
