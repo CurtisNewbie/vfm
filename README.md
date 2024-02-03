@@ -6,7 +6,6 @@ vfm stands for virtual file manager. vfm doesn't manage the actual file storage,
 
 - [event-pump](https://github.com/CurtisNewbie/event-pump)
 - [user-vault](https://github.com/CurtisNewbie/user-vault)
-- [goauth](https://github.com/CurtisNewbie/goauth)
 - [mini-fstore](https://github.com/CurtisNewbie/mini-fstore)
 - [hammer](https://github.com/CurtisNewbie/hammer)
 - MySQL
