@@ -20,11 +20,7 @@ var (
 
 func CachedFindUser(rail miso.Rail, userId int) (vault.UserInfo, error) {
 	userIdInt := strconv.FormatInt(int64(userId), 10)
-	return userIdInfoCache.Get(rail, userIdInt, func(rail miso.Rail, key string) (vault.UserInfo, error) {
-		userId, err := strconv.Atoi(key)
-		if err != nil {
-			return vault.UserInfo{}, miso.NewErr("Invalid userId format, %v", err)
-		}
+	return userIdInfoCache.Get(rail, userIdInt, func() (vault.UserInfo, error) {
 		fui, errFind := vault.FindUser(rail, vault.FindUserReq{
 			UserId: &userId,
 		})
