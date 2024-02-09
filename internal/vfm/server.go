@@ -15,9 +15,5 @@ func PrepareServer(rail miso.Rail) error {
 	if err := RegisterHttpRoutes(rail); err != nil {
 		return err
 	}
-
-	if err := ScheduleJobs(rail); err != nil {
-		return err
-	}
 	return nil
 }

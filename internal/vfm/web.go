@@ -178,30 +178,35 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 
 	// ---------------------------------------------- internal endpoints ------------------------------------------
 
-	miso.BaseRoute("/remote/user/file").
-		Group(
-			miso.IGet("/indir/list", ListFilesInDirEp),
-			miso.IGet("/info", FetchFileInfoItnEp),
-			miso.IGet("/owner/validation", ValidateOwnerEp),
-		)
+	miso.BaseRoute("/remote/user/file").Group(
+		miso.IGet("/indir/list", ListFilesInDirEp),
+		miso.IGet("/info", FetchFileInfoItnEp),
+		miso.IGet("/owner/validation", ValidateOwnerEp),
+	)
 
 	// ---------------------------------- endpoints used to compensate --------------------------------------
 
-	miso.BaseRoute("/compensate").
-		Group(
-			// Compensate image compressions, those that are images (guessed by names) are compressed to generate thumbnail
-			miso.Post("/image/compression",
-				func(c *gin.Context, rail miso.Rail) (any, error) {
-					return nil, CompensateImageCompression(rail, miso.GetMySQL())
-				}),
+	miso.BaseRoute("/compensate").Group(
+		// Compensate image compressions, those that are images (guessed by names) are compressed to generate thumbnail
+		miso.Post("/image/compression",
+			func(c *gin.Context, rail miso.Rail) (any, error) {
+				return nil, CompensateImageCompression(rail, miso.GetMySQL())
+			}).
+			Desc("Compensate thumbnail generation"),
 
-			// update file_info records that do not have uploader_no
-			miso.Post("/file/uploaderno",
-				func(c *gin.Context, rail miso.Rail) (any, error) {
-					return nil, CompensateFileUploaderNo(rail, miso.GetMySQL())
-				},
-			),
-		)
+		// update file_info records that do not have uploader_no
+		miso.Post("/file/uploaderno",
+			func(c *gin.Context, rail miso.Rail) (any, error) {
+				return nil, CompensateFileUploaderNo(rail, miso.GetMySQL())
+			}).
+			Desc("Update file_info records that don't have uploader_no"),
+
+		miso.Post("/dir/calculate-size",
+			func(c *gin.Context, rail miso.Rail) (any, error) {
+				return nil, ImMemBatchCalcDirSize(rail, miso.GetMySQL())
+			}).
+			Desc("Calculate size of all directories recursively"),
+	)
 
 	return nil
 }

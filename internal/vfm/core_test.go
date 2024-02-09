@@ -379,7 +379,7 @@ func TestIsImage(t *testing.T) {
 func TestBatchClacDirSize(t *testing.T) {
 	corePreTest(t)
 	c := miso.EmptyRail()
-	err := BatchCalcDirSize(c, miso.GetMySQL())
+	err := ImMemBatchCalcDirSize(c, miso.GetMySQL())
 	if err != nil {
 		t.Fatal(err)
 	}

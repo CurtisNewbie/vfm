@@ -1670,44 +1670,38 @@ func RemoveVFolder(rail miso.Rail, tx *gorm.DB, user common.User, req RemoveVFol
 	return nil
 }
 
-func BatchCalcDirSize(rail miso.Rail, db *gorm.DB) error {
+func ImMemBatchCalcDirSize(rail miso.Rail, db *gorm.DB) error {
 	defer miso.TimeOp(rail, time.Now(), "BatchCalcDirSize")
-	var limit int = 100
-	var minId int = 0
 
 	type TempFile struct {
-		Id   int
-		Uuid string
+		Uuid       string
+		ParentFile string
 	}
+
 	var files []TempFile
-
-	for {
-		t := db.Table("file_info").
-			Select("uuid", "id").
-			Where("file_type = 'DIR' AND is_del = 0 AND is_logic_deleted = 0").
-			Where("id > ?", minId).
-			Order("id asc").
-			Scan(&files)
-		if t.Error != nil {
-			return fmt.Errorf("failed to list dir files, minId: %v, limit: %v, %v", minId, limit, t.Error)
-		}
-
-		if t.RowsAffected < 1 || len(files) < 1 {
-			rail.Infof("BatchCalcDirSize finished, minId: %v, limit: %v", minId, limit)
-			return nil
-		}
-
-		for _, f := range files {
-			start := time.Now()
-			if err := CalcDirSize(rail, f.Uuid, db); err != nil {
-				return fmt.Errorf("failed to CalcDirSize for file: %v, %v", f.Uuid, err)
-			}
-			miso.TimeOp(rail, start, fmt.Sprintf("CalcDirSize, uuid: %v, id: %v", f.Uuid, f.Id))
-		}
-
-		minId = files[len(files)-1].Id
-		rail.Infof("minId: %v", minId)
+	err := db.Raw(`
+		SELECT uuid, parent_file FROM file_info
+		WHERE parent_file != '' AND file_type = 'DIR' AND is_logic_deleted = 0
+	`).Scan(&files).Error
+	if err != nil {
+		return fmt.Errorf("failed to list dir files, %v", err)
 	}
+
+	parDirSet := miso.NewSet[string]()
+	for _, f := range files {
+		parDirSet.Add(f.ParentFile)
+	}
+
+	for _, f := range files {
+		if parDirSet.Has(f.Uuid) { // the dir itself is a parent dir
+			continue
+		}
+		if err := miso.PubEventBus(rail, CalcDirSizeEvt{FileKey: f.Uuid}, VfmCalcDirSizeEventBus); err != nil {
+			return err
+		}
+		rail.Infof("Triggered CalcDirSizeEvt for %v", f.Uuid)
+	}
+	return nil
 }
 
 func CalcDirSize(rail miso.Rail, fk string, db *gorm.DB) error {
@@ -1729,6 +1723,19 @@ func CalcDirSize(rail miso.Rail, fk string, db *gorm.DB) error {
 		return fmt.Errorf("failed to update dir's size, fileKey: %v, %v", fk, err)
 	}
 
+	// if current dir also has a parent dir, calculate the parent dir's size as well
+	var parDir string
+	if err := db.Raw(`SELECT parent_file FROM file_info WHERE uuid = ?`, fk).Scan(&parDir).Error; err != nil {
+		rail.Errorf("failed to find parent dir of file: %v, %v", fk, err)
+		return nil
+	}
+
+	if parDir != "" {
+		if err := miso.PubEventBus(rail, CalcDirSizeEvt{FileKey: parDir}, VfmCalcDirSizeEventBus); err != nil {
+			rail.Errorf("failed to publish CalcDirSizeEvt for %v, %v", parDir, err)
+			return nil
+		}
+	}
 	return nil
 }
 
