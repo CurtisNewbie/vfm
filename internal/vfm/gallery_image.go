@@ -373,8 +373,7 @@ func GuessIsImage(rail miso.Rail, f FileInfo) bool {
 		rail.Infof("File doesn't have thumbnail, fileKey: %v", f.Uuid)
 		return false
 	}
-
-	return true
+	return isImage(f.Name)
 }
 
 // check whether the gallery image is created already
