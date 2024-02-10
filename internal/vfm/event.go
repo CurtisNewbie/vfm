@@ -260,7 +260,7 @@ func OnFileDeleted(rail miso.Rail, evt StreamEvent) error {
 	rail.Infof("File logically deleted, %v", uuid)
 
 	if e := miso.PubEventBus(rail, NotifyFileDeletedEvent{FileKey: uuid}, NotifyFantahseaFileDeletedEventBus); e != nil {
-		return fmt.Errorf("Failed to send NotifyFileDeletedEvent, uuid: %v, %v", uuid, e)
+		return fmt.Errorf("failed to send NotifyFileDeletedEvent, uuid: %v, %v", uuid, e)
 	}
 	return nil
 }

@@ -27,8 +27,27 @@ Check [miso](https://github.com/curtisnewbie/miso) and [gocommon](https://github
 - Since v0.0.4, `vfm` relies on `evnet-pump` to listen to the binlog events. Whenever a new `file_info` record is inserted, the `event-pump` sends MQ to `vfm`, which triggers the image compression workflow if the file is an image.
 - Since v0.0.8
     - Users can only share files using `vfolder`, field `file_info.user_group` and table `file_sharing` are deprecated.
-    - Uploaders's user no can be updated (compensated) using: `curl -X POST "http://localhost:8086/compensate/file/uploaderno"`.
 - Since v0.1.3, [fantahsea](https://github.com/curtisnewbie/fantahsea) has been merged into vfm codebase, see [Fantahsea Migration](./doc/fantahsea-migration.md).
+
+## Maintenance
+
+Calculate size of all directories recursively, bubbling up to the root:
+
+```sh
+curl -X POST "http://localhost:8086/compensate/dir/calculate-size"
+```
+
+Compensate thumbnail generations, those that are images/videos (guessed by names) are processed to generate thumbnails:
+
+```sh
+curl -X POST "http://localhost:8086/compensate/thumbnail"
+```
+
+Compensate missing uploaders' user_no:
+
+```sh
+curl -X POST "http://localhost:8086/compensate/file/uploaderno"
+```
 
 ## Doc
 
