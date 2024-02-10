@@ -160,7 +160,7 @@ func ListedGrantedGalleryAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedGall
 		return miso.PageRes[ListedGalleryAccessRes]{}, e
 	}
 	if gallery.UserNo != user.UserNo {
-		return miso.PageRes[ListedGalleryAccessRes]{}, miso.NewErr("Operation not allowed")
+		return miso.PageRes[ListedGalleryAccessRes]{}, miso.NewErrf("Operation not allowed")
 	}
 
 	qpp := miso.QueryPageParam[ListedGalleryAccessRes]{
@@ -203,7 +203,7 @@ func RemoveGalleryAccess(rail miso.Rail, tx *gorm.DB, cmd RemoveGalleryAccessCmd
 		return e
 	}
 	if gallery.UserNo != user.UserNo {
-		return miso.NewErr("Operation not allowed")
+		return miso.NewErrf("Operation not allowed")
 	}
 
 	e = tx.Exec(`UPDATE gallery_user_access SET is_del = 1, update_by = ? WHERE gallery_no = ? AND user_no = ?`,
@@ -227,14 +227,14 @@ func GrantGalleryAccessToUser(rail miso.Rail, tx *gorm.DB, cmd PermitGalleryAcce
 	if toUser, err = vault.FindUser(rail, vault.FindUserReq{
 		Username: &cmd.Username,
 	}); err != nil {
-		return miso.NewErr("Failed to find user", "failed to find user, username: %v, %v", cmd.Username, err)
+		return miso.NewErrf("Failed to find user").WithInternalMsg("failed to find user, username: %v, %v", cmd.Username, err)
 	}
 	if toUser.Id < 1 {
-		return miso.NewErr("User not found")
+		return miso.NewErrf("User not found")
 	}
 
 	if gallery.UserNo != user.UserNo {
-		return miso.NewErr("You are not allowed to grant access to this gallery")
+		return miso.NewErrf("You are not allowed to grant access to this gallery")
 	}
 
 	return CreateGalleryAccess(rail, tx, toUser.UserNo, cmd.GalleryNo, user.Username)

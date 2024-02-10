@@ -59,7 +59,7 @@ func CompensateThumbnail(rail miso.Rail, tx *gorm.DB) error {
 					ReplyTo:    VfmGenVideoThumbnailNotifyEventBus,
 				}
 				if e := miso.PubEventBus(rail, evt, hammer.GenVideoThumbnailTriggerEventBus); e != nil {
-					return miso.TraceErrf(e, "Failed to send %#v, uuid: %v", evt, f.Uuid)
+					return fmt.Errorf("failed to send %#v, uuid: %v, %v", evt, f.Uuid, e)
 				}
 				continue
 			}

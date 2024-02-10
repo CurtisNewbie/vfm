@@ -221,7 +221,7 @@ func DupPreflightCheckEp(c *gin.Context, rail miso.Rail, req PreflightCheckReq) 
 
 func GetParentFileEp(c *gin.Context, rail miso.Rail, req FetchParentFileReq) (any, error) {
 	if req.FileKey == "" {
-		return nil, miso.NewErr("fileKey is required")
+		return nil, miso.NewErrf("fileKey is required")
 	}
 	pf, e := FindParentFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
 	if e != nil {
@@ -337,7 +337,7 @@ func ShareVFolderEp(c *gin.Context, rail miso.Rail, req ShareVfolderReq) (any, e
 	sharedTo, e := vault.FindUser(rail, vault.FindUserReq{Username: &req.Username})
 	if e != nil {
 		rail.Warnf("Unable to find user, sharedTo: %s, %v", req.Username, e)
-		return nil, miso.NewErr("Failed to find user")
+		return nil, miso.NewErrf("Failed to find user")
 	}
 	return nil, ShareVFolder(rail, miso.GetMySQL(), sharedTo, req.FolderNo, common.GetUser(rail))
 }

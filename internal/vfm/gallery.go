@@ -216,7 +216,7 @@ func CreateGallery(rail miso.Rail, cmd CreateGalleryCmd, user common.User, tx *g
 			if err != nil {
 				return nil, err
 			}
-			return nil, miso.NewErr("You already have a gallery with the same name, please change and try again")
+			return nil, miso.NewErrf("You already have a gallery with the same name, please change and try again")
 		}
 
 		galleryNo := miso.GenNoL("GAL", 25)
@@ -250,7 +250,7 @@ func UpdateGallery(rail miso.Rail, cmd UpdateGalleryCmd, user common.User, tx *g
 
 	// only owner can update the gallery
 	if user.UserNo != gallery.UserNo {
-		return miso.NewErr("You are not allowed to update this gallery")
+		return miso.NewErrf("You are not allowed to update this gallery")
 	}
 
 	t := tx.Where("gallery_no = ?", galleryNo).
@@ -261,7 +261,7 @@ func UpdateGallery(rail miso.Rail, cmd UpdateGalleryCmd, user common.User, tx *g
 
 	if e := t.Error; e != nil {
 		rail.Warnf("Failed to update gallery, gallery_no: %v, e: %v", galleryNo, t.Error)
-		return miso.NewErr("Failed to update gallery, please try again later")
+		return miso.NewErrf("Failed to update gallery, please try again later")
 	}
 
 	return nil
@@ -281,7 +281,7 @@ func FindGalleryCreator(rail miso.Rail, galleryNo string, tx *gorm.DB) (*string,
 			return nil, t.Error
 		}
 		rail.Warnf("Could not find gallery %v", galleryNo)
-		return nil, miso.NewErr("Gallery doesn't exist")
+		return nil, miso.NewErrf("Gallery doesn't exist")
 	}
 	return &gallery.UserNo, nil
 }
@@ -296,7 +296,7 @@ func FindGallery(rail miso.Rail, tx *gorm.DB, galleryNo string) (*Gallery, error
 		if e != nil {
 			return nil, fmt.Errorf("failed to find gallery, %v", t.Error)
 		}
-		return nil, miso.NewErr("Gallery doesn't exist")
+		return nil, miso.NewErrf("Gallery doesn't exist")
 	}
 	return &gallery, nil
 }
@@ -308,7 +308,7 @@ func DeleteGallery(rail miso.Rail, tx *gorm.DB, cmd DeleteGalleryCmd, user commo
 		if err != nil {
 			return err
 		}
-		return miso.NewErr("You are not allowed to delete this gallery")
+		return miso.NewErrf("You are not allowed to delete this gallery")
 	}
 
 	t := tx.Exec(`UPDATE gallery g SET g.is_del = 1 WHERE gallery_no = ? AND g.is_del = 0`, galleryNo)

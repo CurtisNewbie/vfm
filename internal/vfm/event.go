@@ -109,8 +109,8 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 
 	if isImage(f.Name) {
 		evt := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: VfmCompressImgNotifyEventBus}
-		if e := miso.PubEventBus(rail, evt, hammer.CompressImageTriggerEventBus); e != nil {
-			return miso.TraceErrf(e, "Failed to send %#v, uuid: %v", evt, f.Uuid)
+		if err := miso.PubEventBus(rail, evt, hammer.CompressImageTriggerEventBus); err != nil {
+			return fmt.Errorf("failed to send %#v, uuid: %v, %v", evt, f.Uuid, err)
 		}
 		return nil
 	}
@@ -121,8 +121,8 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 			FileId:     f.FstoreFileId,
 			ReplyTo:    VfmGenVideoThumbnailNotifyEventBus,
 		}
-		if e := miso.PubEventBus(rail, evt, hammer.GenVideoThumbnailTriggerEventBus); e != nil {
-			return miso.TraceErrf(e, "Failed to send %#v, uuid: %v", evt, f.Uuid)
+		if err := miso.PubEventBus(rail, evt, hammer.GenVideoThumbnailTriggerEventBus); err != nil {
+			return fmt.Errorf("failed to send %#v, uuid: %v, %v", evt, f.Uuid, err)
 		}
 		return nil
 	}
@@ -260,7 +260,7 @@ func OnFileDeleted(rail miso.Rail, evt StreamEvent) error {
 	rail.Infof("File logically deleted, %v", uuid)
 
 	if e := miso.PubEventBus(rail, NotifyFileDeletedEvent{FileKey: uuid}, NotifyFantahseaFileDeletedEventBus); e != nil {
-		return miso.TraceErrf(e, "Failed to send NotifyFileDeletedEvent, uuid: %v", uuid)
+		return fmt.Errorf("Failed to send NotifyFileDeletedEvent, uuid: %v, %v", uuid, e)
 	}
 	return nil
 }

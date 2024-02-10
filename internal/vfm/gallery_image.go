@@ -100,7 +100,7 @@ func CreateGalleryImage(rail miso.Rail, cmd CreateGalleryImageCmd, userNo string
 	}
 
 	if *creator != userNo {
-		return miso.NewErr("You are not allowed to upload image to this gallery")
+		return miso.NewErrf("You are not allowed to upload image to this gallery")
 	}
 
 	lock := NewGalleryFileLock(rail, cmd.GalleryNo, cmd.FileKey)
@@ -167,7 +167,7 @@ func ListGalleryImages(rail miso.Rail, tx *gorm.DB, cmd ListGalleryImagesCmd, us
 		if err != nil {
 			return nil, fmt.Errorf("check HasAccessToGallery failed, %v", err)
 		}
-		return nil, miso.NewErr("You are not allowed to access this gallery")
+		return nil, miso.NewErrf("You are not allowed to access this gallery")
 	}
 
 	var galleryImages []GalleryImage
@@ -257,7 +257,7 @@ func BatchTransferAsync(rail miso.Rail, cmd TransferGalleryImageReq, user common
 			if e != nil {
 				return nil, e
 			}
-			return nil, miso.NewErr(fmt.Sprintf("Only file's owner can make it a gallery image ('%s')", img.Name))
+			return nil, miso.NewErrf("Only file's owner can make it a gallery image ('%s')", img.Name)
 		}
 	}
 
@@ -307,15 +307,15 @@ func TransferImagesInDir(rail miso.Rail, cmd TransferGalleryImageInDirReq, user 
 
 	// only the owner of the directory can do this, by default directory is only visible to the uploader
 	if fi.UploaderId != user.UserId {
-		return miso.NewErr("Not permitted operation")
+		return miso.NewErrf("Not permitted operation")
 	}
 
 	if fi.FileType != FileTypeDir {
-		return miso.NewErr("This is not a directory")
+		return miso.NewErrf("This is not a directory")
 	}
 
 	if fi.IsLogicDeleted == LDelY || fi.IsPhysicDeleted == PDelY {
-		return miso.NewErr("Directory is already deleted")
+		return miso.NewErrf("Directory is already deleted")
 	}
 	dirFileKey := cmd.FileKey
 	galleryNo := cmd.GalleryNo
