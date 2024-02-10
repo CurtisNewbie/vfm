@@ -29,10 +29,12 @@ const (
 
 var (
 	_imageSuffix = miso.NewSet[string]()
+	_videoSuffix = miso.NewSet[string]()
 )
 
 func init() {
 	_imageSuffix.AddAll([]string{"jpeg", "jpg", "gif", "png", "svg", "bmp", "webp", "apng", "avif"})
+	_videoSuffix.AddAll([]string{"mp4", "mov", "webm", "ogg"})
 }
 
 type FileTag struct {
@@ -1392,6 +1394,16 @@ func SaveFileRecord(rail miso.Rail, tx *gorm.DB, r SaveFileReq, user common.User
 		}
 	}
 	return nil
+}
+
+func isVideo(name string) bool {
+	i := strings.LastIndex(name, ".")
+	if i < 0 || i == len([]rune(name))-1 {
+		return false
+	}
+
+	suf := string(name[i+1:])
+	return _videoSuffix.Has(strings.ToLower(suf))
 }
 
 func isImage(name string) bool {

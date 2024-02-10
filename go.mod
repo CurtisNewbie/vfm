@@ -10,7 +10,7 @@ require (
 )
 
 require (
-	github.com/curtisnewbie/hammer v0.0.8
+	github.com/curtisnewbie/hammer v0.0.11
 	github.com/curtisnewbie/mini-fstore v0.1.7-beta.4
 	github.com/curtisnewbie/miso v0.0.21
 	github.com/curtisnewbie/user-vault v0.0.10

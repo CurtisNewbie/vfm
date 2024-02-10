@@ -9,22 +9,22 @@ import (
 	"gorm.io/gorm"
 )
 
-type FileCompressInfo struct {
-	Id           int
-	Name         string
-	Uuid         string
-	FstoreFileId string
-}
+func CompensateThumbnail(rail miso.Rail, tx *gorm.DB) error {
+	rail.Info("CompensateThumbnail start")
+	defer miso.TimeOp(rail, time.Now(), "CompensateThumbnail")
 
-func CompensateImageCompression(rail miso.Rail, tx *gorm.DB) error {
-	rail.Info("CompensateImageCompression start")
-	defer miso.TimeOp(rail, time.Now(), "CompensateImageCompression")
+	type FileProcInf struct {
+		Id           int
+		Name         string
+		Uuid         string
+		FstoreFileId string
+	}
 
 	limit := 500
 	minId := 0
 
 	for {
-		var files []FileCompressInfo
+		var files []FileProcInf
 		t := tx.
 			Raw(`SELECT id, name, uuid, fstore_file_id
 			FROM file_info
@@ -43,18 +43,30 @@ func CompensateImageCompression(rail miso.Rail, tx *gorm.DB) error {
 		}
 
 		for _, f := range files {
-			if !isImage(f.Name) {
+			if isImage(f.Name) {
+				event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: VfmCompressImgNotifyEventBus}
+				if e := miso.PubEventBus(rail, event, hammer.CompressImageTriggerEventBus); e != nil {
+					rail.Errorf("Failed to send CompressImageEvent, minId: %v, uuid: %v, %v", minId, f.Uuid, e)
+					return e
+				}
 				continue
 			}
-			event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: VfmCompressImgNotifyEventBus}
-			if e := miso.PubEventBus(rail, event, hammer.CompressImageTriggerEventBus); e != nil {
-				rail.Errorf("Failed to send CompressImageEvent, minId: %v, uuid: %v, %v", minId, f.Uuid, e)
-				return e
+
+			if isVideo(f.Name) {
+				evt := hammer.GenVideoThumbnailTriggerEvent{
+					Identifier: f.Uuid,
+					FileId:     f.FstoreFileId,
+					ReplyTo:    VfmGenVideoThumbnailNotifyEventBus,
+				}
+				if e := miso.PubEventBus(rail, evt, hammer.GenVideoThumbnailTriggerEventBus); e != nil {
+					return miso.TraceErrf(e, "Failed to send %#v, uuid: %v", evt, f.Uuid)
+				}
+				continue
 			}
 		}
 
 		minId = files[len(files)-1].Id
-		rail.Infof("CompensateImageCompression, minId: %v", minId)
+		rail.Infof("CompensateThumbnail, minId: %v", minId)
 	}
 }
 

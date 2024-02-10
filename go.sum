@@ -73,8 +73,8 @@ github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403/go.mod h1:WmhPx2Nbnht
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/curtisnewbie/gocommon v1.1.9 h1:PFUqFhnh+b7bMTqYqrz+zLpkLvI6Tju6u0e3aJArkTk=
 github.com/curtisnewbie/gocommon v1.1.9/go.mod h1:S+ndKdPEjHKpMiLeuRELLXkDRlERGcDoidhciMCjJHg=
-github.com/curtisnewbie/hammer v0.0.8 h1:vGXrLis+94yJubWdhYXTjFgkT0a+Asr2Lq17NluI/eY=
-github.com/curtisnewbie/hammer v0.0.8/go.mod h1:Cb2UDpEb7CBKu49zXw+avR89FBh3WWi7tfOP/UefDYM=
+github.com/curtisnewbie/hammer v0.0.11 h1:ICEVOuBbskURAqnngT6XBSeXCL7aLgYmhXExqr7hoTs=
+github.com/curtisnewbie/hammer v0.0.11/go.mod h1:PIx3nizOpL0j94dKP5K0MGznFMkxrwR3caLJSfkAFb8=
 github.com/curtisnewbie/mini-fstore v0.1.7-beta.4 h1:26u2KsxyAwUp8rva12AW3DsUM3FUm6tWM41/GHeOQc0=
 github.com/curtisnewbie/mini-fstore v0.1.7-beta.4/go.mod h1:o2zSvwqW0cRHzBy8f3C77NwYFUlBSWU1pImI35ud4zg=
 github.com/curtisnewbie/miso v0.0.21 h1:Q6HW/2ykMOSTwwr7Tsk1enGXoRvHd8wZYvZsTVfYCYI=

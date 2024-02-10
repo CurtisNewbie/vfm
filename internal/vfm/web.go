@@ -187,20 +187,24 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 	// ---------------------------------- endpoints used to compensate --------------------------------------
 
 	miso.BaseRoute("/compensate").Group(
-		// Compensate image compressions, those that are images (guessed by names) are compressed to generate thumbnail
-		miso.Post("/image/compression",
+
+		// Compensate thumbnail generations, those that are images/videos (guessed by names) are processed to generate thumbnails
+		// curl -X POST "http://localhost:8086/compensate/thumbnail"
+		miso.Post("/thumbnail",
 			func(c *gin.Context, rail miso.Rail) (any, error) {
-				return nil, CompensateImageCompression(rail, miso.GetMySQL())
+				return nil, CompensateThumbnail(rail, miso.GetMySQL())
 			}).
 			Desc("Compensate thumbnail generation"),
 
 		// update file_info records that do not have uploader_no
+		// curl -X POST "http://localhost:8086/compensate/file/uploaderno"
 		miso.Post("/file/uploaderno",
 			func(c *gin.Context, rail miso.Rail) (any, error) {
 				return nil, CompensateFileUploaderNo(rail, miso.GetMySQL())
 			}).
 			Desc("Update file_info records that don't have uploader_no"),
 
+		// curl -X POST "http://localhost:8086/compensate/dir/calculate-size"
 		miso.Post("/dir/calculate-size",
 			func(c *gin.Context, rail miso.Rail) (any, error) {
 				return nil, ImMemBatchCalcDirSize(rail, miso.GetMySQL())

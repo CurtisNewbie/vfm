@@ -11,13 +11,14 @@ import (
 )
 
 const (
-	VfmFileSavedEventBus         = "event.bus.vfm.file.saved"
-	VfmThumbnailUpdatedEventBus  = "event.bus.vfm.file.thumbnail.updated"
-	VfmFileLDeletedEventBus      = "event.bus.vfm.file.logic.deleted"
-	VfmCalcDirSizeEventBus       = "event.bus.vfm.dir.size.calc"
-	VfmAddFileToVFolderEventBus  = "event.bus.vfm.file.vfolder.add"
-	VfmCompressImgNotifyEventBus = "vfm.image.compressed.event"
-	VfmUnzipResultNotifyEventBus = "vfm.unzip.result.notify.event"
+	VfmFileSavedEventBus               = "event.bus.vfm.file.saved"
+	VfmThumbnailUpdatedEventBus        = "event.bus.vfm.file.thumbnail.updated"
+	VfmFileLDeletedEventBus            = "event.bus.vfm.file.logic.deleted"
+	VfmCalcDirSizeEventBus             = "event.bus.vfm.dir.size.calc"
+	VfmAddFileToVFolderEventBus        = "event.bus.vfm.file.vfolder.add"
+	VfmCompressImgNotifyEventBus       = "vfm.image.compressed.event"
+	VfmGenVideoThumbnailNotifyEventBus = "vfm.video.thumbnail.generate"
+	VfmUnzipResultNotifyEventBus       = "vfm.unzip.result.notify.event"
 
 	AddFantahseaDirGalleryImgEventBus  = "event.bus.fantahsea.dir.gallery.image.add"
 	NotifyFantahseaFileDeletedEventBus = "event.bus.fantahsea.notify.file.deleted"
@@ -25,6 +26,7 @@ const (
 
 func PrepareEventBus(rail miso.Rail) error {
 	miso.SubEventBus(VfmCompressImgNotifyEventBus, 2, OnImageCompressed)
+	miso.SubEventBus(VfmGenVideoThumbnailNotifyEventBus, 2, OnVidoeThumbnailGenerated)
 	miso.SubEventBus(VfmFileSavedEventBus, 2, OnFileSaved)
 	miso.SubEventBus(VfmThumbnailUpdatedEventBus, 2, OnThumbnailUpdated)
 	miso.SubEventBus(VfmFileLDeletedEventBus, 2, OnFileDeleted)
@@ -105,26 +107,42 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 		return nil // already has a thumbnail
 	}
 
-	if !isImage(f.Name) {
-		rail.Infof("file is not image, %v, %v", uuid, f.Name)
-		return nil // not an image
+	if isImage(f.Name) {
+		evt := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: VfmCompressImgNotifyEventBus}
+		if e := miso.PubEventBus(rail, evt, hammer.CompressImageTriggerEventBus); e != nil {
+			return miso.TraceErrf(e, "Failed to send %#v, uuid: %v", evt, f.Uuid)
+		}
+		return nil
 	}
 
-	event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: VfmCompressImgNotifyEventBus}
-	if e := miso.PubEventBus(rail, event, hammer.CompressImageTriggerEventBus); e != nil {
-		return miso.TraceErrf(e, "Failed to send CompressImageEvent, uuid: %v", f.Uuid)
+	if isVideo(f.Name) {
+		evt := hammer.GenVideoThumbnailTriggerEvent{
+			Identifier: f.Uuid,
+			FileId:     f.FstoreFileId,
+			ReplyTo:    VfmGenVideoThumbnailNotifyEventBus,
+		}
+		if e := miso.PubEventBus(rail, evt, hammer.GenVideoThumbnailTriggerEventBus); e != nil {
+			return miso.TraceErrf(e, "Failed to send %#v, uuid: %v", evt, f.Uuid)
+		}
+		return nil
 	}
+
 	return nil
 }
 
 // hammer sends event message when the thumbnail image is compressed and saved on mini-fstore
 func OnImageCompressed(rail miso.Rail, evt hammer.ImageCompressReplyEvent) error {
-	rail.Infof("Received CompressedImageEvent, %+v", evt)
-	return ReactOnImageCompressed(rail, miso.GetMySQL(), evt)
+	rail.Infof("Receive %#v", evt)
+	return OnThumbnailGenerated(rail, miso.GetMySQL(), evt.Identifier, evt.FileId)
 }
 
-func ReactOnImageCompressed(rail miso.Rail, tx *gorm.DB, evt hammer.ImageCompressReplyEvent) error {
-	fileKey := evt.Identifier
+func OnVidoeThumbnailGenerated(rail miso.Rail, evt hammer.GenVideoThumbnailReplyEvent) error {
+	rail.Infof("Receive %#v", evt)
+	return OnThumbnailGenerated(rail, miso.GetMySQL(), evt.Identifier, evt.FileId)
+}
+
+func OnThumbnailGenerated(rail miso.Rail, tx *gorm.DB, identifier string, fileId string) error {
+	fileKey := identifier
 	lock := miso.NewRLock(rail, "file:uuid:"+fileKey)
 	if err := lock.Lock(); err != nil {
 		return err
@@ -141,7 +159,7 @@ func ReactOnImageCompressed(rail miso.Rail, tx *gorm.DB, evt hammer.ImageCompres
 		return nil
 	}
 
-	return tx.Exec("UPDATE file_info SET thumbnail = ? WHERE uuid = ?", evt.FileId, fileKey).
+	return tx.Exec("UPDATE file_info SET thumbnail = ? WHERE uuid = ?", fileId, fileKey).
 		Error
 }
 
@@ -183,6 +201,9 @@ func OnThumbnailUpdated(rail miso.Rail, evt StreamEvent) error {
 	}
 
 	if f.Thumbnail == "" || f.ParentFile == "" {
+		return nil
+	}
+	if !isImage(f.Name) {
 		return nil
 	}
 
