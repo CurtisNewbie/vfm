@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/curtisnewbie/gocommon/auth"
 	"github.com/curtisnewbie/gocommon/common"
-	"github.com/curtisnewbie/gocommon/goauth"
 	"github.com/curtisnewbie/miso/miso"
 	vault "github.com/curtisnewbie/user-vault/api"
 	"github.com/gin-gonic/gin"
@@ -20,12 +20,12 @@ const (
 
 func RegisterHttpRoutes(rail miso.Rail) error {
 
-	goauth.ReportOnBoostrapped(rail, []goauth.AddResourceReq{
+	auth.ExposeResourceInfo([]auth.Resource{
 		{Code: ManageFilesResource, Name: "Manage files"},
 	})
 
-	miso.BaseRoute("/open/api").With(
-		miso.SubPath("/file").Group(
+	miso.GroupRoute("/open/api",
+		miso.GroupRoute("/file",
 			miso.IGet("/upload/duplication/preflight", DupPreflightCheckEp).
 				Desc("Preflight check for duplicate file uploads").
 				Resource(ManageFilesResource),
@@ -95,7 +95,8 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 				Public(),
 		),
 
-		miso.SubPath("/vfolder").Group(
+		miso.GroupRoute("/vfolder",
+
 			miso.Get("/brief/owned", ListVFolderBriefEp).
 				Desc("User list virtual folder briefs").
 				Resource(ManageFilesResource),
@@ -133,7 +134,8 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 				Resource(ManageFilesResource),
 		),
 
-		miso.SubPath("/gallery").Group(
+		miso.GroupRoute("/gallery",
+
 			miso.Get("/brief/owned", ListGalleryBriefsEp).
 				Desc("List owned gallery brief info").
 				Resource(ManageFilesResource),
@@ -178,7 +180,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 
 	// ---------------------------------------------- internal endpoints ------------------------------------------
 
-	miso.BaseRoute("/remote/user/file").Group(
+	miso.GroupRoute("/remote/user/file",
 		miso.IGet("/indir/list", ListFilesInDirEp),
 		miso.IGet("/info", FetchFileInfoItnEp),
 		miso.IGet("/owner/validation", ValidateOwnerEp),
@@ -186,7 +188,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 
 	// ---------------------------------- endpoints used to compensate --------------------------------------
 
-	miso.BaseRoute("/compensate").Group(
+	miso.GroupRoute("/compensate",
 
 		// Compensate thumbnail generations, those that are images/videos (guessed by names) are processed to generate thumbnails
 		// curl -X POST "http://localhost:8086/compensate/thumbnail"

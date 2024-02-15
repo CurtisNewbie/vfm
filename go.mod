@@ -3,7 +3,7 @@ module github.com/curtisnewbie/vfm
 go 1.18
 
 require (
-	github.com/curtisnewbie/gocommon v1.1.9
+	github.com/curtisnewbie/gocommon v1.1.11
 	github.com/gin-gonic/gin v1.8.1
 	github.com/sirupsen/logrus v1.9.0
 	gorm.io/gorm v1.23.8
@@ -12,7 +12,7 @@ require (
 require (
 	github.com/curtisnewbie/hammer v0.0.11
 	github.com/curtisnewbie/mini-fstore v0.1.7-beta.4
-	github.com/curtisnewbie/miso v0.0.22
+	github.com/curtisnewbie/miso v0.0.24
 	github.com/curtisnewbie/user-vault v0.0.10
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 )
