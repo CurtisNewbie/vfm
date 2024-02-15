@@ -8,6 +8,8 @@ import (
 func PrepareServer(rail miso.Rail) error {
 	common.LoadBuiltinPropagationKeys()
 
+	rail.Infof("vfm version: %v", Version)
+
 	if err := PrepareEventBus(rail); err != nil {
 		return err
 	}
