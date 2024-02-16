@@ -195,22 +195,23 @@ func ListGalleryImages(rail miso.Rail, tx *gorm.DB, cmd ListGalleryImagesCmd, us
 	if len(galleryImages) > 0 {
 		awaitFutures := miso.NewAwaitFutures[FstoreTmpToken](vfmPool)
 		for _, img := range galleryImages {
-			r, e := findFile(rail, tx, img.FileKey)
-			if e != nil {
+			fi, e := findFile(rail, tx, img.FileKey)
+			if e != nil || fi == nil {
 				rail.Errorf("findFile failed, fileKey: %v, %v", img.FileKey, e)
 				continue
 			}
+
 			// original
-			GenFstoreTknBatch(rail, awaitFutures, r.FstoreFileId, r.Name)
+			GenFstoreTknBatch(rail, awaitFutures, fi.FstoreFileId, fi.Name)
 
 			// thumbnail
-			thumbnailFileId := r.Thumbnail
+			thumbnailFileId := fi.Thumbnail
 			if thumbnailFileId == "" {
-				thumbnailFileId = r.FstoreFileId
+				thumbnailFileId = fi.FstoreFileId
 			} else {
-				GenFstoreTknBatch(rail, awaitFutures, thumbnailFileId, r.Name)
+				GenFstoreTknBatch(rail, awaitFutures, thumbnailFileId, fi.Name)
 			}
-			images = append(images, ImageInfo{ImageFileId: r.FstoreFileId, ThumbnailFileId: thumbnailFileId})
+			images = append(images, ImageInfo{ImageFileId: fi.FstoreFileId, ThumbnailFileId: thumbnailFileId})
 		}
 
 		genTknFutures := awaitFutures.Await()
@@ -265,7 +266,7 @@ func BatchTransferAsync(rail miso.Rail, cmd TransferGalleryImageReq, user common
 	go func(rail miso.Rail, images []CreateGalleryImageCmd) {
 		for _, cmd := range images {
 			fi, er := findFile(rail, tx, cmd.FileKey)
-			if er != nil {
+			if er != nil || fi == nil {
 				rail.Errorf("Failed to fetch file info while transferring selected images, fi's fileKey: %s, error: %v", cmd.FileKey, er)
 				continue
 			}
@@ -275,7 +276,7 @@ func BatchTransferAsync(rail miso.Rail, cmd TransferGalleryImageReq, user common
 					continue // doesn't have fstore fileId, cannot be transferred
 				}
 
-				if GuessIsImage(rail, fi) {
+				if GuessIsImage(rail, *fi) {
 					nc := CreateGalleryImageCmd{GalleryNo: cmd.GalleryNo, Name: fi.Name, FileKey: fi.Uuid}
 					if err := CreateGalleryImage(rail, nc, user.UserNo, user.Username, tx); err != nil {
 						rail.Errorf("Failed to create gallery image, fi's fileKey: %s, error: %v", cmd.FileKey, err)
@@ -303,6 +304,9 @@ func TransferImagesInDir(rail miso.Rail, cmd TransferGalleryImageInDirReq, user 
 	fi, e := findFile(rail, tx, cmd.FileKey)
 	if e != nil {
 		return e
+	}
+	if fi == nil {
+		return miso.NewErrf("File not found")
 	}
 
 	// only the owner of the directory can do this, by default directory is only visible to the uploader
@@ -341,12 +345,12 @@ func TransferImagesInDir(rail miso.Rail, cmd TransferGalleryImageInDirReq, user 
 		for i := 0; i < len(res); i++ {
 			fk := res[i]
 			fi, er := findFile(rail, tx, fk)
-			if er != nil {
+			if er != nil || fi == nil {
 				rail.Errorf("Failed to fetch file info while looping files in dir, fi's fileKey: %s, error: %v", fk, er)
 				continue
 			}
 
-			if GuessIsImage(rail, fi) {
+			if GuessIsImage(rail, *fi) {
 				cmd := CreateGalleryImageCmd{GalleryNo: galleryNo, Name: fi.Name, FileKey: fi.Uuid}
 				if err := CreateGalleryImage(rail, cmd, user.UserNo, user.Username, tx); err != nil {
 					rail.Errorf("Failed to create gallery image, fi's fileKey: %s, error: %v", fk, err)

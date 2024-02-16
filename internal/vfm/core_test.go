@@ -345,7 +345,7 @@ func TestCreateFile(t *testing.T) {
 func TestDeleteFile(t *testing.T) {
 	corePreTest(t)
 	c := miso.EmptyRail()
-	e := DeleteFile(c, miso.GetMySQL(), DeleteFileReq{Uuid: "ZZZ718078073798656022858"}, testUser())
+	e := DeleteFile(c, miso.GetMySQL(), DeleteFileReq{Uuid: "ZZZ718078073798656022858"}, testUser(), nil)
 	if e != nil {
 		t.Fatal(e)
 	}

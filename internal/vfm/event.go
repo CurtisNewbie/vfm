@@ -92,7 +92,7 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 	if err != nil {
 		return err
 	}
-	if f.IsZero() {
+	if f == nil {
 		rail.Infof("file is deleted, %v", uuid)
 		return nil // file already deleted
 	}
@@ -154,7 +154,7 @@ func OnThumbnailGenerated(rail miso.Rail, tx *gorm.DB, identifier string, fileId
 		rail.Errorf("Unable to find file, uuid: %v, %v", fileKey, e)
 		return nil
 	}
-	if f.IsZero() {
+	if f == nil {
 		rail.Errorf("File not found, uuid: %v", fileKey)
 		return nil
 	}
@@ -196,7 +196,7 @@ func OnThumbnailUpdated(rail miso.Rail, evt StreamEvent) error {
 	if err != nil {
 		return err
 	}
-	if f.IsZero() || f.FileType != FileTypeFile {
+	if f == nil || f.FileType != FileTypeFile {
 		return nil
 	}
 
@@ -211,8 +211,8 @@ func OnThumbnailUpdated(rail miso.Rail, evt StreamEvent) error {
 	if err != nil {
 		return err
 	}
-	if pf.IsZero() {
-		rail.Infof("parent file not found, %v", pf)
+	if pf == nil {
+		rail.Infof("parent file not found, %v", f.ParentFile)
 		return nil
 	}
 

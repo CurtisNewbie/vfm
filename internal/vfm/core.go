@@ -468,11 +468,17 @@ func newListFileTagsQuery(c miso.Rail, tx *gorm.DB, r ListFileTagReq, userId int
 		Where("t.user_id = ? AND ft.file_id = ? AND ft.is_del = 0 AND t.is_del = 0", userId, r.FileId)
 }
 
-func findFile(rail miso.Rail, tx *gorm.DB, fileKey string) (FileInfo, error) {
+func findFile(rail miso.Rail, tx *gorm.DB, fileKey string) (*FileInfo, error) {
 	var f FileInfo
 	t := tx.Raw("SELECT * FROM file_info WHERE uuid = ? AND is_del = 0", fileKey).
 		Scan(&f)
-	return f, t.Error
+	if t.Error != nil {
+		return nil, t.Error
+	}
+	if t.RowsAffected < 1 {
+		return nil, nil
+	}
+	return &f, t.Error
 }
 
 func findFileById(rail miso.Rail, tx *gorm.DB, id int) (FileInfo, error) {
@@ -493,12 +499,11 @@ type FetchParentFileReq struct {
 func FindParentFile(c miso.Rail, tx *gorm.DB, req FetchParentFileReq, user common.User) (ParentFileInfo, error) {
 	userId := user.UserId
 
-	var f FileInfo
 	f, e := findFile(c, tx, req.FileKey)
 	if e != nil {
 		return ParentFileInfo{}, e
 	}
-	if f.IsZero() {
+	if f == nil {
 		return ParentFileInfo{}, miso.NewErrf("File not found")
 	}
 
@@ -515,7 +520,7 @@ func FindParentFile(c miso.Rail, tx *gorm.DB, req FetchParentFileReq, user commo
 	if e != nil {
 		return ParentFileInfo{}, e
 	}
-	if pf.IsZero() {
+	if pf == nil {
 		return ParentFileInfo{}, miso.NewErrf("File not found", fmt.Sprintf("ParentFile %v not found", f.ParentFile))
 	}
 
@@ -570,6 +575,9 @@ func MoveFileToDir(rail miso.Rail, db *gorm.DB, req MoveIntoDirReq, user common.
 	if err != nil {
 		return miso.NewErrf("File not found").WithInternalMsg("failed to find file, uuid: %v, %v", req.Uuid, err)
 	}
+	if fi == nil {
+		return miso.NewErrf("File not found")
+	}
 	if fi.ParentFile == req.ParentFileUuid {
 		return nil
 	}
@@ -584,29 +592,28 @@ func MoveFileToDir(rail miso.Rail, db *gorm.DB, req MoveIntoDirReq, user common.
 			}
 			defer pflock.Unlock()
 
-			pr, e := findFile(rail, tx, req.ParentFileUuid)
+			pf, e := findFile(rail, tx, req.ParentFileUuid)
 			if e != nil {
 				return fmt.Errorf("failed to find parentFile, %v", e)
 			}
-			rail.Debugf("parentFile: %+v", pr)
-
-			if pr.IsZero() {
+			if pf == nil {
 				return fmt.Errorf("perentFile not found, parentFileKey: %v", req.ParentFileUuid)
 			}
+			rail.Debugf("parentFile: %+v", pf)
 
-			if pr.UploaderNo != user.UserNo {
+			if pf.UploaderNo != user.UserNo {
 				return miso.NewErrf("You are not the owner of this directory")
 			}
 
-			if pr.FileType != FileTypeDir {
+			if pf.FileType != FileTypeDir {
 				return miso.NewErrf("Target file is not a directory")
 			}
 
-			if pr.IsLogicDeleted != LDelN {
+			if pf.IsLogicDeleted != LDelN {
 				return miso.NewErrf("Target file deleted")
 			}
 
-			newSize := pr.SizeInBytes + fi.SizeInBytes
+			newSize := pf.SizeInBytes + fi.SizeInBytes
 			err := tx.Exec("UPDATE file_info SET size_in_bytes = ?, update_by = ?, update_time = ? WHERE uuid = ?",
 				newSize, user.Username, time.Now(), req.ParentFileUuid).Error
 			if err != nil {
@@ -655,7 +662,7 @@ func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error 
 }
 
 func fileLock(rail miso.Rail, fileKey string) *miso.RLock {
-	return miso.NewRLock(rail, "file:uuid:"+fileKey)
+	return miso.NewCustomRLock(rail, "file:uuid:"+fileKey, miso.RLockConfig{BackoffDuration: time.Second * 5})
 }
 
 type CreateVFolderReq struct {
@@ -901,18 +908,18 @@ func HandleAddFileToVFolderEvent(rail miso.Rail, tx *gorm.DB, evt AddFileToVfold
 	// add files to vfolder
 	dirs := []FileInfo{}
 	for fk := range distinct.Keys {
-		var f FileInfo
 		var e error
 
-		f, e = findFile(rail, tx, fk)
+		f, e := findFile(rail, tx, fk)
 		if e != nil {
 			return e
 		}
-		if f.IsZero() || f.UploaderId != evt.UserId {
+
+		if f == nil || f.UploaderId != evt.UserId {
 			continue
 		}
 		if f.FileType != FileTypeFile {
-			dirs = append(dirs, f)
+			dirs = append(dirs, *f)
 			continue
 		}
 		if e = doAddFileToVfolder(rail, evt.FolderNo, fk); e != nil {
@@ -1011,9 +1018,10 @@ func RemoveFileFromVFolder(rail miso.Rail, tx *gorm.DB, req RemoveFileFromVfolde
 			if e != nil {
 				return e
 			}
-			if f.IsZero() {
+			if f == nil {
 				continue // file not found
 			}
+
 			// TODO: get rid of the userId
 			if f.UploaderId != user.UserId {
 				continue // not the uploader of the file
@@ -1420,7 +1428,7 @@ type DeleteFileReq struct {
 	Uuid string `json:"uuid"`
 }
 
-func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User) error {
+func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User, condition func(FileInfo) bool) error {
 	lock := fileLock(rail, req.Uuid)
 	if err := lock.Lock(); err != nil {
 		return err
@@ -1431,7 +1439,8 @@ func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 	if e != nil {
 		return fmt.Errorf("unable to find file, uuid: %v, %v", req.Uuid, e)
 	}
-	if f.IsZero() {
+
+	if f == nil {
 		return miso.NewErrf("File not found")
 	}
 
@@ -1441,6 +1450,10 @@ func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 
 	if f.IsLogicDeleted == LDelY {
 		return nil // deleted already
+	}
+
+	if condition != nil && !condition(*f) {
+		return nil // skip
 	}
 
 	if f.FileType == FileTypeDir { // if it's dir make sure it's empty
@@ -1605,7 +1618,7 @@ func FetchFileInfoInternal(rail miso.Rail, tx *gorm.DB, req FetchFileInfoReq) (F
 	if e != nil {
 		return fir, e
 	}
-	if f.IsZero() {
+	if f == nil {
 		return fir, miso.NewErrf("File not found")
 	}
 
@@ -1775,7 +1788,7 @@ func UnpackZip(rail miso.Rail, db *gorm.DB, user common.User, req UnpackZipReq) 
 	if err != nil {
 		return miso.NewErrf("File not found").WithInternalMsg("failed to find file, uuid: %v, %v", req.FileKey, err)
 	}
-	if fi.IsZero() {
+	if fi == nil {
 		return miso.NewErrf("File not found")
 	}
 
@@ -1845,4 +1858,98 @@ func HandleZipUnpackResult(rail miso.Rail, db *gorm.DB, evt fstore.UnzipFileRepl
 		}
 		return nil
 	})
+}
+
+func TruncateDir(rail miso.Rail, db *gorm.DB, req DeleteFileReq, user common.User, async bool) error {
+	rail.Infof("Truncating dir %v", req.Uuid)
+
+	dir, e := findFile(rail, db, req.Uuid)
+	if e != nil {
+		return fmt.Errorf("unable to find file, uuid: %v, %v", req.Uuid, e)
+	}
+
+	if dir == nil {
+		return miso.NewErrf("File not found")
+	}
+
+	if dir.UploaderId != user.UserId {
+		return miso.NewErrf("Not permitted")
+	}
+
+	if dir.IsLogicDeleted == LDelY {
+		return nil // deleted already
+	}
+
+	if dir.FileType != FileTypeDir {
+		return miso.NewErrf("Not a directory")
+	}
+
+	type ListedFilesInDir struct {
+		Id       int
+		Uuid     string
+		FileType string
+	}
+
+	doTruncate := func() {
+		rail := rail
+		if async {
+			rail = rail.NextSpan()
+		}
+		listFilesInDir := func(rail miso.Rail, minId int) ([]ListedFilesInDir, error) {
+			var l []ListedFilesInDir
+			err := db.Table("file_info").
+				Select("id, uuid, file_type").
+				Where("parent_file = ?", dir.Uuid).
+				Where("id > ?", minId).
+				Order("id asc").
+				Limit(50).
+				Scan(&l).Error
+
+			rail.Debugf("listFilesInDir, minId: %v, dir.uuid: %v, count: %d", minId, dir.Uuid, len(l))
+			return l, err
+		}
+
+		stillInDir := func(fi FileInfo) bool { return fi.ParentFile == dir.Uuid }
+
+		minId := 0
+		for {
+			l, err := listFilesInDir(rail, minId)
+			if err != nil {
+				rail.Errorf("failed to listFilesInDir, minId: %v, dir.uuid: %v, %v", minId, dir.Uuid, err)
+				return
+			}
+			if len(l) < 1 {
+				if err := DeleteFile(rail, db, DeleteFileReq{Uuid: dir.Uuid}, user, nil); err != nil {
+					rail.Errorf("failed to delete current directory: %v, %v", dir.Uuid, err)
+				} else {
+					rail.Infof("Truncated dir %v", req.Uuid)
+				}
+				return
+			}
+			minId = l[len(l)-1].Id
+
+			for _, lf := range l {
+				if lf.FileType == FileTypeFile {
+					if err := DeleteFile(rail, db, DeleteFileReq{Uuid: lf.Uuid}, user, stillInDir); err != nil {
+						rail.Errorf("failed to DeleteFile in dir, dir.uuid: %v, deleting file.uuid: %v, %v", dir.Uuid, lf.Uuid, err)
+						return
+					}
+					rail.Infof("Deleted file %v in dir %v", lf.Uuid, dir.Uuid)
+				} else {
+					if err := TruncateDir(rail, db, DeleteFileReq{Uuid: lf.Uuid}, user, false); err != nil {
+						rail.Errorf("failed to TruncateDir in dir, in dir.uuid: %v, truncating dir.uuid: %v, %v", dir.Uuid, lf.Uuid, err)
+						return
+					}
+				}
+			}
+		}
+	}
+
+	if async {
+		vfmPool.Go(doTruncate)
+	} else {
+		doTruncate()
+	}
+
+	return nil
 }

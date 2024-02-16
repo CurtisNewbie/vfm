@@ -54,6 +54,10 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 				Desc("User delete file").
 				Resource(ManageFilesResource),
 
+			miso.IPost("/dir/truncate", TruncateDirEp).
+				Desc("User delete truncate directory recursively").
+				Resource(ManageFilesResource),
+
 			miso.IPost("/delete/batch", BatchDeleteFileEp).
 				Desc("User delete file in batch").
 				Resource(ManageFilesResource),
@@ -92,6 +96,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 
 			miso.RawGet("/token/qrcode", GenFileTknQRCodeEp).
 				Desc("User generate qrcode image for temporary token").
+				DocQueryParam("token", "Generated temporary file key").
 				Public(),
 		),
 
@@ -252,7 +257,11 @@ func ListFilesEp(c *gin.Context, rail miso.Rail, req ListFileReq) (any, error) {
 }
 
 func DeleteFileEp(c *gin.Context, rail miso.Rail, req DeleteFileReq) (any, error) {
-	return nil, DeleteFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
+	return nil, DeleteFile(rail, miso.GetMySQL(), req, common.GetUser(rail), nil)
+}
+
+func TruncateDirEp(c *gin.Context, rail miso.Rail, req DeleteFileReq) (any, error) {
+	return nil, TruncateDir(rail, miso.GetMySQL(), req, common.GetUser(rail), true)
 }
 
 type BatchDeleteFileReq struct {
@@ -264,7 +273,7 @@ func BatchDeleteFileEp(c *gin.Context, rail miso.Rail, req BatchDeleteFileReq) (
 	if len(req.FileKeys) < 31 {
 		for i := range req.FileKeys {
 			fk := req.FileKeys[i]
-			if err := DeleteFile(rail, miso.GetMySQL(), DeleteFileReq{fk}, user); err != nil {
+			if err := DeleteFile(rail, miso.GetMySQL(), DeleteFileReq{fk}, user, nil); err != nil {
 				rail.Errorf("failed to delete file, fileKey: %v, %v", fk, err)
 				return nil, err
 			}
@@ -277,7 +286,7 @@ func BatchDeleteFileEp(c *gin.Context, rail miso.Rail, req BatchDeleteFileReq) (
 		fk := req.FileKeys[i]
 		vfmPool.Go(func() {
 			rrail := rail.NextSpan()
-			if err := DeleteFile(rrail, miso.GetMySQL(), DeleteFileReq{fk}, user); err != nil {
+			if err := DeleteFile(rrail, miso.GetMySQL(), DeleteFileReq{fk}, user, nil); err != nil {
 				rrail.Errorf("failed to delete file, fileKey: %v, %v", fk, err)
 			}
 		})
