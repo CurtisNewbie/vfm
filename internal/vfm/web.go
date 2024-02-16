@@ -43,7 +43,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 				Resource(ManageFilesResource),
 
 			miso.Get("/dir/list", ListDirEp).
-				Desc("User list directoriesUser list directories").
+				Desc("User list directories").
 				Resource(ManageFilesResource),
 
 			miso.IPost("/list", ListFilesEp).
