@@ -2,7 +2,6 @@ package vfm
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/miso/miso"
@@ -18,9 +17,9 @@ type Gallery struct {
 	UserNo     string
 	Name       string
 	DirFileKey string
-	CreateTime time.Time
+	CreateTime miso.ETime
 	CreateBy   string
-	UpdateTime time.Time
+	UpdateTime miso.ETime
 	UpdateBy   string
 	IsDel      common.IS_DEL
 }
@@ -81,7 +80,7 @@ type VGallery struct {
 }
 
 // List owned gallery briefs
-func ListOwnedGalleryBriefs(rail miso.Rail, user common.User, tx *gorm.DB) (*[]VGalleryBrief, error) {
+func ListOwnedGalleryBriefs(rail miso.Rail, user common.User, tx *gorm.DB) ([]VGalleryBrief, error) {
 	var briefs []VGalleryBrief
 	t := tx.Raw(`select gallery_no, name from gallery where user_no = ? AND is_del = 0`, user.UserNo).
 		Scan(&briefs)
@@ -93,7 +92,7 @@ func ListOwnedGalleryBriefs(rail miso.Rail, user common.User, tx *gorm.DB) (*[]V
 		briefs = []VGalleryBrief{}
 	}
 
-	return &briefs, nil
+	return briefs, nil
 }
 
 /* List Galleries */

@@ -111,13 +111,9 @@ func TestFileExists(t *testing.T) {
 	corePreTest(t)
 	c := miso.EmptyRail()
 	fname := "test-files.zip"
-	b, e := FileExists(c, miso.GetMySQL(), PreflightCheckReq{Filename: fname}, testUser())
+	exist, e := FileExists(c, miso.GetMySQL(), PreflightCheckReq{Filename: fname}, testUser())
 	if e != nil {
 		t.Fatal(e)
-	}
-	exist, ok := b.(bool)
-	if !ok {
-		t.Fatal("returned value is not of bool type")
 	}
 	t.Logf("%s exists? %v", fname, exist)
 }

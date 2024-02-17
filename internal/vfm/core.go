@@ -411,7 +411,7 @@ type PreflightCheckReq struct {
 	ParentFileKey string `form:"parentFileKey"`
 }
 
-func FileExists(c miso.Rail, tx *gorm.DB, req PreflightCheckReq, user common.User) (any, error) {
+func FileExists(c miso.Rail, tx *gorm.DB, req PreflightCheckReq, user common.User) (bool, error) {
 	var id int
 	t := tx.Table("file_info").
 		Select("id").
