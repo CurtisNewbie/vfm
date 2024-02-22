@@ -1,0 +1,492 @@
+# API Endpoints
+
+- GET /open/api/file/upload/duplication/preflight
+  - Description: Preflight check for duplicate file uploads
+  - Query Parameter:
+    - "fileName":
+    - "parentFileKey":
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (bool) response data
+- GET /open/api/file/parent
+  - Description: User fetch parent file info
+  - Query Parameter:
+    - "fileKey":
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (*vfm.ParentFileInfo) response data
+      - "fileKey": (string)
+      - "fileName": (string)
+- POST /open/api/file/move-to-dir
+  - Description: User move files into directory
+  - JSON Request:
+    - "uuid": (string)
+    - "parentFileUuid": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/file/make-dir
+  - Description: User make directory
+  - JSON Request:
+    - "parentFile": (string)
+    - "name": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (string) response data
+- GET /open/api/file/dir/list
+  - Description: User list directories
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": ([]vfm.ListedDir) response data
+      - "id": (int)
+      - "uuid": (string)
+      - "name": (string)
+- POST /open/api/file/list
+  - Description: User list files
+  - JSON Request:
+    - "pagingVo": (Paging)
+      - "limit": (int) page limit
+      - "page": (int) page number, 1-based
+      - "total": (int) total count
+    - "filename": (*string)
+    - "folderNo": (*string)
+    - "fileType": (*string)
+    - "parentFile": (*string)
+    - "sensitive": (*bool)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (PageRes[github.com/curtisnewbie/vfm/internal/vfm.ListedFile]) response data
+      - "pagingVo": (Paging) pagination parameters
+        - "limit": (int) page limit
+        - "page": (int) page number, 1-based
+        - "total": (int) total count
+      - "payload": ([]vfm.ListedFile) payload values in current page
+        - "id": (int)
+        - "uuid": (string)
+        - "name": (string)
+        - "uploadTime": (int64)
+        - "uploaderName": (string)
+        - "sizeInBytes": (int64)
+        - "fileType": (string)
+        - "updateTime": (int64)
+        - "parentFileName": (string)
+        - "sensitiveMode": (string)
+        - "thumbnailToken": (string)
+- POST /open/api/file/delete
+  - Description: User delete file
+  - JSON Request:
+    - "uuid": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/file/dir/truncate
+  - Description: User delete truncate directory recursively
+  - JSON Request:
+    - "uuid": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/file/delete/batch
+  - Description: User delete file in batch
+  - JSON Request:
+    - "fileKeys": ([]string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/file/create
+  - Description: User create file
+  - JSON Request:
+    - "filename": (string)
+    - "fstoreFileId": (string)
+    - "parentFile": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/file/info/update
+  - Description: User update file
+  - JSON Request:
+    - "id": (int)
+    - "name": (string)
+    - "sensitiveMode": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/file/token/generate
+  - Description: User generate temporary token
+  - JSON Request:
+    - "fileKey": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (string) response data
+- POST /open/api/file/unpack
+  - Description: User unpack zip
+  - JSON Request:
+    - "fileKey": (string)
+    - "parentFileKey": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- GET /open/api/file/token/qrcode
+  - Description: User generate qrcode image for temporary token
+  - Expected Access Scope: PUBLIC
+  - Query Parameter:
+    - "token": Generated temporary file key
+- GET /open/api/vfolder/brief/owned
+  - Description: User list virtual folder briefs
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": ([]vfm.VFolderBrief) response data
+      - "folderNo": (string)
+      - "name": (string)
+- POST /open/api/vfolder/list
+  - Description: User list virtual folders
+  - JSON Request:
+    - "pagingVo": (Paging)
+      - "limit": (int) page limit
+      - "page": (int) page number, 1-based
+      - "total": (int) total count
+    - "name": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (ListVFolderRes) response data
+      - "pagingVo": (Paging)
+        - "limit": (int) page limit
+        - "page": (int) page number, 1-based
+        - "total": (int) total count
+      - "payload": ([]vfm.ListedVFolder)
+        - "id": (int)
+        - "folderNo": (string)
+        - "name": (string)
+        - "createTime": (int64)
+        - "createBy": (string)
+        - "updateTime": (int64)
+        - "updateBy": (string)
+        - "ownership": (string)
+- POST /open/api/vfolder/create
+  - Description: User create virtual folder
+  - JSON Request:
+    - "name": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (string) response data
+- POST /open/api/vfolder/file/add
+  - Description: User add file to virtual folder
+  - JSON Request:
+    - "folderNo": (string)
+    - "fileKeys": ([]string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/vfolder/file/remove
+  - Description: User remove file from virtual folder
+  - JSON Request:
+    - "folderNo": (string)
+    - "fileKeys": ([]string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/vfolder/share
+  - Description: Share access to virtual folder
+  - JSON Request:
+    - "folderNo": (string)
+    - "username": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/vfolder/access/remove
+  - Description: Remove granted access to virtual folder
+  - JSON Request:
+    - "folderNo": (string)
+    - "userNo": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/vfolder/granted/list
+  - Description: List granted access to virtual folder
+  - JSON Request:
+    - "pagingVo": (Paging)
+      - "limit": (int) page limit
+      - "page": (int) page number, 1-based
+      - "total": (int) total count
+    - "folderNo": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (ListGrantedFolderAccessRes) response data
+      - "pagingVo": (Paging)
+        - "limit": (int) page limit
+        - "page": (int) page number, 1-based
+        - "total": (int) total count
+      - "payload": ([]vfm.ListedFolderAccess)
+        - "userNo": (string)
+        - "username": (string)
+        - "createTime": (int64)
+- POST /open/api/vfolder/remove
+  - Description: Remove virtual folder
+  - JSON Request:
+    - "folderNo": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- GET /open/api/gallery/brief/owned
+  - Description: List owned gallery brief info
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": ([]vfm.VGalleryBrief) response data
+      - "galleryNo": (string)
+      - "name": (string)
+- POST /open/api/gallery/new
+  - Description: Create new gallery
+  - JSON Request:
+    - "name": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (*vfm.Gallery) response data
+      - "iD": (int64)
+      - "galleryNo": (string)
+      - "userNo": (string)
+      - "name": (string)
+      - "dirFileKey": (string)
+      - "createTime": (int64)
+      - "createBy": (string)
+      - "updateTime": (int64)
+      - "updateBy": (string)
+      - "isDel": (IS_DEL)
+- POST /open/api/gallery/update
+  - Description: Update gallery
+  - JSON Request:
+    - "galleryNo": (string)
+    - "name": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/gallery/delete
+  - Description: Delete gallery
+  - JSON Request:
+    - "galleryNo": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/gallery/list
+  - Description: List galleries
+  - JSON Request:
+    - "pagingVo": (Paging)
+      - "limit": (int) page limit
+      - "page": (int) page number, 1-based
+      - "total": (int) total count
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (ListGalleriesResp) response data
+      - "pagingVo": (Paging)
+        - "limit": (int) page limit
+        - "page": (int) page number, 1-based
+        - "total": (int) total count
+      - "galleries": ([]vfm.VGallery)
+        - "id": (int64)
+        - "galleryNo": (string)
+        - "userNo": (string)
+        - "name": (string)
+        - "createBy": (string)
+        - "updateBy": (string)
+        - "isOwner": (bool)
+        - "createTime": (string)
+        - "updateTime": (string)
+- POST /open/api/gallery/access/grant
+  - Description: Grant access to the galleries
+  - JSON Request:
+    - "galleryNo": (string)
+    - "username": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/gallery/access/remove
+  - Description: Remove access to the galleries
+  - JSON Request:
+    - "galleryNo": (string)
+    - "userNo": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /open/api/gallery/access/list
+  - Description: List granted access to the galleries
+  - JSON Request:
+    - "galleryNo": (string)
+    - "pagingVo": (Paging)
+      - "limit": (int) page limit
+      - "page": (int) page number, 1-based
+      - "total": (int) total count
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (PageRes[github.com/curtisnewbie/vfm/internal/vfm.ListedGalleryAccessRes]) response data
+      - "pagingVo": (Paging) pagination parameters
+        - "limit": (int) page limit
+        - "page": (int) page number, 1-based
+        - "total": (int) total count
+      - "payload": ([]vfm.ListedGalleryAccessRes) payload values in current page
+        - "id": (int)
+        - "galleryNo": (string)
+        - "userNo": (string)
+        - "username": (string)
+        - "createTime": (int64)
+- POST /open/api/gallery/images
+  - Description: List images of gallery
+  - JSON Request:
+    - "galleryNo": (string)
+    - "pagingVo": (Paging)
+      - "limit": (int) page limit
+      - "page": (int) page number, 1-based
+      - "total": (int) total count
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (*vfm.ListGalleryImagesResp) response data
+      - "images": ([]vfm.ImageInfo)
+        - "thumbnailToken": (string)
+        - "fileTempToken": (string)
+      - "pagingVo": (Paging)
+        - "limit": (int) page limit
+        - "page": (int) page number, 1-based
+        - "total": (int) total count
+- POST /open/api/gallery/image/transfer
+  - Description: Host selected images on gallery
+  - JSON Request:
+    - "images": ([]vfm.CreateGalleryImageCmd)
+      - "galleryNo": (string)
+      - "name": (string)
+      - "fileKey": (string)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- GET /remote/user/file/indir/list
+  - Query Parameter:
+    - "fileKey":
+    - "limit":
+    - "page":
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": ([]string) response data
+- GET /remote/user/file/info
+  - Query Parameter:
+    - "fileKey":
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (FileInfoResp) response data
+      - "name": (string)
+      - "uuid": (string)
+      - "sizeInBytes": (int64)
+      - "uploaderId": (int)
+      - "uploaderNo": (string)
+      - "uploaderName": (string)
+      - "isDeleted": (bool)
+      - "fileType": (string)
+      - "parentFile": (string)
+      - "localPath": (string)
+      - "fstoreFileId": (string)
+      - "thumbnail": (string)
+- GET /remote/user/file/owner/validation
+  - Query Parameter:
+    - "fileKey":
+    - "userId":
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (bool) response data
+- POST /compensate/thumbnail
+  - Description: Compensate thumbnail generation
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /compensate/file/uploaderno
+  - Description: Update file_info records that don't have uploader_no
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- POST /compensate/dir/calculate-size
+  - Description: Calculate size of all directories recursively
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+- GET /auth/resource
+  - Description: Expose resource and endpoint information to other backend service for authorization.
+  - Expected Access Scope: PROTECTED
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (ResourceInfoRes) response data
+      - "resources": ([]auth.Resource)
+        - "name": (string) resource name
+        - "code": (string) resource code, unique identifier
+      - "paths": ([]auth.Endpoint)
+        - "type": (string) access scope type: PROTECTED/PUBLIC
+        - "url": (string) endpoint url
+        - "group": (string) app name
+        - "desc": (string) description of the endpoint
+        - "resCode": (string) resource code
+        - "method": (string) http method
+- GET /metrics
+  - Description: Collect prometheus metrics information
+  - Header Parameter:
+    - "Authorization": Basic authorization if enabled
+- GET /debug/pprof
+- GET /debug/pprof/:name
+- GET /debug/pprof/cmdline
+- GET /debug/pprof/profile
+- GET /debug/pprof/symbol
+- GET /debug/pprof/trace
+- GET /doc/api
+  - Description: Serve the generated API documentation webpage
+  - Expected Access Scope: PUBLIC

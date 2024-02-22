@@ -85,28 +85,6 @@ func TestListFilesSelective(t *testing.T) {
 	t.Logf("%+v", r)
 }
 
-func TestListFilesForTags(t *testing.T) {
-	corePreTest(t)
-	c := miso.EmptyRail()
-	var tagName string = "test"
-
-	r, e := listFilesForTags(c, miso.GetMySQL(), ListFileReq{TagName: &tagName}, testUser())
-	if e != nil {
-		t.Fatal(e)
-	}
-	t.Logf("%+v", r)
-
-	var filename = "myfile"
-	r, e = listFilesForTags(c, miso.GetMySQL(), ListFileReq{
-		Filename: &filename,
-		TagName:  &tagName,
-	}, testUser())
-	if e != nil {
-		t.Fatal(e)
-	}
-	t.Logf("%+v", r)
-}
-
 func TestFileExists(t *testing.T) {
 	corePreTest(t)
 	c := miso.EmptyRail()
@@ -116,16 +94,6 @@ func TestFileExists(t *testing.T) {
 		t.Fatal(e)
 	}
 	t.Logf("%s exists? %v", fname, exist)
-}
-
-func TestListFileTags(t *testing.T) {
-	corePreTest(t)
-	c := miso.EmptyRail()
-	r, e := ListFileTags(c, miso.GetMySQL(), ListFileTagReq{FileId: 1892}, testUser())
-	if e != nil {
-		t.Fatal(e)
-	}
-	t.Logf("%+v", r)
 }
 
 func TestFindParentFile(t *testing.T) {
@@ -268,35 +236,6 @@ func TestListGrantedFolderAccess(t *testing.T) {
 func TestUpdateFile(t *testing.T) {
 	corePreTest(t)
 	e := UpdateFile(miso.EmptyRail(), miso.GetMySQL(), UpdateFileReq{Id: 301, Name: "test-files-222.zip"}, testUser())
-	if e != nil {
-		t.Fatal(e)
-	}
-}
-
-func TestListAllTags(t *testing.T) {
-	corePreTest(t)
-	tags, e := ListAllTags(miso.EmptyRail(), miso.GetMySQL(), testUser())
-	if e != nil {
-		t.Fatal(e)
-	}
-	t.Logf("%+v", tags)
-}
-
-func TestTagFile(t *testing.T) {
-	corePreTest(t)
-	c := miso.EmptyRail()
-
-	e := TagFile(c, miso.GetMySQL(), TagFileReq{FileId: 355, TagName: "mytag"}, testUser())
-	if e != nil {
-		t.Fatal(e)
-	}
-}
-
-func TestUntagFile(t *testing.T) {
-	corePreTest(t)
-	c := miso.EmptyRail()
-
-	e := UntagFile(c, miso.GetMySQL(), UntagFileReq{FileId: 355, TagName: "mytag"}, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}

@@ -18,7 +18,7 @@ vfm stands for virtual file manager. vfm doesn't manage the actual file storage,
 Check [miso](https://github.com/curtisnewbie/miso) and [gocommon](https://github.com/curtisnewbie/gocommon) for more about configuration.
 
 | Property | Description | Default Value |
-|----------|-------------|---------------|
+| -------- | ----------- | ------------- |
 |          |             |               |
 
 
@@ -28,6 +28,7 @@ Check [miso](https://github.com/curtisnewbie/miso) and [gocommon](https://github
 - Since v0.0.8
     - Users can only share files using `vfolder`, field `file_info.user_group` and table `file_sharing` are deprecated.
 - Since v0.1.3, [fantahsea](https://github.com/curtisnewbie/fantahsea) has been merged into vfm codebase, see [Fantahsea Migration](./doc/fantahsea-migration.md).
+- Since v0.1.17, file tag functionality is removed.
 
 ## Maintenance
 

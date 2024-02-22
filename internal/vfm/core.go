@@ -37,37 +37,6 @@ func init() {
 	_videoSuffix.AddAll([]string{"mp4", "mov", "webm", "ogg"})
 }
 
-type FileTag struct {
-	Id         int
-	FileId     int
-	TagId      int
-	UserId     int
-	CreateTime miso.ETime
-	CreateBy   string
-	UpdateTime miso.ETime
-	UpdateBy   string
-	IsDel      common.IS_DEL
-}
-
-func (t FileTag) IsZero() bool {
-	return t.Id < 1
-}
-
-type Tag struct {
-	Id         int
-	Name       string
-	UserId     int
-	CreateTime miso.ETime
-	CreateBy   string
-	UpdateTime miso.ETime
-	UpdateBy   string
-	IsDel      common.IS_DEL
-}
-
-func (t Tag) IsZero() bool {
-	return t.Id < 1
-}
-
 type FileVFolder struct {
 	FolderNo   string
 	Uuid       string
@@ -109,13 +78,6 @@ type ListedFile struct {
 type GrantAccessReq struct {
 	FileId    int    `json:"fileId" validation:"positive"`
 	GrantedTo string `json:"grantedTo" validation:"notEmpty"`
-}
-
-type ListedFileTag struct {
-	Id         int        `json:"id"`
-	Name       string     `json:"name"`
-	CreateTime miso.ETime `json:"createTime"`
-	CreateBy   string     `json:"createBy"`
 }
 
 type ListedVFolder struct {
@@ -271,7 +233,6 @@ func queryFilenames(tx *gorm.DB, fileKeys []string) (map[string]string, error) {
 type ListFileReq struct {
 	Page       miso.Paging `json:"pagingVo"`
 	Filename   *string     `json:"filename"`
-	TagName    *string     `json:"tagName"`
 	FolderNo   *string     `json:"folderNo"`
 	FileType   *string     `json:"fileType"`
 	ParentFile *string     `json:"parentFile"`
@@ -284,8 +245,6 @@ func ListFiles(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (
 
 	if req.FolderNo != nil && *req.FolderNo != "" {
 		res, e = listFilesInVFolder(rail, tx, req.Page, *req.FolderNo, user)
-	} else if req.TagName != nil && *req.TagName != "" {
-		res, e = listFilesForTags(rail, tx, req, user)
 	} else {
 		res, e = listFilesSelective(rail, tx, req, user)
 	}
@@ -327,45 +286,8 @@ func ListFiles(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (
 	return res, e
 }
 
-// TODO: deprecate this? we have dir and folder, should be more than enough
-func listFilesForTags(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (miso.PageRes[ListedFile], error) {
-	qpp := miso.QueryPageParam[ListedFile]{
-		AddSelectQuery: func(tx *gorm.DB) *gorm.DB {
-			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
-			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.sensitive_mode, fi.thumbnail`)
-		},
-		GetBaseQuery: func(t *gorm.DB) *gorm.DB {
-			t = t.Table("file_info fi").
-				Joins("LEFT JOIN file_tag ft ON (ft.user_id = ? AND fi.id = ft.file_id)", user.UserId).
-				Joins("LEFT JOIN tag t ON (ft.tag_id = t.id)").
-				Order("fi.id desc")
-
-			if req.Filename != nil && *req.Filename != "" {
-				t = t.Where("fi.name LIKE ?", "%"+*req.Filename+"%")
-			}
-
-			if req.Sensitive != nil && *req.Sensitive {
-				t = t.Where("fi.sensitive_mode = 'N'")
-			}
-
-			t = t.Where("fi.uploader_id = ?", user.UserId).
-				Where("fi.file_type = 'FILE'").
-				Where("fi.is_del = 0").
-				Where("fi.is_logic_deleted = 0").
-				Where("ft.is_del = 0").
-				Where("t.is_del = 0").
-				Where("t.name = ?", *req.TagName)
-			return t
-		},
-	}
-	return qpp.ExecPageQuery(rail, tx)
-}
-
 func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (miso.PageRes[ListedFile], error) {
-	/*
-	   If parentFile is empty, and filename are not searched, then we only return the top level file or dir.
-	   The query for tags will ignore parent_file param, so it's working fine
-	*/
+	//  If parentFile is empty, and filename are not queried, then we only return the top level file or dir.
 	if (req.ParentFile == nil || *req.ParentFile == "") && (req.Filename == nil || *req.Filename == "") {
 		req.ParentFile = new(string) // top-level file/dir
 	}
@@ -430,43 +352,6 @@ func FileExists(c miso.Rail, tx *gorm.DB, req PreflightCheckReq, user common.Use
 	}
 
 	return id > 0, nil
-}
-
-type ListFileTagReq struct {
-	Page   miso.Paging `json:"pagingVo"`
-	FileId int         `json:"fileId" validation:"positive"`
-}
-
-type ListFileTagRes struct {
-	Page    miso.Paging     `json:"pagingVo"`
-	Payload []ListedFileTag `json:"payload"`
-}
-
-func ListFileTags(rail miso.Rail, tx *gorm.DB, req ListFileTagReq, user common.User) (ListFileTagRes, error) {
-	var ftags []ListedFileTag
-
-	t := newListFileTagsQuery(rail, tx, req, user.UserId).
-		Select("*").
-		Scan(&ftags)
-	if t.Error != nil {
-		return ListFileTagRes{}, fmt.Errorf("failed to list file tags for req: %v, %v", req, t.Error)
-	}
-
-	var total int
-	t = newListFileTagsQuery(rail, tx, req, user.UserId).
-		Select("count(*)").
-		Scan(&total)
-	if t.Error != nil {
-		return ListFileTagRes{}, fmt.Errorf("failed to count file tags for req: %v, %v", req, t.Error)
-	}
-
-	return ListFileTagRes{Payload: ftags}, nil
-}
-
-func newListFileTagsQuery(c miso.Rail, tx *gorm.DB, r ListFileTagReq, userId int) *gorm.DB {
-	return tx.Table("file_tag ft").
-		Joins("LEFT JOIN tag t ON ft.tag_id = t.id").
-		Where("t.user_id = ? AND ft.file_id = ? AND ft.is_del = 0 AND t.is_del = 0", userId, r.FileId)
 }
 
 func findFile(rail miso.Rail, tx *gorm.DB, fileKey string) (*FileInfo, error) {
@@ -1190,164 +1075,6 @@ func UpdateFile(rail miso.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) 
 		Exec("UPDATE file_info SET name = ?, sensitive_mode = ?, update_by = ? WHERE id = ? AND is_logic_deleted = 0 AND is_del = 0",
 			r.Name, r.SensitiveMode, user.Username, r.Id).
 		Error
-}
-
-func ListAllTags(rail miso.Rail, tx *gorm.DB, user common.User) ([]string, error) {
-	var l []string
-	e := tx.Raw("SELECT t.name FROM tag t WHERE t.user_id = ? AND t.is_del = 0", user.UserId).
-		Scan(&l).
-		Error
-
-	return l, e
-}
-
-type TagFileReq struct {
-	FileId  int    `json:"fileId" validation:"positive"`
-	TagName string `json:"tagName" validation:"notEmpty"`
-}
-
-func TagFile(rail miso.Rail, tx *gorm.DB, req TagFileReq, user common.User) error {
-	req.TagName = strings.TrimSpace(req.TagName)
-	return _lockFileTagExec(rail, user.UserId, req.TagName, func() error {
-
-		// find the tag first, and create one for current user if necessary
-		tagId, e := tryCreateTag(rail, tx, user.UserId, req.TagName, user.Username)
-		if e != nil {
-			return e
-		}
-		if tagId < 1 {
-			return fmt.Errorf("tagId illegal, shouldn't be less than 1")
-		}
-
-		// check if it's already tagged
-		ft, e := findFileTag(rail, tx, req.FileId, tagId)
-		if e != nil {
-			return e
-		}
-
-		if ft.IsZero() {
-			ft = FileTag{UserId: user.UserId,
-				FileId:     req.FileId,
-				TagId:      tagId,
-				CreateTime: miso.Now(),
-				CreateBy:   user.Username,
-			}
-			return tx.Table("file_tag").
-				Omit("id", "update_time", "update_by").
-				Create(&ft).Error
-		}
-
-		if ft.IsDel == common.IS_DEL_Y {
-			return tx.Exec("UPDATE file_tag SET is_del = 0, update_time = ?, update_by = ? WHERE id = ?", time.Now(), user.Username, ft.Id).
-				Error
-		}
-
-		return nil
-	})
-}
-
-func tryCreateTag(rail miso.Rail, tx *gorm.DB, userId int, tagName string, username string) (int, error) {
-	t, e := findTag(rail, tx, userId, tagName)
-	if e != nil {
-		return 0, fmt.Errorf("failed to find tag, userId: %v, tagName: %v, %e", userId, tagName, e)
-	}
-
-	if t.IsZero() {
-		t = Tag{Name: tagName, UserId: userId, CreateBy: username, CreateTime: miso.Now()}
-		e := tx.Table("tag").Omit("id", "update_time", "update_by").Create(&t).Error
-		if e != nil {
-			return 0, fmt.Errorf("failed to create tag, userId: %v, tagName: %v, %e", userId, tagName, e)
-		}
-		return t.Id, nil
-	}
-
-	if t.IsDel == common.IS_DEL_Y {
-		e := tx.Exec("UPDATE tag SET is_del = 0, update_time = ?, update_by = ? WHERE id = ?", time.Now(), username, t.Id).Error
-		if e != nil {
-			return 0, fmt.Errorf("failed to update tag, id: %v, %e", t.Id, e)
-		}
-	}
-
-	return t.Id, nil
-}
-
-func findTag(rail miso.Rail, tx *gorm.DB, userId int, tagName string) (Tag, error) {
-	var t Tag
-	e := tx.Raw("SELECT * FROM tag WHERE user_id = ? AND name = ?", userId, tagName).
-		Scan(&t).Error
-	return t, e
-}
-
-func findFileTag(rail miso.Rail, tx *gorm.DB, fileId int, tagId int) (FileTag, error) {
-	var ft FileTag
-	e := tx.Raw("SELECT * FROM file_tag WHERE file_id = ? AND tag_id = ?", fileId, tagId).
-		Scan(&ft).Error
-	return ft, e
-}
-
-type UntagFileReq struct {
-	FileId  int    `json:"fileId" validation:"positive"`
-	TagName string `json:"tagName" validation:"notEmpty"`
-}
-
-func UntagFile(rail miso.Rail, tx *gorm.DB, req UntagFileReq, user common.User) error {
-	req.TagName = strings.TrimSpace(req.TagName)
-	return _lockFileTagExec(rail, user.UserId, req.TagName, func() error {
-		// each tag is bound to a specific user
-		tag, e := findTag(rail, tx, user.UserId, req.TagName)
-		if e != nil {
-			return e
-		}
-		if tag.IsZero() {
-			rail.Infof("Tag for '%v' doesn't exist, unable to untag file", req.TagName)
-			return nil // tag doesn't exist
-		}
-
-		fileTag, e := findFileTag(rail, tx, req.FileId, tag.Id)
-		if e != nil {
-			return e
-		}
-
-		if fileTag.IsZero() || fileTag.IsDel == common.IS_DEL_Y {
-			rail.Infof("FileTag for file_id: %d, tag_id: %d, doesn't exist", req.FileId, tag.Id)
-			return nil
-		}
-
-		return tx.Transaction(func(txx *gorm.DB) error {
-			// it was a logic delete in file-server, it now becomes a physical delete
-			e = txx.Exec("DELETE FROM file_tag WHERE id = ?", fileTag.Id).Error
-			if e != nil {
-				return fmt.Errorf("failed to update file_tag, %v", e)
-			}
-
-			rail.Infof("Untagged file, file_id: %d, tag_name: %s", req.FileId, req.TagName)
-
-			/*
-			   check if the tag is still associated with other files, if not, we remove it
-			   remember, the tag is bound for a specific user only, so this doesn't affect
-			   other users
-			*/
-			var anyFileTagId int
-			e = txx.Table("file_tag").
-				Where("tag_id = ? AND is_del = 0", tag.Id).
-				Limit(1).
-				Scan(&anyFileTagId).
-				Error
-			if e != nil {
-				return e
-			}
-
-			if anyFileTagId < 1 {
-				// it was a logic delete in file-server, it now becomes a physical delete
-				return txx.Exec("delete from tag where id = ?", tag.Id).Error
-			}
-			return nil
-		})
-	})
-}
-
-func _lockFileTagExec(rail miso.Rail, userId int, tagName string, run miso.Runnable) error {
-	return miso.RLockExec(rail, fmt.Sprintf("file:tag:uid:%d:name:%s", userId, tagName), run)
 }
 
 type CreateFileReq struct {

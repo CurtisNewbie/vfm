@@ -70,22 +70,6 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 				Desc("User update file").
 				Resource(ManageFilesResource),
 
-			miso.Get("/tag/list/all", ListAllFileTagsEp).
-				Desc("User list all file tags").
-				Resource(ManageFilesResource),
-
-			miso.IPost("/tag/list-for-file", ListTagsOfFileEp).
-				Desc("User list tags of file").
-				Resource(ManageFilesResource),
-
-			miso.IPost("/tag", TagFileEp).
-				Desc("User tag file").
-				Resource(ManageFilesResource),
-
-			miso.IPost("/untag", UntagFileEp).
-				Desc("User untag file").
-				Resource(ManageFilesResource),
-
 			miso.IPost("/token/generate", GenFileTknEp).
 				Desc("User generate temporary token").
 				Resource(ManageFilesResource),
@@ -300,24 +284,6 @@ func CreateFileEp(c *gin.Context, rail miso.Rail, req CreateFileReq) (any, error
 
 func UpdateFileEp(c *gin.Context, rail miso.Rail, req UpdateFileReq) (any, error) {
 	return nil, UpdateFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
-}
-
-func ListAllFileTagsEp(c *gin.Context, rail miso.Rail) ([]string, error) {
-	return ListAllTags(rail, miso.GetMySQL(), common.GetUser(rail))
-}
-
-func ListTagsOfFileEp(c *gin.Context, rail miso.Rail, req ListFileTagReq) (ListFileTagRes, error) {
-	return ListFileTags(rail, miso.GetMySQL(), req, common.GetUser(rail))
-}
-
-func TagFileEp(c *gin.Context, rail miso.Rail, req TagFileReq) (any, error) {
-	user := common.GetUser(rail)
-	return nil, TagFile(rail, miso.GetMySQL(), req, user)
-}
-
-func UntagFileEp(c *gin.Context, rail miso.Rail, req UntagFileReq) (any, error) {
-	user := common.GetUser(rail)
-	return nil, UntagFile(rail, miso.GetMySQL(), req, user)
 }
 
 func GenFileTknEp(c *gin.Context, rail miso.Rail, req GenerateTempTokenReq) (string, error) {

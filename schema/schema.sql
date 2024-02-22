@@ -33,33 +33,6 @@ CREATE TABLE IF NOT EXISTS vfm.file_info (
   FULLTEXT KEY `name_idx` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS vfm.file_tag (
-  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
-  `file_id` int unsigned NOT NULL COMMENT 'id of file_info',
-  `tag_id` int unsigned NOT NULL COMMENT 'id of tag',
-  `user_id` int unsigned NOT NULL COMMENT 'id of user who created this file_tag relation',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'when the record is created',
-  `create_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who created this record',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'when the record is updated',
-  `update_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who updated this record',
-  `is_del` tinyint NOT NULL DEFAULT '0' COMMENT '0-normal, 1-deleted',
-  PRIMARY KEY (`id`),
-  KEY `user_id_file_id_idx` (`user_id`,`file_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='join table between file_info and tag';
-
-CREATE TABLE IF NOT EXISTS vfm.tag (
-  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
-  `name` varchar(50) NOT NULL COMMENT 'name of tag',
-  `user_id` int unsigned NOT NULL COMMENT 'user who owns this tag (tags are isolated between different users)',
-  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'when the record is created',
-  `create_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who created this record',
-  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'when the record is updated',
-  `update_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who updated this record',
-  `is_del` tinyint NOT NULL DEFAULT '0' COMMENT '0-normal, 1-deleted',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_tag` (`user_id`,`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='tag';
-
 CREATE TABLE IF NOT EXISTS vfm.vfolder (
   `id` int NOT NULL AUTO_INCREMENT,
   `folder_no` varchar(64) NOT NULL COMMENT 'folder no',
