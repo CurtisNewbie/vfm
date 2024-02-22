@@ -23,7 +23,7 @@ func testUser() common.User {
 func corePreTest(t *testing.T) {
 	user := "root"
 	pw := ""
-	db := "fileserver"
+	db := "vfm"
 	host := "localhost"
 	port := 3306
 	rail := miso.EmptyRail()

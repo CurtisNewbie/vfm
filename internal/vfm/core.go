@@ -193,20 +193,19 @@ type UserVFolder struct {
 }
 
 func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, page miso.Paging, folderNo string, user common.User) (miso.PageRes[ListedFile], error) {
-	qpp := miso.QueryPageParam[ListedFile]{
-		ReqPage: page,
-		AddSelectQuery: func(tx *gorm.DB) *gorm.DB {
+	return miso.NewPageQuery[ListedFile]().
+		WithPage(page).
+		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
 			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
-			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.thumbnail`)
-		},
-		GetBaseQuery: func(tx *gorm.DB) *gorm.DB {
+			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.thumbnail`).
+				Order("fi.id DESC")
+		}).
+		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
 			return tx.Table("file_info fi").
 				Joins("LEFT JOIN file_vfolder fv ON (fi.uuid = fv.uuid AND fv.is_del = 0)").
 				Joins("LEFT JOIN user_vfolder uv ON (fv.folder_no = uv.folder_no AND uv.is_del = 0)").
 				Where("uv.user_no = ? AND uv.folder_no = ?", user.UserNo, folderNo)
-		},
-	}
-	return qpp.ExecPageQuery(rail, tx)
+		}).Exec(rail, tx)
 }
 
 type FileKeyName struct {
@@ -292,13 +291,13 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 		req.ParentFile = new(string) // top-level file/dir
 	}
 
-	qpq := miso.QueryPageParam[ListedFile]{
-		ReqPage: req.Page,
-		AddSelectQuery: func(tx *gorm.DB) *gorm.DB {
+	return miso.NewPageQuery[ListedFile]().
+		WithPage(req.Page).
+		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
 			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
 			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.sensitive_mode, fi.thumbnail`)
-		},
-		GetBaseQuery: func(tx *gorm.DB) *gorm.DB {
+		}).
+		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
 			tx = tx.Table("file_info fi").
 				Where("fi.uploader_id = ?", user.UserId).
 				Where("fi.is_logic_deleted = 0 AND fi.is_del = 0")
@@ -323,10 +322,7 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 			}
 
 			return tx
-		},
-	}
-
-	return qpq.ExecPageQuery(rail, tx)
+		}).Exec(rail, tx)
 }
 
 type PreflightCheckReq struct {

@@ -163,38 +163,29 @@ func ListedGrantedGalleryAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedGall
 		return miso.PageRes[ListedGalleryAccessRes]{}, miso.NewErrf("Operation not allowed")
 	}
 
-	qpp := miso.QueryPageParam[ListedGalleryAccessRes]{
-		ReqPage: req.PagingVo,
-		AddSelectQuery: func(tx *gorm.DB) *gorm.DB {
-			return tx.Select("id", "gallery_no", "user_no", "create_time")
-		},
-		GetBaseQuery: func(tx *gorm.DB) *gorm.DB {
-			return tx.Table("gallery_user_access").Order("id DESC")
-		},
-		ApplyConditions: func(tx *gorm.DB) *gorm.DB {
-			return tx.Where("gallery_no = ?", req.GalleryNo).Where("is_del = 0")
-		},
-	}
-	res, err := qpp.ExecPageQuery(rail, tx)
-	if err != nil {
-		return res, err
-	}
-
-	if len(res.Payload) > 0 {
-		for i, p := range res.Payload {
-			var toUser vault.UserInfo
-			var err error
-			if toUser, err = vault.FindUser(rail, vault.FindUserReq{
-				UserNo: &p.UserNo,
-			}); err != nil {
-				return res, err
+	return miso.NewPageQuery[ListedGalleryAccessRes]().
+		WithPage(req.PagingVo).
+		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
+			return tx.Select("id", "gallery_no", "user_no", "create_time").
+				Order("id DESC")
+		}).
+		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
+			return tx.Table("gallery_user_access").
+				Where("gallery_no = ?", req.GalleryNo).
+				Where("is_del = 0")
+		}).
+		ForEach(func(t ListedGalleryAccessRes) ListedGalleryAccessRes {
+			u, err := vault.FindUser(rail, vault.FindUserReq{
+				UserNo: &t.UserNo,
+			})
+			if err != nil {
+				rail.Errorf("failed to vault.FindUser, userNo: %v, %v", t.UserNo, err)
+			} else {
+				t.Username = u.Username
 			}
-			p.Username = toUser.Username
-			res.Payload[i] = p
-		}
-	}
-
-	return res, nil
+			return t
+		}).
+		Exec(rail, tx)
 }
 
 func RemoveGalleryAccess(rail miso.Rail, tx *gorm.DB, cmd RemoveGalleryAccessCmd, user common.User) error {
