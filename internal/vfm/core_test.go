@@ -23,7 +23,7 @@ func testUser() common.User {
 func corePreTest(t *testing.T) {
 	user := "root"
 	pw := ""
-	db := "vfm"
+	db := "fileserver"
 	host := "localhost"
 	port := 3306
 	rail := miso.EmptyRail()
@@ -59,7 +59,7 @@ func TestListFilesInVFolder(t *testing.T) {
 	corePreTest(t)
 	c := miso.EmptyRail()
 	var folderNo string = "hfKh3QZSsWjKufZWflqu8jb0n"
-	r, e := listFilesInVFolder(c, miso.GetMySQL(), ListFileReq{FolderNo: &folderNo}, testUser())
+	r, e := listFilesInVFolder(c, miso.GetMySQL(), miso.Paging{}, folderNo, testUser())
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -75,7 +75,7 @@ func TestListFilesSelective(t *testing.T) {
 	}
 	t.Logf("%+v", r)
 
-	var filename = "myfile"
+	var filename = "head"
 	r, e = listFilesSelective(c, miso.GetMySQL(), ListFileReq{
 		Filename: &filename,
 	}, testUser())

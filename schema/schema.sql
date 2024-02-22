@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS vfm.file_info (
   UNIQUE KEY `uuid_uk` (`uuid`),
   KEY `parent_file_type_idx` (`parent_file`,`file_type`),
   KEY `uploader_id_idx` (`uploader_id`),
-  KEY `name` (`name`(128)),
-  KEY `uploader_no_idx` (`uploader_no`)
+  KEY `uploader_no_idx` (`uploader_no`),
+  FULLTEXT KEY `name_idx` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS vfm.file_tag (

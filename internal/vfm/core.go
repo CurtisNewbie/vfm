@@ -230,9 +230,9 @@ type UserVFolder struct {
 	UpdateBy   string
 }
 
-func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (miso.PageRes[ListedFile], error) {
+func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, page miso.Paging, folderNo string, user common.User) (miso.PageRes[ListedFile], error) {
 	qpp := miso.QueryPageParam[ListedFile]{
-		ReqPage: req.Page,
+		ReqPage: page,
 		AddSelectQuery: func(tx *gorm.DB) *gorm.DB {
 			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
 			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.thumbnail`)
@@ -241,7 +241,7 @@ func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 			return tx.Table("file_info fi").
 				Joins("LEFT JOIN file_vfolder fv ON (fi.uuid = fv.uuid AND fv.is_del = 0)").
 				Joins("LEFT JOIN user_vfolder uv ON (fv.folder_no = uv.folder_no AND uv.is_del = 0)").
-				Where("uv.user_no = ? AND uv.folder_no = ?", user.UserNo, req.FolderNo)
+				Where("uv.user_no = ? AND uv.folder_no = ?", user.UserNo, folderNo)
 		},
 	}
 	return qpp.ExecPageQuery(rail, tx)
@@ -283,7 +283,7 @@ func ListFiles(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (
 	var e error
 
 	if req.FolderNo != nil && *req.FolderNo != "" {
-		res, e = listFilesInVFolder(rail, tx, req, user)
+		res, e = listFilesInVFolder(rail, tx, req.Page, *req.FolderNo, user)
 	} else if req.TagName != nil && *req.TagName != "" {
 		res, e = listFilesForTags(rail, tx, req, user)
 	} else {
@@ -327,6 +327,7 @@ func ListFiles(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (
 	return res, e
 }
 
+// TODO: deprecate this? we have dir and folder, should be more than enough
 func listFilesForTags(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (miso.PageRes[ListedFile], error) {
 	qpp := miso.QueryPageParam[ListedFile]{
 		AddSelectQuery: func(tx *gorm.DB) *gorm.DB {
@@ -366,9 +367,7 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 	   The query for tags will ignore parent_file param, so it's working fine
 	*/
 	if (req.ParentFile == nil || *req.ParentFile == "") && (req.Filename == nil || *req.Filename == "") {
-		req.Filename = nil
-		var pf = ""
-		req.ParentFile = &pf // top-level file/dir
+		req.ParentFile = new(string) // top-level file/dir
 	}
 
 	qpq := miso.QueryPageParam[ListedFile]{
@@ -380,15 +379,17 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 		GetBaseQuery: func(tx *gorm.DB) *gorm.DB {
 			tx = tx.Table("file_info fi").
 				Where("fi.uploader_id = ?", user.UserId).
-				Where("fi.is_logic_deleted = 0 AND fi.is_del = 0").
-				Order("fi.file_type asc, fi.id desc")
+				Where("fi.is_logic_deleted = 0 AND fi.is_del = 0")
 
 			if req.ParentFile != nil {
 				tx = tx.Where("fi.parent_file = ?", *req.ParentFile)
 			}
 
 			if req.Filename != nil && *req.Filename != "" {
-				tx = tx.Where("fi.name LIKE ?", "%"+*req.Filename+"%")
+				// tx = tx.Where("fi.name LIKE ?", "%"+*req.Filename+"%")
+				tx = tx.Where("match(fi.name) against (? IN NATURAL LANGUAGE MODE)", req.Filename)
+			} else {
+				tx = tx.Order("fi.file_type asc, fi.id desc")
 			}
 
 			if req.FileType != nil && *req.FileType != "" {
