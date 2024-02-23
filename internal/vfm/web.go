@@ -10,7 +10,6 @@ import (
 	"github.com/curtisnewbie/gocommon/common"
 	"github.com/curtisnewbie/miso/miso"
 	vault "github.com/curtisnewbie/user-vault/api"
-	"github.com/gin-gonic/gin"
 	"github.com/skip2/go-qrcode"
 )
 
@@ -182,7 +181,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 		// Compensate thumbnail generations, those that are images/videos (guessed by names) are processed to generate thumbnails
 		// curl -X POST "http://localhost:8086/compensate/thumbnail"
 		miso.Post("/thumbnail",
-			func(c *gin.Context, rail miso.Rail) (any, error) {
+			func(inb *miso.Inbound) (any, error) {
 				return nil, CompensateThumbnail(rail, miso.GetMySQL())
 			}).
 			Desc("Compensate thumbnail generation"),
@@ -190,14 +189,14 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 		// update file_info records that do not have uploader_no
 		// curl -X POST "http://localhost:8086/compensate/file/uploaderno"
 		miso.Post("/file/uploaderno",
-			func(c *gin.Context, rail miso.Rail) (any, error) {
+			func(inb *miso.Inbound) (any, error) {
 				return nil, CompensateFileUploaderNo(rail, miso.GetMySQL())
 			}).
 			Desc("Update file_info records that don't have uploader_no"),
 
 		// curl -X POST "http://localhost:8086/compensate/dir/calculate-size"
 		miso.Post("/dir/calculate-size",
-			func(c *gin.Context, rail miso.Rail) (any, error) {
+			func(inb *miso.Inbound) (any, error) {
 				return nil, ImMemBatchCalcDirSize(rail, miso.GetMySQL())
 			}).
 			Desc("Calculate size of all directories recursively"),
@@ -206,11 +205,13 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 	return nil
 }
 
-func DupPreflightCheckEp(c *gin.Context, rail miso.Rail, req PreflightCheckReq) (bool, error) {
+func DupPreflightCheckEp(inb *miso.Inbound, req PreflightCheckReq) (bool, error) {
+	rail := inb.Rail()
 	return FileExists(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func GetParentFileEp(c *gin.Context, rail miso.Rail, req FetchParentFileReq) (*ParentFileInfo, error) {
+func GetParentFileEp(inb *miso.Inbound, req FetchParentFileReq) (*ParentFileInfo, error) {
+	rail := inb.Rail()
 	if req.FileKey == "" {
 		return nil, miso.NewErrf("fileKey is required")
 	}
@@ -224,27 +225,33 @@ func GetParentFileEp(c *gin.Context, rail miso.Rail, req FetchParentFileReq) (*P
 	return &pf, nil
 }
 
-func MoveFileToDirEp(c *gin.Context, rail miso.Rail, req MoveIntoDirReq) (any, error) {
+func MoveFileToDirEp(inb *miso.Inbound, req MoveIntoDirReq) (any, error) {
+	rail := inb.Rail()
 	return nil, MoveFileToDir(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func MakeDirEp(c *gin.Context, rail miso.Rail, req MakeDirReq) (string, error) {
+func MakeDirEp(inb *miso.Inbound, req MakeDirReq) (string, error) {
+	rail := inb.Rail()
 	return MakeDir(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func ListDirEp(c *gin.Context, rail miso.Rail) ([]ListedDir, error) {
+func ListDirEp(inb *miso.Inbound) ([]ListedDir, error) {
+	rail := inb.Rail()
 	return ListDirs(rail, miso.GetMySQL(), common.GetUser(rail))
 }
 
-func ListFilesEp(c *gin.Context, rail miso.Rail, req ListFileReq) (miso.PageRes[ListedFile], error) {
+func ListFilesEp(inb *miso.Inbound, req ListFileReq) (miso.PageRes[ListedFile], error) {
+	rail := inb.Rail()
 	return ListFiles(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func DeleteFileEp(c *gin.Context, rail miso.Rail, req DeleteFileReq) (any, error) {
+func DeleteFileEp(inb *miso.Inbound, req DeleteFileReq) (any, error) {
+	rail := inb.Rail()
 	return nil, DeleteFile(rail, miso.GetMySQL(), req, common.GetUser(rail), nil)
 }
 
-func TruncateDirEp(c *gin.Context, rail miso.Rail, req DeleteFileReq) (any, error) {
+func TruncateDirEp(inb *miso.Inbound, req DeleteFileReq) (any, error) {
+	rail := inb.Rail()
 	return nil, TruncateDir(rail, miso.GetMySQL(), req, common.GetUser(rail), true)
 }
 
@@ -252,7 +259,8 @@ type BatchDeleteFileReq struct {
 	FileKeys []string
 }
 
-func BatchDeleteFileEp(c *gin.Context, rail miso.Rail, req BatchDeleteFileReq) (any, error) {
+func BatchDeleteFileEp(inb *miso.Inbound, req BatchDeleteFileReq) (any, error) {
+	rail := inb.Rail()
 	user := common.GetUser(rail)
 	if len(req.FileKeys) < 31 {
 		for i := range req.FileKeys {
@@ -278,39 +286,48 @@ func BatchDeleteFileEp(c *gin.Context, rail miso.Rail, req BatchDeleteFileReq) (
 	return nil, nil
 }
 
-func CreateFileEp(c *gin.Context, rail miso.Rail, req CreateFileReq) (any, error) {
+func CreateFileEp(inb *miso.Inbound, req CreateFileReq) (any, error) {
+	rail := inb.Rail()
 	return nil, CreateFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func UpdateFileEp(c *gin.Context, rail miso.Rail, req UpdateFileReq) (any, error) {
+func UpdateFileEp(inb *miso.Inbound, req UpdateFileReq) (any, error) {
+	rail := inb.Rail()
 	return nil, UpdateFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func GenFileTknEp(c *gin.Context, rail miso.Rail, req GenerateTempTokenReq) (string, error) {
+func GenFileTknEp(inb *miso.Inbound, req GenerateTempTokenReq) (string, error) {
+	rail := inb.Rail()
 	return GenTempToken(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func ListVFolderBriefEp(c *gin.Context, rail miso.Rail) ([]VFolderBrief, error) {
+func ListVFolderBriefEp(inb *miso.Inbound) ([]VFolderBrief, error) {
+	rail := inb.Rail()
 	return ListVFolderBrief(rail, miso.GetMySQL(), common.GetUser(rail))
 }
 
-func ListVFoldersEp(c *gin.Context, rail miso.Rail, req ListVFolderReq) (ListVFolderRes, error) {
+func ListVFoldersEp(inb *miso.Inbound, req ListVFolderReq) (ListVFolderRes, error) {
+	rail := inb.Rail()
 	return ListVFolders(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func CreateVFolderEp(c *gin.Context, rail miso.Rail, req CreateVFolderReq) (string, error) {
+func CreateVFolderEp(inb *miso.Inbound, req CreateVFolderReq) (string, error) {
+	rail := inb.Rail()
 	return CreateVFolder(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func VFolderAddFileEp(c *gin.Context, rail miso.Rail, req AddFileToVfolderReq) (any, error) {
+func VFolderAddFileEp(inb *miso.Inbound, req AddFileToVfolderReq) (any, error) {
+	rail := inb.Rail()
 	return nil, AddFileToVFolder(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func VFolderRemoveFileEp(c *gin.Context, rail miso.Rail, req RemoveFileFromVfolderReq) (any, error) {
+func VFolderRemoveFileEp(inb *miso.Inbound, req RemoveFileFromVfolderReq) (any, error) {
+	rail := inb.Rail()
 	return nil, RemoveFileFromVFolder(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func ShareVFolderEp(c *gin.Context, rail miso.Rail, req ShareVfolderReq) (any, error) {
+func ShareVFolderEp(inb *miso.Inbound, req ShareVfolderReq) (any, error) {
+	rail := inb.Rail()
 	sharedTo, e := vault.FindUser(rail, vault.FindUserReq{Username: &req.Username})
 	if e != nil {
 		rail.Warnf("Unable to find user, sharedTo: %s, %v", req.Username, e)
@@ -319,110 +336,129 @@ func ShareVFolderEp(c *gin.Context, rail miso.Rail, req ShareVfolderReq) (any, e
 	return nil, ShareVFolder(rail, miso.GetMySQL(), sharedTo, req.FolderNo, common.GetUser(rail))
 }
 
-func RemoveVFolderAccessEp(c *gin.Context, rail miso.Rail, req RemoveGrantedFolderAccessReq) (any, error) {
+func RemoveVFolderAccessEp(inb *miso.Inbound, req RemoveGrantedFolderAccessReq) (any, error) {
+	rail := inb.Rail()
 	return nil, RemoveVFolderAccess(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func ListVFolderAccessEp(c *gin.Context, rail miso.Rail, req ListGrantedFolderAccessReq) (ListGrantedFolderAccessRes, error) {
+func ListVFolderAccessEp(inb *miso.Inbound, req ListGrantedFolderAccessReq) (ListGrantedFolderAccessRes, error) {
+	rail := inb.Rail()
 	return ListGrantedFolderAccess(rail, miso.GetMySQL(), req, common.GetUser(rail))
 }
 
-func ListFilesInDirEp(c *gin.Context, rail miso.Rail, req ListFilesInDirReq) ([]string, error) {
+func ListFilesInDirEp(inb *miso.Inbound, req ListFilesInDirReq) ([]string, error) {
+	rail := inb.Rail()
 	return ListFilesInDir(rail, miso.GetMySQL(), req)
 }
 
-func FetchFileInfoItnEp(c *gin.Context, rail miso.Rail, req FetchFileInfoReq) (FileInfoResp, error) {
+func FetchFileInfoItnEp(inb *miso.Inbound, req FetchFileInfoReq) (FileInfoResp, error) {
+	rail := inb.Rail()
 	return FetchFileInfoInternal(rail, miso.GetMySQL(), req)
 }
 
-func ValidateOwnerEp(c *gin.Context, rail miso.Rail, req ValidateFileOwnerReq) (bool, error) {
+func ValidateOwnerEp(inb *miso.Inbound, req ValidateFileOwnerReq) (bool, error) {
+	rail := inb.Rail()
 	return ValidateFileOwner(rail, miso.GetMySQL(), req)
 }
 
-func RemoveVFolderEp(c *gin.Context, rail miso.Rail, req RemoveVFolderReq) (any, error) {
+func RemoveVFolderEp(inb *miso.Inbound, req RemoveVFolderReq) (any, error) {
+	rail := inb.Rail()
 	return nil, RemoveVFolder(rail, miso.GetMySQL(), common.GetUser(rail), req)
 }
 
-func UnpackZipEp(c *gin.Context, rail miso.Rail, req UnpackZipReq) (any, error) {
+func UnpackZipEp(inb *miso.Inbound, req UnpackZipReq) (any, error) {
+	rail := inb.Rail()
 	err := UnpackZip(rail, miso.GetMySQL(), common.GetUser(rail), req)
 	return nil, err
 }
 
-func ListGalleryBriefsEp(c *gin.Context, rail miso.Rail) ([]VGalleryBrief, error) {
+func ListGalleryBriefsEp(inb *miso.Inbound) ([]VGalleryBrief, error) {
+	rail := inb.Rail()
 	user := common.GetUser(rail)
 	return ListOwnedGalleryBriefs(rail, user, miso.GetMySQL())
 }
 
-func CreateGalleryEp(c *gin.Context, rail miso.Rail, cmd CreateGalleryCmd) (*Gallery, error) {
+func CreateGalleryEp(inb *miso.Inbound, cmd CreateGalleryCmd) (*Gallery, error) {
+	rail := inb.Rail()
 	user := common.GetUser(rail)
 	return CreateGallery(rail, cmd, user, miso.GetMySQL())
 }
 
-func UpdateGalleryEp(c *gin.Context, rail miso.Rail, cmd UpdateGalleryCmd) (any, error) {
+func UpdateGalleryEp(inb *miso.Inbound, cmd UpdateGalleryCmd) (any, error) {
+	rail := inb.Rail()
 	user := common.GetUser(rail)
 	e := UpdateGallery(rail, cmd, user, miso.GetMySQL())
 	return nil, e
 }
 
-func DeleteGalleryEp(c *gin.Context, rail miso.Rail, cmd DeleteGalleryCmd) (any, error) {
+func DeleteGalleryEp(inb *miso.Inbound, cmd DeleteGalleryCmd) (any, error) {
+	rail := inb.Rail()
 	user := common.GetUser(rail)
 	e := DeleteGallery(rail, miso.GetMySQL(), cmd, user)
 	return nil, e
 }
 
-func ListGalleriesEp(c *gin.Context, rail miso.Rail, cmd ListGalleriesCmd) (ListGalleriesResp, error) {
+func ListGalleriesEp(inb *miso.Inbound, cmd ListGalleriesCmd) (ListGalleriesResp, error) {
+	rail := inb.Rail()
 	user := common.GetUser(rail)
 	return ListGalleries(rail, cmd, user, miso.GetMySQL())
 }
 
-func GranteGalleryAccessEp(c *gin.Context, rail miso.Rail, cmd PermitGalleryAccessCmd) (any, error) {
+func GranteGalleryAccessEp(inb *miso.Inbound, cmd PermitGalleryAccessCmd) (any, error) {
+	rail := inb.Rail()
 	user := common.GetUser(rail)
 	e := GrantGalleryAccessToUser(rail, miso.GetMySQL(), cmd, user)
 	return nil, e
 }
 
-func RemoveGalleryAccessEp(c *gin.Context, rail miso.Rail, cmd RemoveGalleryAccessCmd) (any, error) {
+func RemoveGalleryAccessEp(inb *miso.Inbound, cmd RemoveGalleryAccessCmd) (any, error) {
+	rail := inb.Rail()
 	user := common.GetUser(rail)
 	e := RemoveGalleryAccess(rail, miso.GetMySQL(), cmd, user)
 	return nil, e
 }
 
-func ListGalleryAccessEp(c *gin.Context, rail miso.Rail, cmd ListGrantedGalleryAccessCmd) (miso.PageRes[ListedGalleryAccessRes], error) {
+func ListGalleryAccessEp(inb *miso.Inbound, cmd ListGrantedGalleryAccessCmd) (miso.PageRes[ListedGalleryAccessRes], error) {
+	rail := inb.Rail()
 	user := common.GetUser(rail)
 	return ListedGrantedGalleryAccess(rail, miso.GetMySQL(), cmd, user)
 }
 
-func ListGalleryImagesEp(c *gin.Context, rail miso.Rail, cmd ListGalleryImagesCmd) (*ListGalleryImagesResp, error) {
+func ListGalleryImagesEp(inb *miso.Inbound, cmd ListGalleryImagesCmd) (*ListGalleryImagesResp, error) {
+	rail := inb.Rail()
 	return ListGalleryImages(rail, miso.GetMySQL(), cmd, common.GetUser(rail))
 }
 
-func TransferGalleryImageEp(c *gin.Context, rail miso.Rail, cmd TransferGalleryImageReq) (any, error) {
+func TransferGalleryImageEp(inb *miso.Inbound, cmd TransferGalleryImageReq) (any, error) {
+	rail := inb.Rail()
 	user := common.GetUser(rail)
 	return BatchTransferAsync(rail, cmd, user, miso.GetMySQL())
 }
 
-func GenFileTknQRCodeEp(c *gin.Context, rail miso.Rail) {
-	token := c.Query("token")
+func GenFileTknQRCodeEp(inb *miso.Inbound) {
+	w, r := inb.Unwrap()
+	rail := inb.Rail()
+	token := r.URL.Query().Get("token")
 	if miso.IsBlankStr(token) {
-		c.String(http.StatusBadRequest, "token is required")
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	url := miso.GetPropStr(PropVfmSiteHost) + "/fstore/file/raw?key=" + url.QueryEscape(token)
 	png, err := qrcode.Encode(url, qrcode.Medium, 512)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		rail.Errorf("Failed to generate qrcode image, fileKey: %v, %v", token, err)
 		return
 	}
 
 	reader := bytes.NewReader(png)
-	_, err = io.Copy(c.Writer, reader)
+	_, err = io.Copy(w, reader)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		rail.Errorf("Failed to tranfer qrcode image, fileKey: %v, %v", token, err)
 		return
 	}
 
-	c.Status(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 }
