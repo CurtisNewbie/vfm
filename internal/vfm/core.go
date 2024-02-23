@@ -92,7 +92,7 @@ type ListedVFolder struct {
 }
 
 type ListVFolderRes struct {
-	Page    miso.Paging     `json:"pagingVo"`
+	Page    miso.Paging     `json:"paging"`
 	Payload []ListedVFolder `json:"payload"`
 }
 
@@ -230,7 +230,7 @@ func queryFilenames(tx *gorm.DB, fileKeys []string) (map[string]string, error) {
 }
 
 type ListFileReq struct {
-	Page       miso.Paging `json:"pagingVo"`
+	Page       miso.Paging `json:"paging"`
 	Filename   *string     `json:"filename"`
 	FolderNo   *string     `json:"folderNo"`
 	FileType   *string     `json:"fileType"`
@@ -923,7 +923,7 @@ func RemoveFileFromVFolder(rail miso.Rail, tx *gorm.DB, req RemoveFileFromVfolde
 }
 
 type ListVFolderReq struct {
-	Page miso.Paging `json:"pagingVo"`
+	Page miso.Paging `json:"paging"`
 	Name string      `json:"name"`
 }
 
@@ -967,12 +967,12 @@ type RemoveGrantedAccessReq struct {
 }
 
 type ListGrantedFolderAccessReq struct {
-	Page     miso.Paging `json:"pagingVo"`
+	Page     miso.Paging `json:"paging"`
 	FolderNo string      `json:"folderNo"`
 }
 
 type ListGrantedFolderAccessRes struct {
-	Page    miso.Paging          `json:"pagingVo"`
+	Page    miso.Paging          `json:"paging"`
 	Payload []ListedFolderAccess `json:"payload"`
 }
 

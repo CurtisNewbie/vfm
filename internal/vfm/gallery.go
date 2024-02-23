@@ -48,12 +48,12 @@ type UpdateGalleryCmd struct {
 }
 
 type ListGalleriesResp struct {
-	Paging    miso.Paging `json:"pagingVo"`
+	Paging    miso.Paging `json:"paging"`
 	Galleries []VGallery  `json:"galleries"`
 }
 
 type ListGalleriesCmd struct {
-	Paging miso.Paging `json:"pagingVo"`
+	Paging miso.Paging `json:"paging"`
 }
 
 type DeleteGalleryCmd struct {
@@ -207,7 +207,7 @@ func CreateGalleryForDir(rail miso.Rail, cmd CreateGalleryForDirCmd, tx *gorm.DB
 
 // Create a new Gallery
 func CreateGallery(rail miso.Rail, cmd CreateGalleryCmd, user common.User, tx *gorm.DB) (*Gallery, error) {
-	rail.Infof("Creating gallery, cmd: %v, user: %v", cmd, user)
+	rail.Infof("Creating gallery, cmd: %#v, user: %#v", cmd, user)
 
 	gal, er := miso.RLockRun(rail, "fantahsea:gallery:create:"+user.UserNo, func() (*Gallery, error) {
 

@@ -67,12 +67,12 @@ type CreateGalleryImgEvent struct {
 
 type ListGalleryImagesCmd struct {
 	GalleryNo   string `json:"galleryNo" validation:"notEmpty"`
-	miso.Paging `json:"pagingVo"`
+	miso.Paging `json:"paging"`
 }
 
 type ListGalleryImagesResp struct {
 	Images []ImageInfo `json:"images"`
-	Paging miso.Paging `json:"pagingVo"`
+	Paging miso.Paging `json:"paging"`
 }
 
 type ImageInfo struct {

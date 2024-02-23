@@ -53,7 +53,7 @@
 - POST /open/api/file/list
   - Description: User list files
   - JSON Request:
-    - "pagingVo": (Paging)
+    - "paging": (Paging)
       - "limit": (int) page limit
       - "page": (int) page number, 1-based
       - "total": (int) total count
@@ -67,7 +67,7 @@
     - "msg": (string) message
     - "error": (bool) whether the request was successful
     - "data": (PageRes[github.com/curtisnewbie/vfm/internal/vfm.ListedFile]) response data
-      - "pagingVo": (Paging) pagination parameters
+      - "paging": (Paging) pagination parameters
         - "limit": (int) page limit
         - "page": (int) page number, 1-based
         - "total": (int) total count
@@ -162,7 +162,7 @@
 - POST /open/api/vfolder/list
   - Description: User list virtual folders
   - JSON Request:
-    - "pagingVo": (Paging)
+    - "paging": (Paging)
       - "limit": (int) page limit
       - "page": (int) page number, 1-based
       - "total": (int) total count
@@ -172,7 +172,7 @@
     - "msg": (string) message
     - "error": (bool) whether the request was successful
     - "data": (ListVFolderRes) response data
-      - "pagingVo": (Paging)
+      - "paging": (Paging)
         - "limit": (int) page limit
         - "page": (int) page number, 1-based
         - "total": (int) total count
@@ -233,7 +233,7 @@
 - POST /open/api/vfolder/granted/list
   - Description: List granted access to virtual folder
   - JSON Request:
-    - "pagingVo": (Paging)
+    - "paging": (Paging)
       - "limit": (int) page limit
       - "page": (int) page number, 1-based
       - "total": (int) total count
@@ -243,7 +243,7 @@
     - "msg": (string) message
     - "error": (bool) whether the request was successful
     - "data": (ListGrantedFolderAccessRes) response data
-      - "pagingVo": (Paging)
+      - "paging": (Paging)
         - "limit": (int) page limit
         - "page": (int) page number, 1-based
         - "total": (int) total count
@@ -307,7 +307,7 @@
 - POST /open/api/gallery/list
   - Description: List galleries
   - JSON Request:
-    - "pagingVo": (Paging)
+    - "paging": (Paging)
       - "limit": (int) page limit
       - "page": (int) page number, 1-based
       - "total": (int) total count
@@ -316,7 +316,7 @@
     - "msg": (string) message
     - "error": (bool) whether the request was successful
     - "data": (ListGalleriesResp) response data
-      - "pagingVo": (Paging)
+      - "paging": (Paging)
         - "limit": (int) page limit
         - "page": (int) page number, 1-based
         - "total": (int) total count
@@ -352,7 +352,7 @@
   - Description: List granted access to the galleries
   - JSON Request:
     - "galleryNo": (string)
-    - "pagingVo": (Paging)
+    - "paging": (Paging)
       - "limit": (int) page limit
       - "page": (int) page number, 1-based
       - "total": (int) total count
@@ -361,7 +361,7 @@
     - "msg": (string) message
     - "error": (bool) whether the request was successful
     - "data": (PageRes[github.com/curtisnewbie/vfm/internal/vfm.ListedGalleryAccessRes]) response data
-      - "pagingVo": (Paging) pagination parameters
+      - "paging": (Paging) pagination parameters
         - "limit": (int) page limit
         - "page": (int) page number, 1-based
         - "total": (int) total count
@@ -375,7 +375,7 @@
   - Description: List images of gallery
   - JSON Request:
     - "galleryNo": (string)
-    - "pagingVo": (Paging)
+    - "paging": (Paging)
       - "limit": (int) page limit
       - "page": (int) page number, 1-based
       - "total": (int) total count
@@ -387,7 +387,7 @@
       - "images": ([]vfm.ImageInfo)
         - "thumbnailToken": (string)
         - "fileTempToken": (string)
-      - "pagingVo": (Paging)
+      - "paging": (Paging)
         - "limit": (int) page limit
         - "page": (int) page number, 1-based
         - "total": (int) total count

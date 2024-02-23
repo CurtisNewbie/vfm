@@ -138,7 +138,7 @@ type RemoveGalleryAccessCmd struct {
 
 type ListGrantedGalleryAccessCmd struct {
 	GalleryNo string `json:"galleryNo" validation:"notEmpty"`
-	PagingVo  miso.Paging
+	Paging    miso.Paging
 }
 
 type ListedGalleryAccessRes struct {
@@ -164,7 +164,7 @@ func ListedGrantedGalleryAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedGall
 	}
 
 	return miso.NewPageQuery[ListedGalleryAccessRes]().
-		WithPage(req.PagingVo).
+		WithPage(req.Paging).
 		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
 			return tx.Select("id", "gallery_no", "user_no", "create_time").
 				Order("id DESC")
