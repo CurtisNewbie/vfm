@@ -310,7 +310,7 @@ func TransferImagesInDir(rail miso.Rail, cmd TransferGalleryImageInDirReq, user 
 	}
 
 	// only the owner of the directory can do this, by default directory is only visible to the uploader
-	if fi.UploaderId != user.UserId {
+	if fi.UploaderNo != user.UserNo {
 		return miso.NewErrf("Not permitted operation")
 	}
 

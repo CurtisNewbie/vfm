@@ -216,7 +216,7 @@ func OnThumbnailUpdated(rail miso.Rail, evt StreamEvent) error {
 		return nil
 	}
 
-	user, err := CachedFindUser(rail, f.UploaderId)
+	user, err := CachedFindUser(rail, f.UploaderNo)
 	if err != nil {
 		return err
 	}

@@ -44,12 +44,6 @@ Compensate thumbnail generations, those that are images/videos (guessed by names
 curl -X POST "http://localhost:8086/compensate/thumbnail"
 ```
 
-Compensate missing uploaders' user_no:
-
-```sh
-curl -X POST "http://localhost:8086/compensate/file/uploaderno"
-```
-
 ## Doc
 
 - [File-Service Migration](./doc/file-service-migration.md)

@@ -72,7 +72,6 @@ type ListedFile struct {
 	ThumbnailToken string     `json:"thumbnailToken"`
 	Thumbnail      string     `json:"-"`
 	ParentFile     string     `json:"-"`
-	UploaderId     int        `json:"-"`
 }
 
 type GrantAccessReq struct {
@@ -379,8 +378,6 @@ type FetchParentFileReq struct {
 }
 
 func FindParentFile(c miso.Rail, tx *gorm.DB, req FetchParentFileReq, user common.User) (ParentFileInfo, error) {
-	userId := user.UserId
-
 	f, e := findFile(c, tx, req.FileKey)
 	if e != nil {
 		return ParentFileInfo{}, e
@@ -390,7 +387,7 @@ func FindParentFile(c miso.Rail, tx *gorm.DB, req FetchParentFileReq, user commo
 	}
 
 	// dir is only visible to the uploader for now
-	if f.UploaderId != userId {
+	if f.UploaderNo != user.UserNo {
 		return ParentFileInfo{}, miso.NewErrf("Not permitted")
 	}
 
@@ -797,7 +794,7 @@ func HandleAddFileToVFolderEvent(rail miso.Rail, tx *gorm.DB, evt AddFileToVfold
 			return e
 		}
 
-		if f == nil || f.UploaderId != evt.UserId {
+		if f == nil || f.UploaderNo != evt.UserNo {
 			continue
 		}
 		if f.FileType != FileTypeFile {
@@ -904,8 +901,7 @@ func RemoveFileFromVFolder(rail miso.Rail, tx *gorm.DB, req RemoveFileFromVfolde
 				continue // file not found
 			}
 
-			// TODO: get rid of the userId
-			if f.UploaderId != user.UserId {
+			if f.UploaderNo != user.UserNo {
 				continue // not the uploader of the file
 			}
 			if f.FileType != FileTypeFile {
@@ -1055,7 +1051,7 @@ func UpdateFile(rail miso.Rail, tx *gorm.DB, r UpdateFileReq, user common.User) 
 	}
 
 	// dir is only visible to the uploader for now
-	if f.UploaderId != user.UserId {
+	if f.UploaderNo != user.UserNo {
 		return miso.NewErrf("Not permitted")
 	}
 
@@ -1168,7 +1164,7 @@ func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 		return miso.NewErrf("File not found")
 	}
 
-	if f.UploaderId != user.UserId {
+	if f.UploaderNo != user.UserNo {
 		return miso.NewErrf("Not permitted")
 	}
 
@@ -1325,7 +1321,6 @@ type FileInfoResp struct {
 	Name         string `json:"name"`
 	Uuid         string `json:"uuid"`
 	SizeInBytes  int64  `json:"sizeInBytes"`
-	UploaderId   int    `json:"uploaderId"` // deprecated
 	UploaderNo   string `json:"uploaderNo"`
 	UploaderName string `json:"uploaderName"`
 	IsDeleted    bool   `json:"isDeleted"`
@@ -1349,7 +1344,6 @@ func FetchFileInfoInternal(rail miso.Rail, tx *gorm.DB, req FetchFileInfoReq) (F
 	fir.Name = f.Name
 	fir.Uuid = f.Uuid
 	fir.SizeInBytes = f.SizeInBytes
-	fir.UploaderId = f.UploaderId
 	fir.UploaderNo = f.UploaderNo
 	fir.UploaderName = f.UploaderName
 	fir.IsDeleted = f.IsLogicDeleted == LDelY
@@ -1596,7 +1590,7 @@ func TruncateDir(rail miso.Rail, db *gorm.DB, req DeleteFileReq, user common.Use
 		return miso.NewErrf("File not found")
 	}
 
-	if dir.UploaderId != user.UserId {
+	if dir.UploaderNo != user.UserNo {
 		return miso.NewErrf("Not permitted")
 	}
 

@@ -186,14 +186,6 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			}).
 			Desc("Compensate thumbnail generation"),
 
-		// update file_info records that do not have uploader_no
-		// curl -X POST "http://localhost:8086/compensate/file/uploaderno"
-		miso.Post("/file/uploaderno",
-			func(inb *miso.Inbound) (any, error) {
-				return nil, CompensateFileUploaderNo(rail, miso.GetMySQL())
-			}).
-			Desc("Update file_info records that don't have uploader_no"),
-
 		// curl -X POST "http://localhost:8086/compensate/dir/calculate-size"
 		miso.Post("/dir/calculate-size",
 			func(inb *miso.Inbound) (any, error) {

@@ -3,7 +3,6 @@ package vfm
 import (
 	"fmt"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/curtisnewbie/miso/miso"
@@ -15,14 +14,13 @@ const (
 )
 
 var (
-	userIdInfoCache = miso.NewRCache[vault.UserInfo]("vfm:user:info:userid", miso.RCacheConfig{Exp: 1 * time.Minute, NoSync: true})
+	userIdInfoCache = miso.NewRCache[vault.UserInfo]("vfm:user:info:userno", miso.RCacheConfig{Exp: 5 * time.Minute, NoSync: true})
 )
 
-func CachedFindUser(rail miso.Rail, userId int) (vault.UserInfo, error) {
-	userIdInt := strconv.FormatInt(int64(userId), 10)
-	return userIdInfoCache.Get(rail, userIdInt, func() (vault.UserInfo, error) {
+func CachedFindUser(rail miso.Rail, userNo string) (vault.UserInfo, error) {
+	return userIdInfoCache.Get(rail, userNo, func() (vault.UserInfo, error) {
 		fui, errFind := vault.FindUser(rail, vault.FindUserReq{
-			UserId: &userId,
+			UserNo: &userNo,
 		})
 		return fui, errFind
 	})
