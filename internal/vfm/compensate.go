@@ -44,8 +44,8 @@ func CompensateThumbnail(rail miso.Rail, tx *gorm.DB) error {
 
 		for _, f := range files {
 			if isImage(f.Name) {
-				event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: VfmCompressImgNotifyEventBus}
-				if e := miso.PubEventBus(rail, event, hammer.CompressImageTriggerEventBus); e != nil {
+				event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: CompressImgNotifyEventBus}
+				if e := CompressImageTriggerPipeline.Send(rail, event); e != nil {
 					rail.Errorf("Failed to send CompressImageEvent, minId: %v, uuid: %v, %v", minId, f.Uuid, e)
 					return e
 				}
@@ -56,9 +56,9 @@ func CompensateThumbnail(rail miso.Rail, tx *gorm.DB) error {
 				evt := hammer.GenVideoThumbnailTriggerEvent{
 					Identifier: f.Uuid,
 					FileId:     f.FstoreFileId,
-					ReplyTo:    VfmGenVideoThumbnailNotifyEventBus,
+					ReplyTo:    GenVideoThumbnailNotifyEventBus,
 				}
-				if e := miso.PubEventBus(rail, evt, hammer.GenVideoThumbnailTriggerEventBus); e != nil {
+				if e := GenVideoThumbnailTriggerPipeline.Send(rail, evt); e != nil {
 					return fmt.Errorf("failed to send %#v, uuid: %v, %v", evt, f.Uuid, e)
 				}
 				continue

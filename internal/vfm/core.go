@@ -505,9 +505,7 @@ func MoveFileToDir(rail miso.Rail, db *gorm.DB, req MoveIntoDirReq, user common.
 		if !miso.IsBlankStr(fi.ParentFile) {
 
 			// calculate the dir size asynchronously
-			if err := miso.PubEventBus(rail, CalcDirSizeEvt{
-				FileKey: fi.ParentFile,
-			}, VfmCalcDirSizeEventBus); err != nil {
+			if err := CalcDirSizePipeline.Send(rail, CalcDirSizeEvt{FileKey: fi.ParentFile}); err != nil {
 				rail.Errorf("failed to send CalcDirSizeEvt, fileKey: %v, %v", fi.ParentFile, err)
 			}
 		}
@@ -860,7 +858,8 @@ func AddFileToVFolder(rail miso.Rail, tx *gorm.DB, req AddFileToVfolderReq, user
 		FolderNo: req.FolderNo,
 		FileKeys: req.FileKeys,
 	}
-	err := miso.PubEventBus(rail, evt, VfmAddFileToVFolderEventBus)
+
+	err := AddFileToVFolderPipeline.Send(rail, evt)
 	if err != nil {
 		return fmt.Errorf("failed to publish AddFileToVfolderEvent, %+v, %v", evt, err)
 	}
@@ -1210,9 +1209,9 @@ func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 
 		// calculate the dir size asynchronously
 		if f.ParentFile != "" {
-			if err := miso.PubEventBus(rail, CalcDirSizeEvt{
+			if err := CalcDirSizePipeline.Send(rail, CalcDirSizeEvt{
 				FileKey: f.ParentFile,
-			}, VfmCalcDirSizeEventBus); err != nil {
+			}); err != nil {
 				rail.Errorf("failed to send CalcDirSizeEvt, fileKey: %v, %v", f.ParentFile, err)
 			}
 		}
@@ -1439,7 +1438,7 @@ func ImMemBatchCalcDirSize(rail miso.Rail, db *gorm.DB) error {
 		if parDirSet.Has(f.Uuid) { // the dir itself is a parent dir
 			continue
 		}
-		if err := miso.PubEventBus(rail, CalcDirSizeEvt{FileKey: f.Uuid}, VfmCalcDirSizeEventBus); err != nil {
+		if err := CalcDirSizePipeline.Send(rail, CalcDirSizeEvt{FileKey: f.Uuid}); err != nil {
 			return err
 		}
 		rail.Infof("Triggered CalcDirSizeEvt for %v", f.Uuid)
@@ -1474,7 +1473,7 @@ func CalcDirSize(rail miso.Rail, fk string, db *gorm.DB) error {
 	}
 
 	if parDir != "" {
-		if err := miso.PubEventBus(rail, CalcDirSizeEvt{FileKey: parDir}, VfmCalcDirSizeEventBus); err != nil {
+		if err := CalcDirSizePipeline.Send(rail, CalcDirSizeEvt{FileKey: parDir}); err != nil {
 			rail.Errorf("failed to publish CalcDirSizeEvt for %v, %v", parDir, err)
 			return nil
 		}
@@ -1539,7 +1538,7 @@ func UnpackZip(rail miso.Rail, db *gorm.DB, user common.User, req UnpackZipReq) 
 
 	err = fstore.TriggerFileUnzip(rail, fstore.UnzipFileReq{
 		FileId:          fi.FstoreFileId,
-		ReplyToEventBus: VfmUnzipResultNotifyEventBus,
+		ReplyToEventBus: UnzipResultNotifyEventBus,
 		Extra:           string(extra),
 	})
 	if err != nil {

@@ -11,30 +11,44 @@ import (
 )
 
 const (
-	VfmFileSavedEventBus               = "event.bus.vfm.file.saved"
-	VfmThumbnailUpdatedEventBus        = "event.bus.vfm.file.thumbnail.updated"
-	VfmFileLDeletedEventBus            = "event.bus.vfm.file.logic.deleted"
-	VfmCalcDirSizeEventBus             = "event.bus.vfm.dir.size.calc"
-	VfmAddFileToVFolderEventBus        = "event.bus.vfm.file.vfolder.add"
-	VfmCompressImgNotifyEventBus       = "vfm.image.compressed.event"
-	VfmGenVideoThumbnailNotifyEventBus = "vfm.video.thumbnail.generate"
-	VfmUnzipResultNotifyEventBus       = "vfm.unzip.result.notify.event"
+	FileSavedEventBus               = "event.bus.vfm.file.saved"
+	ThumbnailUpdatedEventBus        = "event.bus.vfm.file.thumbnail.updated"
+	FileLDeletedEventBus            = "event.bus.vfm.file.logic.deleted"
+	CalcDirSizeEventBus             = "event.bus.vfm.dir.size.calc"
+	AddFileToVFolderEventBus        = "event.bus.vfm.file.vfolder.add"
+	CompressImgNotifyEventBus       = "vfm.image.compressed.event"
+	GenVideoThumbnailNotifyEventBus = "vfm.video.thumbnail.generate"
+	UnzipResultNotifyEventBus       = "vfm.unzip.result.notify.event"
+	AddDirGalleryImgEventBus        = "event.bus.fantahsea.dir.gallery.image.add"
+	SyncGalleryFileDeletedEventBus  = "event.bus.fantahsea.notify.file.deleted"
+)
 
-	AddFantahseaDirGalleryImgEventBus  = "event.bus.fantahsea.dir.gallery.image.add"
-	NotifyFantahseaFileDeletedEventBus = "event.bus.fantahsea.notify.file.deleted"
+var (
+	UnzipResultNotifyPipeline        = miso.NewEventPipeline[fstore.UnzipFileReplyEvent](UnzipResultNotifyEventBus)
+	GenVideoThumbnailNotifyPipeline  = miso.NewEventPipeline[hammer.GenVideoThumbnailReplyEvent](GenVideoThumbnailNotifyEventBus)
+	CompressImgNotifyPipeline        = miso.NewEventPipeline[hammer.ImageCompressReplyEvent](CompressImgNotifyEventBus)
+	AddFileToVFolderPipeline         = miso.NewEventPipeline[AddFileToVfolderEvent](AddFileToVFolderEventBus)
+	CalcDirSizePipeline              = miso.NewEventPipeline[CalcDirSizeEvt](CalcDirSizeEventBus)
+	FileLDeletedPipeline             = miso.NewEventPipeline[StreamEvent](FileLDeletedEventBus)
+	ThumbnailUpdatedPipeline         = miso.NewEventPipeline[StreamEvent](ThumbnailUpdatedEventBus)
+	FileSavedPipeline                = miso.NewEventPipeline[StreamEvent](FileSavedEventBus)
+	AddDirGalleryImgPipeline         = miso.NewEventPipeline[CreateGalleryImgEvent](AddDirGalleryImgEventBus)
+	SyncGalleryFileDeletedPipeline   = miso.NewEventPipeline[NotifyFileDeletedEvent](SyncGalleryFileDeletedEventBus)
+	CompressImageTriggerPipeline     = miso.NewEventPipeline[hammer.ImageCompressTriggerEvent](hammer.CompressImageTriggerEventBus)
+	GenVideoThumbnailTriggerPipeline = miso.NewEventPipeline[hammer.GenVideoThumbnailTriggerEvent](hammer.GenVideoThumbnailTriggerEventBus)
 )
 
 func PrepareEventBus(rail miso.Rail) error {
-	miso.SubEventBus(VfmCompressImgNotifyEventBus, 2, OnImageCompressed)
-	miso.SubEventBus(VfmGenVideoThumbnailNotifyEventBus, 2, OnVidoeThumbnailGenerated)
-	miso.SubEventBus(VfmFileSavedEventBus, 2, OnFileSaved)
-	miso.SubEventBus(VfmThumbnailUpdatedEventBus, 2, OnThumbnailUpdated)
-	miso.SubEventBus(VfmFileLDeletedEventBus, 2, OnFileDeleted)
-	miso.SubEventBus(VfmAddFileToVFolderEventBus, 2, OnAddFileToVfolderEvent)
-	miso.SubEventBus(AddFantahseaDirGalleryImgEventBus, 2, OnCreateGalleryImgEvent)
-	miso.SubEventBus(NotifyFantahseaFileDeletedEventBus, 2, OnNotifyFileDeletedEvent)
-	miso.SubEventBus(VfmCalcDirSizeEventBus, 1, OnCalcDirSizeEvt)
-	miso.SubEventBus(VfmUnzipResultNotifyEventBus, 2, OnUnzipFileReplyEvent)
+	UnzipResultNotifyPipeline.Listen(2, OnUnzipFileReplyEvent)
+	GenVideoThumbnailNotifyPipeline.Listen(2, OnVidoeThumbnailGenerated)
+	CompressImgNotifyPipeline.Listen(2, OnImageCompressed)
+	AddFileToVFolderPipeline.Listen(2, OnAddFileToVfolderEvent)
+	CalcDirSizePipeline.Listen(1, OnCalcDirSizeEvt)
+	FileLDeletedPipeline.Listen(2, OnFileDeleted)
+	ThumbnailUpdatedPipeline.Listen(2, OnThumbnailUpdated)
+	FileSavedPipeline.Listen(2, OnFileSaved)
+	AddDirGalleryImgPipeline.Listen(2, OnCreateGalleryImgEvent)
+	SyncGalleryFileDeletedPipeline.Listen(2, OnNotifyFileDeletedEvent)
 	return nil
 }
 
@@ -54,15 +68,6 @@ type StreamEventColumn struct {
 	DataType string `json:"dataType"`
 	Before   string `json:"before"`
 	After    string `json:"after"`
-}
-
-type CreateFantahseaImgEvt struct {
-	Username     string `json:"username"`
-	UserNo       string `json:"userNo"`
-	DirFileKey   string `json:"dirFileKey"`
-	DirName      string `json:"dirName"`
-	ImageName    string `json:"imageName"`
-	ImageFileKey string `json:"imageFileKey"`
 }
 
 // event-pump send binlog event when a file_info record is saved.
@@ -108,8 +113,8 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 	}
 
 	if isImage(f.Name) {
-		evt := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: VfmCompressImgNotifyEventBus}
-		if err := miso.PubEventBus(rail, evt, hammer.CompressImageTriggerEventBus); err != nil {
+		evt := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: CompressImgNotifyEventBus}
+		if err := CompressImageTriggerPipeline.Send(rail, evt); err != nil {
 			return fmt.Errorf("failed to send %#v, uuid: %v, %v", evt, f.Uuid, err)
 		}
 		return nil
@@ -119,9 +124,9 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 		evt := hammer.GenVideoThumbnailTriggerEvent{
 			Identifier: f.Uuid,
 			FileId:     f.FstoreFileId,
-			ReplyTo:    VfmGenVideoThumbnailNotifyEventBus,
+			ReplyTo:    GenVideoThumbnailNotifyEventBus,
 		}
-		if err := miso.PubEventBus(rail, evt, hammer.GenVideoThumbnailTriggerEventBus); err != nil {
+		if err := GenVideoThumbnailTriggerPipeline.Send(rail, evt); err != nil {
 			return fmt.Errorf("failed to send %#v, uuid: %v, %v", evt, f.Uuid, err)
 		}
 		return nil
@@ -221,7 +226,7 @@ func OnThumbnailUpdated(rail miso.Rail, evt StreamEvent) error {
 		return err
 	}
 
-	cfi := CreateFantahseaImgEvt{
+	cfi := CreateGalleryImgEvent{
 		Username:     user.Username,
 		UserNo:       user.UserNo,
 		DirFileKey:   pf.Uuid,
@@ -229,7 +234,7 @@ func OnThumbnailUpdated(rail miso.Rail, evt StreamEvent) error {
 		ImageName:    f.Name,
 		ImageFileKey: f.Uuid,
 	}
-	return miso.PubEventBus(rail, cfi, AddFantahseaDirGalleryImgEventBus)
+	return AddDirGalleryImgPipeline.Send(rail, cfi)
 }
 
 // event-pump send binlog event when a file_info is deleted (is_logic_deleted changed)
@@ -259,7 +264,7 @@ func OnFileDeleted(rail miso.Rail, evt StreamEvent) error {
 
 	rail.Infof("File logically deleted, %v", uuid)
 
-	if e := miso.PubEventBus(rail, NotifyFileDeletedEvent{FileKey: uuid}, NotifyFantahseaFileDeletedEventBus); e != nil {
+	if e := SyncGalleryFileDeletedPipeline.Send(rail, NotifyFileDeletedEvent{FileKey: uuid}); e != nil {
 		return fmt.Errorf("failed to send NotifyFileDeletedEvent, uuid: %v, %v", uuid, e)
 	}
 	return nil

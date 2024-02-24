@@ -23,7 +23,8 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 		{Code: ManageFilesResource, Name: "Manage files"},
 	})
 
-	miso.GroupRoute("/open/api",
+	miso.BaseRoute("/open/api").Group(
+
 		miso.GroupRoute("/file",
 			miso.IGet("/upload/duplication/preflight", DupPreflightCheckEp).
 				Desc("Preflight check for duplicate file uploads").
@@ -83,7 +84,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 				Public(),
 		),
 
-		miso.GroupRoute("/vfolder",
+		miso.BaseRoute("/vfolder").Group(
 
 			miso.Get("/brief/owned", ListVFolderBriefEp).
 				Desc("User list virtual folder briefs").
@@ -122,7 +123,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 				Resource(ManageFilesResource),
 		),
 
-		miso.GroupRoute("/gallery",
+		miso.BaseRoute("/gallery").Group(
 
 			miso.Get("/brief/owned", ListGalleryBriefsEp).
 				Desc("List owned gallery brief info").
@@ -166,16 +167,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 		),
 	)
 
-	// ---------------------------------------------- internal endpoints ------------------------------------------
-
-	miso.GroupRoute("/remote/user/file",
-		miso.IGet("/indir/list", ListFilesInDirEp),
-		miso.IGet("/info", FetchFileInfoItnEp),
-		miso.IGet("/owner/validation", ValidateOwnerEp),
-	)
-
-	// ---------------------------------- endpoints used to compensate --------------------------------------
-
+	// endpoints used to compensate
 	miso.GroupRoute("/compensate",
 
 		// Compensate thumbnail generations, those that are images/videos (guessed by names) are processed to generate thumbnails
@@ -341,16 +333,6 @@ func ListVFolderAccessEp(inb *miso.Inbound, req ListGrantedFolderAccessReq) (Lis
 func ListFilesInDirEp(inb *miso.Inbound, req ListFilesInDirReq) ([]string, error) {
 	rail := inb.Rail()
 	return ListFilesInDir(rail, miso.GetMySQL(), req)
-}
-
-func FetchFileInfoItnEp(inb *miso.Inbound, req FetchFileInfoReq) (FileInfoResp, error) {
-	rail := inb.Rail()
-	return FetchFileInfoInternal(rail, miso.GetMySQL(), req)
-}
-
-func ValidateOwnerEp(inb *miso.Inbound, req ValidateFileOwnerReq) (bool, error) {
-	rail := inb.Rail()
-	return ValidateFileOwner(rail, miso.GetMySQL(), req)
 }
 
 func RemoveVFolderEp(inb *miso.Inbound, req RemoveVFolderReq) (any, error) {
