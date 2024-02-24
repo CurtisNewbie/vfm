@@ -46,8 +46,8 @@ CREATE TABLE IF NOT EXISTS vfm.vfolder (
   UNIQUE KEY `folder_no_uk` (`folder_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Virtual folder';
 
-CREATE TABLE IF NOT EXISTS vfm.user_vfolder (
-  `id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE vfm.user_vfolder (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_no` varchar(64) NOT NULL COMMENT 'user no',
   `username` varchar(50) DEFAULT '' COMMENT 'username',
   `folder_no` varchar(64) NOT NULL COMMENT 'folder no',
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS vfm.user_vfolder (
   `update_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who updated this record',
   `is_del` tinyint NOT NULL DEFAULT '0' COMMENT '0-normal, 1-deleted',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `user_folder_uk` (`user_no`,`folder_no`)
+  KEY `user_folder_idx` (`user_no`,`folder_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User and Virtual folder join table';
 
 CREATE TABLE IF NOT EXISTS vfm.file_vfolder (
