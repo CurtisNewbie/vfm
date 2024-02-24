@@ -198,7 +198,7 @@ func RemoveGalleryAccess(rail miso.Rail, tx *gorm.DB, cmd RemoveGalleryAccessCmd
 	}
 
 	e = tx.Exec(`UPDATE gallery_user_access SET is_del = 1, update_by = ? WHERE gallery_no = ? AND user_no = ?`,
-		user.Username, cmd.GalleryNo, user.UserNo).Error
+		user.Username, cmd.GalleryNo, cmd.UserNo).Error
 	if e != nil {
 		return fmt.Errorf("failed to update gallery_user_access, galleryNo: %v, userNo: %v, %v", cmd.GalleryNo, cmd.UserNo, e)
 	}
