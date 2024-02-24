@@ -398,7 +398,7 @@ func DeleteGalleryEp(inb *miso.Inbound, cmd DeleteGalleryCmd) (any, error) {
 	return nil, e
 }
 
-func ListGalleriesEp(inb *miso.Inbound, cmd ListGalleriesCmd) (ListGalleriesResp, error) {
+func ListGalleriesEp(inb *miso.Inbound, cmd ListGalleriesCmd) (miso.PageRes[VGallery], error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
 	return ListGalleries(rail, cmd, user, miso.GetMySQL())

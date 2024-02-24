@@ -47,11 +47,6 @@ type UpdateGalleryCmd struct {
 	Name      string `json:"name" validation:"notEmpty"`
 }
 
-type ListGalleriesResp struct {
-	Paging    miso.Paging `json:"paging"`
-	Galleries []VGallery  `json:"galleries"`
-}
-
 type ListGalleriesCmd struct {
 	Paging miso.Paging `json:"paging"`
 }
@@ -96,53 +91,28 @@ func ListOwnedGalleryBriefs(rail miso.Rail, user common.User, tx *gorm.DB) ([]VG
 }
 
 /* List Galleries */
-func ListGalleries(rail miso.Rail, cmd ListGalleriesCmd, user common.User, tx *gorm.DB) (ListGalleriesResp, error) {
-	paging := cmd.Paging
-
-	const selectSql string = `
-		SELECT g.* from gallery g
-		WHERE (g.user_no = ?
-		OR EXISTS (SELECT * FROM gallery_user_access ga WHERE ga.gallery_no = g.gallery_no AND ga.user_no = ? AND ga.is_del = 0))
-		AND g.is_del = 0
-		ORDER BY g.update_time DESC
-		LIMIT ?, ?
-	`
-	var galleries []VGallery
-
-	offset := paging.GetOffset()
-	t := tx.Raw(selectSql, user.UserNo, user.UserNo, offset, paging.Limit).Scan(&galleries)
-
-	if e := t.Error; e != nil {
-		return ListGalleriesResp{}, e
-	}
-
-	const countSql string = `
-		SELECT count(*) from gallery g
-		WHERE (g.user_no = ?
-		OR EXISTS (SELECT * FROM gallery_user_access ga WHERE ga.gallery_no = g.gallery_no AND ga.user_no = ?))
-		AND g.is_del = 0
-	`
-	var total int
-	t = tx.Raw(countSql, user.UserNo, user.UserNo).Scan(&total)
-
-	if e := t.Error; e != nil {
-		return ListGalleriesResp{}, e
-	}
-
-	if galleries == nil {
-		galleries = []VGallery{}
-	}
-
-	for i, g := range galleries {
-		if g.UserNo == user.UserNo {
-			g.IsOwner = true
-		}
-		g.CreateTimeStr = g.CreateTime.FormatClassic()
-		g.UpdateTimeStr = g.UpdateTime.FormatClassic()
-		galleries[i] = g
-	}
-
-	return ListGalleriesResp{Galleries: galleries, Paging: paging.ToRespPage(total)}, nil
+func ListGalleries(rail miso.Rail, cmd ListGalleriesCmd, user common.User, db *gorm.DB) (miso.PageRes[VGallery], error) {
+	return miso.NewPageQuery[VGallery]().
+		WithPage(cmd.Paging).
+		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
+			return tx.Table("gallery g").
+				Joins("LEFT JOIN gallery_user_access ga ON (g.gallery_no = ga.gallery_no)").
+				Where("g.is_del = 0").
+				Where("g.user_no = ? OR (ga.user_no = ? AND ga.is_del = 0)", user.UserNo, user.UserNo)
+		}).
+		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
+			tx = tx.Select("g.*").Order("g.update_time DESC")
+			return tx
+		}).
+		ForEach(func(g VGallery) VGallery {
+			if g.UserNo == user.UserNo {
+				g.IsOwner = true
+			}
+			g.CreateTimeStr = g.CreateTime.FormatClassic()
+			g.UpdateTimeStr = g.UpdateTime.FormatClassic()
+			return g
+		}).
+		Exec(rail, db)
 }
 
 func GalleryNoOfDir(dirFileKey string, tx *gorm.DB) (string, error) {
