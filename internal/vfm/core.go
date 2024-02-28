@@ -1134,7 +1134,7 @@ func isVideo(name string) bool {
 
 func isImage(name string) bool {
 	i := strings.LastIndex(name, ".")
-	if i < 0 || i == len([]rune(name))-1 {
+	if i < 0 || i == len(name)-1 {
 		return false
 	}
 
