@@ -271,7 +271,6 @@ func OnFileDeleted(rail miso.Rail, evt StreamEvent) error {
 }
 
 type AddFileToVfolderEvent struct {
-	UserId   int
 	Username string
 	UserNo   string
 	FolderNo string

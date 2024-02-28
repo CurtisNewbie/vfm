@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/curtisnewbie/gocommon/common"
+	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	vault "github.com/curtisnewbie/user-vault/api"
 	"github.com/sirupsen/logrus"
@@ -14,7 +14,6 @@ import (
 
 func testUser() common.User {
 	return common.User{
-		UserId:   1,
 		UserNo:   "UE202205142310076187414",
 		Username: "zhuangyongj",
 	}

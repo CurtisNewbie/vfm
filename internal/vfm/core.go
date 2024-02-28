@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/curtisnewbie/gocommon/common"
 	fstore "github.com/curtisnewbie/mini-fstore/api"
+	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	vault "github.com/curtisnewbie/user-vault/api"
 	"gorm.io/gorm"
@@ -44,7 +44,7 @@ type FileVFolder struct {
 	CreateBy   string
 	UpdateTime miso.ETime
 	UpdateBy   string
-	IsDel      common.IS_DEL
+	IsDel      bool
 }
 
 type VFolderBrief struct {
@@ -132,7 +132,7 @@ type FileInfo struct {
 	IsLogicDeleted   int
 	IsPhysicDeleted  int
 	SizeInBytes      int64
-	UploaderId       int
+	UploaderId       int    // deprecated.
 	UploaderNo       string // uploader's user_no
 	UploaderName     string
 	UploadTime       miso.ETime
@@ -298,7 +298,7 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 		}).
 		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
 			tx = tx.Table("file_info fi").
-				Where("fi.uploader_id = ?", user.UserId).
+				Where("fi.uploader_no = ?", user.UserNo).
 				Where("fi.is_logic_deleted = 0 AND fi.is_del = 0")
 
 			if req.ParentFile != nil {
@@ -335,10 +335,10 @@ func FileExists(c miso.Rail, tx *gorm.DB, req PreflightCheckReq, user common.Use
 		Select("id").
 		Where("parent_file = ?", req.ParentFileKey).
 		Where("name = ?", req.Filename).
-		Where("uploader_id = ?", user.UserId).
+		Where("uploader_no = ?", user.UserNo).
 		Where("file_type = ?", FileTypeFile).
 		Where("is_logic_deleted = ?", LDelN).
-		Where("is_del = ?", common.IS_DEL_N).
+		Where("is_del = ?", false).
 		Limit(1).
 		Scan(&id)
 
@@ -522,7 +522,7 @@ func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error 
 
 	f.IsLogicDeleted = LDelN
 	f.IsPhysicDeleted = PDelN
-	f.UploaderId = user.UserId
+	f.UploaderId = 0
 	f.UploaderName = uname
 	f.CreateBy = uname
 	f.UploadTime = now
@@ -609,7 +609,7 @@ func ListDirs(c miso.Rail, tx *gorm.DB, user common.User) ([]ListedDir, error) {
 	var dirs []ListedDir
 	e := tx.Table("file_info").
 		Select("id, uuid, name").
-		Where("uploader_id = ?", user.UserId).
+		Where("uploader_no = ?", user.UserNo).
 		Where("file_type = 'DIR'").
 		Where("is_logic_deleted = 0").
 		Where("is_del = 0").
@@ -852,7 +852,6 @@ func AddFileToVFolder(rail miso.Rail, tx *gorm.DB, req AddFileToVfolderReq, user
 	}
 
 	evt := AddFileToVfolderEvent{
-		UserId:   user.UserId,
 		Username: user.Username,
 		UserNo:   user.UserNo,
 		FolderNo: req.FolderNo,
@@ -1356,7 +1355,7 @@ func FetchFileInfoInternal(rail miso.Rail, tx *gorm.DB, req FetchFileInfoReq) (F
 
 type ValidateFileOwnerReq struct {
 	FileKey string `form:"fileKey"`
-	UserId  int    `form:"userId"`
+	UserNo  string `form:"userNo"`
 }
 
 func ValidateFileOwner(rail miso.Rail, tx *gorm.DB, q ValidateFileOwnerReq) (bool, error) {
@@ -1364,7 +1363,7 @@ func ValidateFileOwner(rail miso.Rail, tx *gorm.DB, q ValidateFileOwnerReq) (boo
 	e := tx.Select("id").
 		Table("file_info").
 		Where("uuid = ?", q.FileKey).
-		Where("uploader_id = ?", q.UserId).
+		Where("uploader_no = ?", q.UserNo).
 		Where("is_logic_deleted = 0").
 		Limit(1).
 		Scan(&id).Error
@@ -1489,7 +1488,6 @@ type UnpackZipReq struct {
 type UnpackZipExtra struct {
 	FileKey       string // file key of the zip file
 	ParentFileKey string // file key of the target directory
-	UserId        int
 	UserNo        string
 	Username      string
 }
@@ -1528,7 +1526,6 @@ func UnpackZip(rail miso.Rail, db *gorm.DB, user common.User, req UnpackZipReq) 
 	extra, err := miso.WriteJson(UnpackZipExtra{
 		FileKey:       req.FileKey,
 		ParentFileKey: dir,
-		UserId:        user.UserId,
 		UserNo:        user.UserNo,
 		Username:      user.Username,
 	})
@@ -1565,7 +1562,6 @@ func HandleZipUnpackResult(rail miso.Rail, db *gorm.DB, evt fstore.UnzipFileRepl
 				Size:       ze.Size,
 				ParentFile: extra.ParentFileKey,
 			}, common.User{
-				UserId:   extra.UserId,
 				UserNo:   extra.UserNo,
 				Username: extra.Username,
 			})

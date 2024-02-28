@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/curtisnewbie/gocommon/common"
+	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	"gorm.io/gorm"
 )
@@ -44,7 +44,7 @@ type GalleryImage struct {
 	CreateBy   string
 	UpdateTime time.Time
 	UpdateBy   string
-	IsDel      common.IS_DEL
+	IsDel      bool
 }
 
 func (GalleryImage) TableName() string {
@@ -253,7 +253,7 @@ func BatchTransferAsync(rail miso.Rail, cmd TransferGalleryImageReq, user common
 	for _, img := range cmd.Images {
 		if isValid, e := ValidateFileOwner(rail, tx, ValidateFileOwnerReq{
 			FileKey: img.FileKey,
-			UserId:  user.UserId,
+			UserNo:  user.UserNo,
 		}); e != nil || !isValid {
 			if e != nil {
 				return nil, e

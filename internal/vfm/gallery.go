@@ -3,7 +3,7 @@ package vfm
 import (
 	"fmt"
 
-	"github.com/curtisnewbie/gocommon/common"
+	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	"gorm.io/gorm"
 )
@@ -21,7 +21,7 @@ type Gallery struct {
 	CreateBy   string
 	UpdateTime miso.ETime
 	UpdateBy   string
-	IsDel      common.IS_DEL
+	IsDel      bool
 }
 
 func (Gallery) TableName() string {
@@ -162,7 +162,7 @@ func CreateGalleryForDir(rail miso.Rail, cmd CreateGalleryForDirCmd, tx *gorm.DB
 						UserNo:     cmd.UserNo,
 						CreateBy:   cmd.Username,
 						UpdateBy:   cmd.Username,
-						IsDel:      common.IS_DEL_N,
+						IsDel:      false,
 					}
 					result := tx.Omit("CreateTime", "UpdateTime").Create(gallery)
 					return result.Error
@@ -195,7 +195,7 @@ func CreateGallery(rail miso.Rail, cmd CreateGalleryCmd, user common.User, tx *g
 			UserNo:    user.UserNo,
 			CreateBy:  user.Username,
 			UpdateBy:  user.Username,
-			IsDel:     common.IS_DEL_N,
+			IsDel:     false,
 		}
 		result := tx.Omit("CreateTime", "UpdateTime").Create(gallery)
 		return gallery, result.Error

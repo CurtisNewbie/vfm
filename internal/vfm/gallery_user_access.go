@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/curtisnewbie/gocommon/common"
+	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	vault "github.com/curtisnewbie/user-vault/api"
 	"gorm.io/gorm"
@@ -19,14 +19,14 @@ type GalleryUserAccess struct {
 	CreateBy   string
 	UpdateTime time.Time
 	UpdateBy   string
-	IsDel      common.IS_DEL
+	IsDel      bool
 }
 
 type UpdateGUAIsDelCmd struct {
 	GalleryNo string
 	UserNo    string
-	IsDelFrom common.IS_DEL
-	IsDelTo   common.IS_DEL
+	IsDelFrom bool
+	IsDelTo   bool
 	UpdateBy  string
 }
 
@@ -52,7 +52,7 @@ func HasAccessToGallery(rail miso.Rail, tx *gorm.DB, userNo string, galleryNo st
 		return false, err
 	}
 
-	if userAccess == nil || common.IsDeleted(userAccess.IsDel) {
+	if userAccess == nil || userAccess.IsDel {
 		return false, nil
 	}
 
@@ -68,7 +68,7 @@ func CreateGalleryAccess(rail miso.Rail, tx *gorm.DB, userNo string, galleryNo s
 		return err
 	}
 
-	if userAccess != nil && !common.IsDeleted(userAccess.IsDel) {
+	if userAccess != nil && !userAccess.IsDel {
 		return nil
 	}
 
@@ -79,8 +79,8 @@ func CreateGalleryAccess(rail miso.Rail, tx *gorm.DB, userNo string, galleryNo s
 		e = updateUserAccessIsDelFlag(rail, tx, &UpdateGUAIsDelCmd{
 			UserNo:    userNo,
 			GalleryNo: galleryNo,
-			IsDelFrom: common.IS_DEL_N,
-			IsDelTo:   common.IS_DEL_Y,
+			IsDelFrom: false,
+			IsDelTo:   true,
 			UpdateBy:  operator,
 		})
 	}

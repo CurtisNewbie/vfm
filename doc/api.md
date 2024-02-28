@@ -286,7 +286,7 @@
       - "createBy": (string)
       - "updateTime": (int64)
       - "updateBy": (string)
-      - "isDel": (IS_DEL)
+      - "isDel": (bool)
 - POST /open/api/gallery/update
   - Description: Update gallery
   - JSON Request:
