@@ -75,8 +75,10 @@ github.com/curtisnewbie/hammer v0.0.11 h1:ICEVOuBbskURAqnngT6XBSeXCL7aLgYmhXExqr
 github.com/curtisnewbie/hammer v0.0.11/go.mod h1:PIx3nizOpL0j94dKP5K0MGznFMkxrwR3caLJSfkAFb8=
 github.com/curtisnewbie/mini-fstore v0.1.14 h1:ZZzO/HnETy3uY97ilNjhERCK6CYfC/J6A1q9qPCM7Gk=
 github.com/curtisnewbie/mini-fstore v0.1.14/go.mod h1:KGMK0+bUfXlRP6zCjV7fXLKSl20a03vmE5aWZEUHXq0=
-github.com/curtisnewbie/miso v0.0.27 h1:tL20mxzhiH6/m24Usy3khn9KuNLly9bUgTjJkgeSShg=
-github.com/curtisnewbie/miso v0.0.27/go.mod h1:hS8TSnvQgwLpEvMHBVVdR+rpbnt/6IvSY3ycTG/lw9Q=
+github.com/curtisnewbie/miso v0.0.28-0.20240302160034-a414a8b232c4 h1:imptGT23w7rdcyY+O3DGLXq2K9EK3yv9CRGlfdtYgrk=
+github.com/curtisnewbie/miso v0.0.28-0.20240302160034-a414a8b232c4/go.mod h1:Es3vFQFU1OdgrG7kyNb4hxfLKvbQOGf8iq5ucL6EbBk=
+github.com/curtisnewbie/svc v0.0.2 h1:FF0ex80NEZjyOKJdw+iu9UloSSMghK+4EYH2G0spAlo=
+github.com/curtisnewbie/svc v0.0.2/go.mod h1:Ow2lgxDwJG46p0VsVXZWm3cegzGdnn/rbT0EdXgA7wI=
 github.com/curtisnewbie/user-vault v0.0.10 h1:at0yXgALJ/ZICgMJJTDnP06paiiotwIxVeXdvuGc+hw=
 github.com/curtisnewbie/user-vault v0.0.10/go.mod h1:mU9TYDThqhB5/8n0i1WS8R5kgz09pXW6eweTet914EU=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -92,7 +94,7 @@ github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5Kwzbycv
 github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL+zU=
 github.com/fatih/color v1.13.0 h1:8LOYc1KYPPmyKMuN8QV2DNRWNbLo6LZ0iLs8+mlH53w=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
-github.com/frankban/quicktest v1.14.3 h1:FJKSZTDHjyhriyC81FLQ0LY93eSai0ZyR/ZIkd3ZUKE=
+github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
 github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
@@ -371,8 +373,8 @@ github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e h1:MRM5ITcdelLK2j1
 github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e/go.mod h1:XV66xRDqSt+GTGFMVlhk3ULuV0y9ZmzeVGR4mloJI3M=
 github.com/spf13/afero v1.9.2 h1:j49Hj62F0n+DaZ1dDCvhABaPNSGNkt32oRFxI33IEMw=
 github.com/spf13/afero v1.9.2/go.mod h1:iUV7ddyEEZPO5gA3zD4fJt6iStLlL+Lg4m2cihcDf8Y=
-github.com/spf13/cast v1.5.0 h1:rj3WzYc11XZaIZMPKmwP96zkFEnnAmV8s6XbB2aY32w=
-github.com/spf13/cast v1.5.0/go.mod h1:SpXXQ5YoyJw6s3/6cMTQuxvgRl3PCJiyaX9p6b155UU=
+github.com/spf13/cast v1.6.0 h1:GEiTHELF+vaR5dhz3VqZfFSzZjYbgeKDpBxQVS4GYJ0=
+github.com/spf13/cast v1.6.0/go.mod h1:ancEpBxwJDODSW/UG4rDrAqiKolqNNh2DX3mk86cAdo=
 github.com/spf13/jwalterweatherman v1.1.0 h1:ue6voC5bR5F8YxI5S67j9i582FU4Qvo2bmqnqMYADFk=
 github.com/spf13/jwalterweatherman v1.1.0/go.mod h1:aNWZUN0dPAAO/Ljvb5BEdw96iTZ0EXowPYD95IqWIGo=
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
