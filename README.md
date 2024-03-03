@@ -44,6 +44,10 @@ Compensate thumbnail generations, those that are images/videos (guessed by names
 curl -X POST "http://localhost:8086/compensate/thumbnail"
 ```
 
+## Schema Migration
+
+Everytime the schema is changed, a new SQL script for that specific version is maintained at `internal/schema/scripts`. The migration is automatically handled by [github.com/curtisnewbie/svc](https://github.com/curtisnewbie/svc).
+
 ## Doc
 
 - [File-Service Migration](./doc/file-service-migration.md)

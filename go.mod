@@ -11,7 +11,7 @@ require (
 require (
 	github.com/curtisnewbie/hammer v0.0.11
 	github.com/curtisnewbie/mini-fstore v0.1.14
-	github.com/curtisnewbie/miso v0.0.28-0.20240302160034-a414a8b232c4
+	github.com/curtisnewbie/miso v0.0.28-0.20240303154527-01ce53027b40
 	github.com/curtisnewbie/user-vault v0.0.10
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 )
@@ -21,7 +21,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bsm/redislock v0.0.0-20191219095057-3d76f17a9f1e // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
-	github.com/curtisnewbie/svc v0.0.2 // indirect
+	github.com/curtisnewbie/svc v0.0.4 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect

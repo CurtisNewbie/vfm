@@ -122,4 +122,15 @@ CREATE TABLE IF NOT EXISTS vfm.gallery_user_access (
   UNIQUE KEY `gallery_user` (`gallery_no`,`user_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User access to gallery';
 
-INSERT INTO schema_version (app, script, success) VALUES ("vfm", "v0.1.17.sql", 1);
+CREATE TABLE IF NOT EXISTS schema_version (
+    id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+    app VARCHAR(50) NOT NULL DEFAULT '',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    script VARCHAR(256) NOT NULL DEFAULT '',
+    success TINYINT(1) NOT NULL DEFAULT 1,
+    remark VARCHAR(256) NOT NULL DEFAULT '',
+    PRIMARY KEY (id),
+    KEY app_idx (app)
+);
+
+INSERT INTO schema_version (app, script, success, remark) VALUES ("vfm", "v0.1.17.sql", 1, "Initial Setup");

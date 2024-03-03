@@ -75,10 +75,10 @@ github.com/curtisnewbie/hammer v0.0.11 h1:ICEVOuBbskURAqnngT6XBSeXCL7aLgYmhXExqr
 github.com/curtisnewbie/hammer v0.0.11/go.mod h1:PIx3nizOpL0j94dKP5K0MGznFMkxrwR3caLJSfkAFb8=
 github.com/curtisnewbie/mini-fstore v0.1.14 h1:ZZzO/HnETy3uY97ilNjhERCK6CYfC/J6A1q9qPCM7Gk=
 github.com/curtisnewbie/mini-fstore v0.1.14/go.mod h1:KGMK0+bUfXlRP6zCjV7fXLKSl20a03vmE5aWZEUHXq0=
-github.com/curtisnewbie/miso v0.0.28-0.20240302160034-a414a8b232c4 h1:imptGT23w7rdcyY+O3DGLXq2K9EK3yv9CRGlfdtYgrk=
-github.com/curtisnewbie/miso v0.0.28-0.20240302160034-a414a8b232c4/go.mod h1:Es3vFQFU1OdgrG7kyNb4hxfLKvbQOGf8iq5ucL6EbBk=
-github.com/curtisnewbie/svc v0.0.2 h1:FF0ex80NEZjyOKJdw+iu9UloSSMghK+4EYH2G0spAlo=
-github.com/curtisnewbie/svc v0.0.2/go.mod h1:Ow2lgxDwJG46p0VsVXZWm3cegzGdnn/rbT0EdXgA7wI=
+github.com/curtisnewbie/miso v0.0.28-0.20240303154527-01ce53027b40 h1:RPOYoYC5aHFgwtJ7DUqoHZkZL/wee5RurFrfU6gkzDs=
+github.com/curtisnewbie/miso v0.0.28-0.20240303154527-01ce53027b40/go.mod h1:UFmvu4Fp4Tt8BM1IODmkQ/YqHj4tQzlHlFv1ZdLy1q8=
+github.com/curtisnewbie/svc v0.0.4 h1:Xsld9xrDWPI/Ch8C6M0zMegdyIXxJYf4TFGMRSVovnE=
+github.com/curtisnewbie/svc v0.0.4/go.mod h1:Ow2lgxDwJG46p0VsVXZWm3cegzGdnn/rbT0EdXgA7wI=
 github.com/curtisnewbie/user-vault v0.0.10 h1:at0yXgALJ/ZICgMJJTDnP06paiiotwIxVeXdvuGc+hw=
 github.com/curtisnewbie/user-vault v0.0.10/go.mod h1:mU9TYDThqhB5/8n0i1WS8R5kgz09pXW6eweTet914EU=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

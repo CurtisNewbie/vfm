@@ -4,7 +4,6 @@ import (
 	"embed"
 	"os"
 
-	"github.com/curtisnewbie/miso/middleware/svc/migrate"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	"github.com/curtisnewbie/vfm/internal/schema"
@@ -16,12 +15,8 @@ var (
 
 func PrepareServer() {
 	common.LoadBuiltinPropagationKeys()
-	miso.PreServerBootstrap(func(rail miso.Rail) error {
-		rail.Infof("vfm version: %v", Version)
-		return nil
-	})
-	// starting from v0.1.18, let svc manages the schema migration
-	migrate.EnableSchemaMigrateOnProd(schema.SchemaFs, schema.BaseDir, schema.StartingVer)
+	schema.EnableSchemaMigrateOnProd()
+	miso.PreServerBootstrap(PrintVersion)
 	miso.PreServerBootstrap(PrepareEventBus)
 	miso.PreServerBootstrap(RegisterHttpRoutes)
 }
@@ -29,4 +24,9 @@ func PrepareServer() {
 func BootstrapServer(args []string) {
 	PrepareServer()
 	miso.BootstrapServer(os.Args)
+}
+
+func PrintVersion(rail miso.Rail) error {
+	rail.Infof("vfm version: %v", Version)
+	return nil
 }
