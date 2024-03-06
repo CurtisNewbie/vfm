@@ -53,3 +53,7 @@ Everytime the schema is changed, a new SQL script for that specific version is m
 - [File-Service Migration](./doc/file-service-migration.md)
 - [Fantahsea Migration](./doc/fantahsea-migration.md)
 - [Thumbnail Generation](./doc/thumbnail.md)
+
+## Updates
+
+- Since v0.1.19, vfm will migrate schema automatically using [github.com/curtisnewbie/svc](https://github.com/curtisnewbie/svc).
