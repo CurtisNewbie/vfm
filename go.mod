@@ -11,7 +11,7 @@ require (
 require (
 	github.com/curtisnewbie/hammer v0.0.11
 	github.com/curtisnewbie/mini-fstore v0.1.14
-	github.com/curtisnewbie/miso v0.0.28-beta.1
+	github.com/curtisnewbie/miso v0.0.28
 	github.com/curtisnewbie/user-vault v0.0.10
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 )

@@ -75,8 +75,8 @@ github.com/curtisnewbie/hammer v0.0.11 h1:ICEVOuBbskURAqnngT6XBSeXCL7aLgYmhXExqr
 github.com/curtisnewbie/hammer v0.0.11/go.mod h1:PIx3nizOpL0j94dKP5K0MGznFMkxrwR3caLJSfkAFb8=
 github.com/curtisnewbie/mini-fstore v0.1.14 h1:ZZzO/HnETy3uY97ilNjhERCK6CYfC/J6A1q9qPCM7Gk=
 github.com/curtisnewbie/mini-fstore v0.1.14/go.mod h1:KGMK0+bUfXlRP6zCjV7fXLKSl20a03vmE5aWZEUHXq0=
-github.com/curtisnewbie/miso v0.0.28-beta.1 h1:/QJ3x3DpcoOoRCF0X0dooHCx82JP24KkY/D9OuZ2gHs=
-github.com/curtisnewbie/miso v0.0.28-beta.1/go.mod h1:UFmvu4Fp4Tt8BM1IODmkQ/YqHj4tQzlHlFv1ZdLy1q8=
+github.com/curtisnewbie/miso v0.0.28 h1:0A9kgclEuqMxuGeGyS4LAMtMjDMicoZ2QXlehXugV9c=
+github.com/curtisnewbie/miso v0.0.28/go.mod h1:UFmvu4Fp4Tt8BM1IODmkQ/YqHj4tQzlHlFv1ZdLy1q8=
 github.com/curtisnewbie/svc v0.0.4 h1:Xsld9xrDWPI/Ch8C6M0zMegdyIXxJYf4TFGMRSVovnE=
 github.com/curtisnewbie/svc v0.0.4/go.mod h1:Ow2lgxDwJG46p0VsVXZWm3cegzGdnn/rbT0EdXgA7wI=
 github.com/curtisnewbie/user-vault v0.0.10 h1:at0yXgALJ/ZICgMJJTDnP06paiiotwIxVeXdvuGc+hw=
