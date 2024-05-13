@@ -25,150 +25,142 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 
 	miso.BaseRoute("/open/api").Group(
 
-		miso.GroupRoute("/file",
-			miso.IGet("/upload/duplication/preflight", DupPreflightCheckEp).
-				Desc("Preflight check for duplicate file uploads").
-				Resource(ManageFilesResource),
+		miso.IGet("/file/upload/duplication/preflight", DupPreflightCheckEp).
+			Desc("Preflight check for duplicate file uploads").
+			Resource(ManageFilesResource),
 
-			miso.IGet("/parent", GetParentFileEp).
-				Desc("User fetch parent file info").
-				Resource(ManageFilesResource),
+		miso.IGet("/file/parent", GetParentFileEp).
+			Desc("User fetch parent file info").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/move-to-dir", MoveFileToDirEp).
-				Desc("User move files into directory").
-				Resource(ManageFilesResource),
+		miso.IPost("/file/move-to-dir", MoveFileToDirEp).
+			Desc("User move files into directory").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/make-dir", MakeDirEp).
-				Desc("User make directory").
-				Resource(ManageFilesResource),
+		miso.IPost("/file/make-dir", MakeDirEp).
+			Desc("User make directory").
+			Resource(ManageFilesResource),
 
-			miso.Get("/dir/list", ListDirEp).
-				Desc("User list directories").
-				Resource(ManageFilesResource),
+		miso.Get("/file/dir/list", ListDirEp).
+			Desc("User list directories").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/list", ListFilesEp).
-				Desc("User list files").
-				Resource(ManageFilesResource),
+		miso.IPost("/file/list", ListFilesEp).
+			Desc("User list files").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/delete", DeleteFileEp).
-				Desc("User delete file").
-				Resource(ManageFilesResource),
+		miso.IPost("/file/delete", DeleteFileEp).
+			Desc("User delete file").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/dir/truncate", TruncateDirEp).
-				Desc("User delete truncate directory recursively").
-				Resource(ManageFilesResource),
+		miso.IPost("/file/dir/truncate", TruncateDirEp).
+			Desc("User delete truncate directory recursively").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/delete/batch", BatchDeleteFileEp).
-				Desc("User delete file in batch").
-				Resource(ManageFilesResource),
+		miso.IPost("/file/delete/batch", BatchDeleteFileEp).
+			Desc("User delete file in batch").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/create", CreateFileEp).
-				Desc("User create file").
-				Resource(ManageFilesResource),
+		miso.IPost("/file/create", CreateFileEp).
+			Desc("User create file").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/info/update", UpdateFileEp).
-				Desc("User update file").
-				Resource(ManageFilesResource),
+		miso.IPost("/file/info/update", UpdateFileEp).
+			Desc("User update file").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/token/generate", GenFileTknEp).
-				Desc("User generate temporary token").
-				Resource(ManageFilesResource),
+		miso.IPost("/file/token/generate", GenFileTknEp).
+			Desc("User generate temporary token").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/unpack", UnpackZipEp).
-				Desc("User unpack zip").
-				Resource(ManageFilesResource),
+		miso.IPost("/file/unpack", UnpackZipEp).
+			Desc("User unpack zip").
+			Resource(ManageFilesResource),
 
-			miso.RawGet("/token/qrcode", GenFileTknQRCodeEp).
-				Desc("User generate qrcode image for temporary token").
-				DocQueryParam("token", "Generated temporary file key").
-				Public(),
-		),
+		miso.RawGet("/file/token/qrcode", GenFileTknQRCodeEp).
+			Desc("User generate qrcode image for temporary token").
+			DocQueryParam("token", "Generated temporary file key").
+			Public(),
 
-		miso.BaseRoute("/vfolder").Group(
+		miso.Get("/vfolder/brief/owned", ListVFolderBriefEp).
+			Desc("User list virtual folder briefs").
+			Resource(ManageFilesResource),
 
-			miso.Get("/brief/owned", ListVFolderBriefEp).
-				Desc("User list virtual folder briefs").
-				Resource(ManageFilesResource),
+		miso.IPost("/vfolder/list", ListVFoldersEp).
+			Desc("User list virtual folders").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/list", ListVFoldersEp).
-				Desc("User list virtual folders").
-				Resource(ManageFilesResource),
+		miso.IPost("/vfolder/create", CreateVFolderEp).
+			Desc("User create virtual folder").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/create", CreateVFolderEp).
-				Desc("User create virtual folder").
-				Resource(ManageFilesResource),
+		miso.IPost("/vfolder/file/add", VFolderAddFileEp).
+			Desc("User add file to virtual folder").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/file/add", VFolderAddFileEp).
-				Desc("User add file to virtual folder").
-				Resource(ManageFilesResource),
+		miso.IPost("/vfolder/file/remove", VFolderRemoveFileEp).
+			Desc("User remove file from virtual folder").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/file/remove", VFolderRemoveFileEp).
-				Desc("User remove file from virtual folder").
-				Resource(ManageFilesResource),
+		miso.IPost("/vfolder/share", ShareVFolderEp).
+			Desc("Share access to virtual folder").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/share", ShareVFolderEp).
-				Desc("Share access to virtual folder").
-				Resource(ManageFilesResource),
+		miso.IPost("/vfolder/access/remove", RemoveVFolderAccessEp).
+			Desc("Remove granted access to virtual folder").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/access/remove", RemoveVFolderAccessEp).
-				Desc("Remove granted access to virtual folder").
-				Resource(ManageFilesResource),
+		miso.IPost("/vfolder/granted/list", ListVFolderAccessEp).
+			Desc("List granted access to virtual folder").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/granted/list", ListVFolderAccessEp).
-				Desc("List granted access to virtual folder").
-				Resource(ManageFilesResource),
+		miso.IPost("/vfolder/remove", RemoveVFolderEp).
+			Desc("Remove virtual folder").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/remove", RemoveVFolderEp).
-				Desc("Remove virtual folder").
-				Resource(ManageFilesResource),
-		),
+		miso.Get("/gallery/brief/owned", ListGalleryBriefsEp).
+			Desc("List owned gallery brief info").
+			Resource(ManageFilesResource),
 
-		miso.BaseRoute("/gallery").Group(
+		miso.IPost("/gallery/new", CreateGalleryEp).
+			Desc("Create new gallery").
+			Resource(ManageFilesResource),
 
-			miso.Get("/brief/owned", ListGalleryBriefsEp).
-				Desc("List owned gallery brief info").
-				Resource(ManageFilesResource),
+		miso.IPost("/gallery/update", UpdateGalleryEp).
+			Desc("Update gallery").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/new", CreateGalleryEp).
-				Desc("Create new gallery").
-				Resource(ManageFilesResource),
+		miso.IPost("/gallery/delete", DeleteGalleryEp).
+			Desc("Delete gallery").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/update", UpdateGalleryEp).
-				Desc("Update gallery").
-				Resource(ManageFilesResource),
+		miso.IPost("/gallery/list", ListGalleriesEp).
+			Desc("List galleries").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/delete", DeleteGalleryEp).
-				Desc("Delete gallery").
-				Resource(ManageFilesResource),
+		miso.IPost("/gallery/access/grant", GranteGalleryAccessEp).
+			Desc("Grant access to the galleries").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/list", ListGalleriesEp).
-				Desc("List galleries").
-				Resource(ManageFilesResource),
+		miso.IPost("/gallery/access/remove", RemoveGalleryAccessEp).
+			Desc("Remove access to the galleries").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/access/grant", GranteGalleryAccessEp).
-				Desc("Grant access to the galleries").
-				Resource(ManageFilesResource),
+		miso.IPost("/gallery/access/list", ListGalleryAccessEp).
+			Desc("List granted access to the galleries").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/access/remove", RemoveGalleryAccessEp).
-				Desc("Remove access to the galleries").
-				Resource(ManageFilesResource),
+		miso.IPost("/gallery/images", ListGalleryImagesEp).
+			Desc("List images of gallery").
+			Resource(ManageFilesResource),
 
-			miso.IPost("/access/list", ListGalleryAccessEp).
-				Desc("List granted access to the galleries").
-				Resource(ManageFilesResource),
-
-			miso.IPost("/images", ListGalleryImagesEp).
-				Desc("List images of gallery").
-				Resource(ManageFilesResource),
-
-			miso.IPost("/image/transfer", TransferGalleryImageEp).
-				Desc("Host selected images on gallery").
-				Resource(ManageFilesResource),
-		),
+		miso.IPost("/gallery/image/transfer", TransferGalleryImageEp).
+			Desc("Host selected images on gallery").
+			Resource(ManageFilesResource),
 	)
 
 	// endpoints used to compensate
-	miso.GroupRoute("/compensate",
+	miso.BaseRoute("/compensate").Group(
 
 		// Compensate thumbnail generations, those that are images/videos (guessed by names) are processed to generate thumbnails
 		// curl -X POST "http://localhost:8086/compensate/thumbnail"
