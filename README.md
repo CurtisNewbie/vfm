@@ -1,5 +1,7 @@
 # vfm
 
+> ***main branch is unstable, see tagged versions in releases***
+
 vfm stands for virtual file manager. vfm doesn't manage the actual file storage, the actual files are stored by [mini-fstore](https://github.com/CurtisNewbie/mini-fstore).
 
 ## Requirements
