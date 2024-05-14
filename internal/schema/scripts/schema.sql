@@ -120,3 +120,32 @@ CREATE TABLE IF NOT EXISTS gallery_user_access (
   UNIQUE KEY `gallery_user` (`gallery_no`,`user_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User access to gallery';
 
+CREATE TABLE IF NOT EXISTS versioned_file (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT 'primary key',
+    ver_file_id VARCHAR(32) NOT NULL COMMENT 'versioned file id',
+    file_key VARCHAR(64) NOT NULL COMMENT 'file_info key',
+    size_in_bytes BIGINT NOT NULL COMMENT 'size in bytes',
+    uploader_no VARCHAR(32) NOT NULL DEFAULT '' COMMENT 'uploader user_no',
+    uploader_name VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'uploader name',
+    upload_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'upload time',
+    delete_time DATETIME DEFAULT NULL COMMENT 'when the file is logically deleted',
+    deleted TINYINT(4) NOT NULL DEFAULT '0' COMMENT 'whether the file is deleted, 0-false, 1-true',
+    ctime TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created at',
+    created_by VARCHAR(255) NOT NULL DEFAULT '' comment 'created by',
+    utime TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'updated at',
+    updated_by VARCHAR(255) NOT NULL DEFAULT '' comment 'updated by',
+    UNIQUE KEY ver_file_id_uk (ver_file_id),
+    KEY file_key_idx (file_key),
+    KEY uploader_no_idx (uploader_no)
+) ENGINE=INNODB DEFAULT CHARSET=utf8mb4 COMMENT='Versioned File';
+
+CREATE TABLE IF NOT EXISTS versioned_file_log (
+    id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT 'primary key',
+    ver_file_id VARCHAR(32) NOT NULL COMMENT 'versioned file id',
+    file_key VARCHAR(64) NOT NULL COMMENT 'file_info key',
+    ctime TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created at',
+    created_by VARCHAR(255) NOT NULL DEFAULT '' comment 'created by',
+    utime TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'updated at',
+    updated_by VARCHAR(255) NOT NULL DEFAULT '' comment 'updated by',
+    KEY ver_file_id_idx (ver_file_id)
+) ENGINE=INNODB DEFAULT CHARSET=utf8mb4 COMMENT='Versioned File Log';
