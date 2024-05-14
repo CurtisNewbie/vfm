@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS file_info (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL COMMENT 'name of the file',
   `uuid` varchar(64) NOT NULL COMMENT 'file''s uuid',
-  `is_logic_deleted` int NOT NULL DEFAULT '0' COMMENT 'whether the file is logically deleted, 0-normal, 1-deleted',
-  `is_physic_deleted` int NOT NULL DEFAULT '0' COMMENT 'whether the file is physically deleted, 0-normal, 1-deleted',
+  `is_logic_deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'whether the file is logically deleted, 0-normal, 1-deleted',
+  `is_physic_deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'whether the file is physically deleted, 0-normal, 1-deleted',
   `size_in_bytes` bigint NOT NULL COMMENT 'size of file in bytes',
   `uploader_name` varchar(255) NOT NULL DEFAULT '' COMMENT 'uploader name',
   `upload_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'upload time',
@@ -120,3 +120,4 @@ CREATE TABLE IF NOT EXISTS gallery_user_access (
   PRIMARY KEY (`id`),
   UNIQUE KEY `gallery_user` (`gallery_no`,`user_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User access to gallery';
+
