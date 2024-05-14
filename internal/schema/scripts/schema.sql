@@ -1,6 +1,7 @@
 create database if not exists vfm;
+use vfm;
 
-CREATE TABLE IF NOT EXISTS vfm.file_info (
+CREATE TABLE IF NOT EXISTS file_info (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL COMMENT 'name of the file',
   `uuid` varchar(64) NOT NULL COMMENT 'file''s uuid',
@@ -31,7 +32,7 @@ CREATE TABLE IF NOT EXISTS vfm.file_info (
   FULLTEXT KEY `name_idx` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS vfm.vfolder (
+CREATE TABLE IF NOT EXISTS vfolder (
   `id` int NOT NULL AUTO_INCREMENT,
   `folder_no` varchar(64) NOT NULL COMMENT 'folder no',
   `name` varchar(255) NOT NULL COMMENT 'name of the folder',
@@ -44,7 +45,7 @@ CREATE TABLE IF NOT EXISTS vfm.vfolder (
   UNIQUE KEY `folder_no_uk` (`folder_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Virtual folder';
 
-CREATE TABLE vfm.user_vfolder (
+CREATE TABLE user_vfolder (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_no` varchar(64) NOT NULL COMMENT 'user no',
   `username` varchar(50) DEFAULT '' COMMENT 'username',
@@ -60,7 +61,7 @@ CREATE TABLE vfm.user_vfolder (
   KEY `user_folder_idx` (`user_no`,`folder_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='User and Virtual folder join table';
 
-CREATE TABLE IF NOT EXISTS vfm.file_vfolder (
+CREATE TABLE IF NOT EXISTS file_vfolder (
   `id` int NOT NULL AUTO_INCREMENT,
   `folder_no` varchar(64) NOT NULL COMMENT 'folder no',
   `uuid` varchar(64) NOT NULL COMMENT 'file''s uuid',
@@ -73,7 +74,7 @@ CREATE TABLE IF NOT EXISTS vfm.file_vfolder (
   UNIQUE KEY `folder_file_uk` (`folder_no`,`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='File and vfolder join table';
 
-CREATE TABLE IF NOT EXISTS vfm.gallery (
+CREATE TABLE IF NOT EXISTS gallery (
   `id` int NOT NULL AUTO_INCREMENT,
   `gallery_no` varchar(32) NOT NULL DEFAULT '' COMMENT 'gallery no',
   `user_no` varchar(64) NOT NULL DEFAULT '' COMMENT 'user no',
@@ -89,7 +90,7 @@ CREATE TABLE IF NOT EXISTS vfm.gallery (
   KEY `idx_dir_file_key` (`dir_file_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Gallery';
 
-CREATE TABLE IF NOT EXISTS vfm.gallery_image (
+CREATE TABLE IF NOT EXISTS gallery_image (
   `id` int NOT NULL AUTO_INCREMENT,
   `gallery_no` varchar(32) NOT NULL DEFAULT '' COMMENT 'gallery no',
   `image_no` varchar(32) NOT NULL DEFAULT '' COMMENT 'image no',
@@ -107,7 +108,7 @@ CREATE TABLE IF NOT EXISTS vfm.gallery_image (
   KEY `gallery_no_idx` (`gallery_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Gallery Image';
 
-CREATE TABLE IF NOT EXISTS vfm.gallery_user_access (
+CREATE TABLE IF NOT EXISTS gallery_user_access (
   `id` int NOT NULL AUTO_INCREMENT,
   `gallery_no` varchar(32) NOT NULL DEFAULT '' COMMENT 'gallery no',
   `user_no` varchar(64) NOT NULL DEFAULT '' COMMENT 'user''s no',
