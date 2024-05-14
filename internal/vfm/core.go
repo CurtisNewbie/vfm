@@ -132,7 +132,6 @@ type FileInfo struct {
 	IsLogicDeleted   int
 	IsPhysicDeleted  int
 	SizeInBytes      int64
-	UploaderId       int    // deprecated.
 	UploaderNo       string // uploader's user_no
 	UploaderName     string
 	UploadTime       miso.ETime
@@ -195,7 +194,7 @@ func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, page miso.Paging, folderNo 
 	return miso.NewPageQuery[ListedFile]().
 		WithPage(page).
 		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
-			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
+			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes,
 			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.thumbnail`).
 				Order("fi.id DESC")
 		}).
@@ -293,7 +292,7 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 	return miso.NewPageQuery[ListedFile]().
 		WithPage(req.Page).
 		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
-			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes, fi.uploader_id,
+			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes,
 			fi.uploader_name, fi.upload_time, fi.file_type, fi.update_time, fi.sensitive_mode, fi.thumbnail`)
 		}).
 		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
@@ -522,7 +521,6 @@ func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error 
 
 	f.IsLogicDeleted = LDelN
 	f.IsPhysicDeleted = PDelN
-	f.UploaderId = 0
 	f.UploaderName = uname
 	f.CreateBy = uname
 	f.UploadTime = now

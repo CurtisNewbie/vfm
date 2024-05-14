@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS vfm.file_info (
   `is_logic_deleted` int NOT NULL DEFAULT '0' COMMENT 'whether the file is logically deleted, 0-normal, 1-deleted',
   `is_physic_deleted` int NOT NULL DEFAULT '0' COMMENT 'whether the file is physically deleted, 0-normal, 1-deleted',
   `size_in_bytes` bigint NOT NULL COMMENT 'size of file in bytes',
-  `uploader_id` int NOT NULL DEFAULT '0' COMMENT 'uploader id, i.e., user.id',
   `uploader_name` varchar(255) NOT NULL DEFAULT '' COMMENT 'uploader name',
   `upload_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'upload time',
   `logic_delete_time` datetime DEFAULT NULL COMMENT 'when the file is logically deleted',
@@ -28,7 +27,6 @@ CREATE TABLE IF NOT EXISTS vfm.file_info (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid_uk` (`uuid`),
   KEY `parent_file_type_idx` (`parent_file`,`file_type`),
-  KEY `uploader_id_idx` (`uploader_id`),
   KEY `uploader_no_idx` (`uploader_no`),
   FULLTEXT KEY `name_idx` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

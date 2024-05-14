@@ -1,0 +1,1 @@
+alter table file_info drop column uploader_id;
