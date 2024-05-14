@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS file_info (
   `logic_delete_time` datetime DEFAULT NULL COMMENT 'when the file is logically deleted',
   `physic_delete_time` datetime DEFAULT NULL COMMENT 'when the file is physically deleted',
   `user_group` int NOT NULL DEFAULT '1' COMMENT 'the group that the file belongs to, 0-public, 1-private',
-  `fs_group_id` int NOT NULL DEFAULT '0' COMMENT 'id of fs_group',
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'when the record is created',
   `create_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who created this record',
   `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'when the record is updated',
