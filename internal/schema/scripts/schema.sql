@@ -1,29 +1,30 @@
 create database if not exists vfm;
 use vfm;
 
-CREATE TABLE IF NOT EXISTS file_info (
-  `id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE `file_info` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL COMMENT 'name of the file',
   `uuid` varchar(64) NOT NULL COMMENT 'file''s uuid',
   `is_logic_deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'whether the file is logically deleted, 0-normal, 1-deleted',
   `is_physic_deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'whether the file is physically deleted, 0-normal, 1-deleted',
-  `size_in_bytes` bigint NOT NULL COMMENT 'size of file in bytes',
+  `size_in_bytes` bigint(20) NOT NULL COMMENT 'size of file in bytes',
   `uploader_name` varchar(255) NOT NULL DEFAULT '' COMMENT 'uploader name',
   `upload_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'upload time',
   `logic_delete_time` datetime DEFAULT NULL COMMENT 'when the file is logically deleted',
   `physic_delete_time` datetime DEFAULT NULL COMMENT 'when the file is physically deleted',
-  `user_group` int NOT NULL DEFAULT '1' COMMENT 'the group that the file belongs to, 0-public, 1-private',
+  `user_group` int(11) NOT NULL DEFAULT '1' COMMENT 'the group that the file belongs to, 0-public, 1-private',
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'when the record is created',
   `create_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who created this record',
   `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'when the record is updated',
   `update_by` varchar(255) NOT NULL DEFAULT '' COMMENT 'who updated this record',
-  `is_del` tinyint NOT NULL DEFAULT '0' COMMENT '0-normal, 1-deleted',
+  `is_del` tinyint(4) NOT NULL DEFAULT '0' COMMENT '0-normal, 1-deleted',
   `file_type` varchar(6) NOT NULL DEFAULT 'FILE' COMMENT 'file type: FILE, DIR',
   `parent_file` varchar(64) NOT NULL DEFAULT '' COMMENT 'parent file uuid',
   `fstore_file_id` varchar(32) NOT NULL DEFAULT '' COMMENT 'mini-fstore file id',
   `thumbnail` varchar(32) NOT NULL DEFAULT '' COMMENT 'thumbnail, mini-fstore file id',
   `uploader_no` varchar(32) NOT NULL DEFAULT '' COMMENT 'user no of uploader',
   `sensitive_mode` varchar(1) NOT NULL DEFAULT 'N' COMMENT 'sensitive file, Y/N',
+  `hidden` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'whether the file is hidden',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid_uk` (`uuid`),
   KEY `parent_file_type_idx` (`parent_file`,`file_type`),
@@ -122,6 +123,7 @@ CREATE TABLE IF NOT EXISTS gallery_user_access (
 
 CREATE TABLE IF NOT EXISTS versioned_file (
     id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT 'primary key',
+    name varchar(255) NOT NULL COMMENT 'name of the file',
     ver_file_id VARCHAR(32) NOT NULL COMMENT 'versioned file id',
     file_key VARCHAR(64) NOT NULL COMMENT 'file_info key',
     size_in_bytes BIGINT NOT NULL COMMENT 'size in bytes',
@@ -130,22 +132,23 @@ CREATE TABLE IF NOT EXISTS versioned_file (
     upload_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'upload time',
     delete_time DATETIME DEFAULT NULL COMMENT 'when the file is logically deleted',
     deleted TINYINT(4) NOT NULL DEFAULT '0' COMMENT 'whether the file is deleted, 0-false, 1-true',
-    ctime TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created at',
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created at',
     created_by VARCHAR(255) NOT NULL DEFAULT '' comment 'created by',
-    utime TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'updated at',
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'updated at',
     updated_by VARCHAR(255) NOT NULL DEFAULT '' comment 'updated by',
     UNIQUE KEY ver_file_id_uk (ver_file_id),
     KEY file_key_idx (file_key),
-    KEY uploader_no_idx (uploader_no)
+    KEY uploader_no_idx (uploader_no),
+    FULLTEXT KEY name_idx (name)
 ) ENGINE=INNODB DEFAULT CHARSET=utf8mb4 COMMENT='Versioned File';
 
 CREATE TABLE IF NOT EXISTS versioned_file_log (
     id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT 'primary key',
     ver_file_id VARCHAR(32) NOT NULL COMMENT 'versioned file id',
     file_key VARCHAR(64) NOT NULL COMMENT 'file_info key',
-    ctime TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created at',
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created at',
     created_by VARCHAR(255) NOT NULL DEFAULT '' comment 'created by',
-    utime TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'updated at',
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'updated at',
     updated_by VARCHAR(255) NOT NULL DEFAULT '' comment 'updated by',
     KEY ver_file_id_idx (ver_file_id)
 ) ENGINE=INNODB DEFAULT CHARSET=utf8mb4 COMMENT='Versioned File Log';

@@ -202,7 +202,8 @@ func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, page miso.Paging, folderNo 
 			return tx.Table("file_info fi").
 				Joins("LEFT JOIN file_vfolder fv ON (fi.uuid = fv.uuid AND fv.is_del = 0)").
 				Joins("LEFT JOIN user_vfolder uv ON (fv.folder_no = uv.folder_no AND uv.is_del = 0)").
-				Where("uv.user_no = ? AND uv.folder_no = ?", user.UserNo, folderNo)
+				Where("uv.user_no = ? AND uv.folder_no = ?", user.UserNo, folderNo).
+				Where("fi.hidden = 0")
 		}).Exec(rail, tx)
 }
 
@@ -298,7 +299,8 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
 			tx = tx.Table("file_info fi").
 				Where("fi.uploader_no = ?", user.UserNo).
-				Where("fi.is_logic_deleted = 0 AND fi.is_del = 0")
+				Where("fi.is_logic_deleted = 0 AND fi.is_del = 0").
+				Where("fi.hidden = 0")
 
 			if req.ParentFile != nil {
 				tx = tx.Where("fi.parent_file = ?", *req.ParentFile)

@@ -157,6 +157,22 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 		miso.IPost("/gallery/image/transfer", TransferGalleryImageEp).
 			Desc("Host selected images on gallery").
 			Resource(ManageFilesResource),
+
+		miso.IPost("/versioned-file/list", ApiListVersionedFile).
+			Desc("List versioned files").
+			Resource(ManageFilesResource),
+
+		miso.IPost("/versioned-file/create", ApiCreateVersionedFile).
+			Desc("Create versioned file").
+			Resource(ManageFilesResource),
+
+		miso.IPost("/versioned-file/update", ApiUpdateVersionedFile).
+			Desc("Update versioned file").
+			Resource(ManageFilesResource),
+
+		miso.IPost("/versioned-file/delete", ApiDelVersionedFile).
+			Desc("Delete versioned file").
+			Resource(ManageFilesResource),
 	)
 
 	// endpoints used to compensate
@@ -427,4 +443,20 @@ func GenFileTknQRCodeEp(inb *miso.Inbound) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func ApiCreateVersionedFile(inb *miso.Inbound, req ApiCreateVerFileReq) (ApiCreateVerFileRes, error) {
+	return CreateVerFile(inb.Rail(), miso.GetMySQL(), req, common.GetUser(inb.Rail()))
+}
+
+func ApiListVersionedFile(inb *miso.Inbound, req ApiListVerFileReq) (miso.PageRes[ApiListVerFileRes], error) {
+	return ListVerFile(inb.Rail(), miso.GetMySQL(), req, common.GetUser(inb.Rail()))
+}
+
+func ApiUpdateVersionedFile(inb *miso.Inbound, req ApiUpdateVerFileReq) (any, error) {
+	return nil, UpdateVerFile(inb.Rail(), miso.GetMySQL(), req, common.GetUser(inb.Rail()))
+}
+
+func ApiDelVersionedFile(inb *miso.Inbound, req ApiDelVerFileReq) (any, error) {
+	return nil, DelVerFile(inb.Rail(), miso.GetMySQL(), req, common.GetUser(inb.Rail()))
 }
