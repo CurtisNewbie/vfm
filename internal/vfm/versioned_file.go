@@ -85,8 +85,8 @@ func CreateVerFile(rail miso.Rail, db *gorm.DB, req ApiCreateVerFileReq, user co
 }
 
 type ApiUpdateVerFileReq struct {
-	VerFileId string `valid:"notEmpty" desc:"Versioned File Id"`
-	FileKey   string `valid:"notEmpty" desc:"File Key"`
+	VerFileId string `valid:"notEmpty" desc:"versioned file id"`
+	FileKey   string `valid:"notEmpty" desc:"file key"`
 }
 
 type UpdateVerFileInf struct {
@@ -166,19 +166,19 @@ func UpdateVerFile(rail miso.Rail, db *gorm.DB, req ApiUpdateVerFileReq, user co
 
 type ApiListVerFileReq struct {
 	Paging miso.Paging `desc:"paging params"`
-	Name   *string     `desc:"File name"`
+	Name   *string     `desc:"file name"`
 }
 
 type ApiListVerFileRes struct {
-	VerFileId   string     `desc:"Versioned File Id"`
-	Name        string     `desc:"File name"`
-	FileKey     string     `desc:"File key"`
-	SizeInBytes int64      `desc:"Size in bytes"`
-	UploadTime  miso.ETime `desc:"Last upload time"`
-	CreateTime  miso.ETime `desc:"Create time of the versioned file record"`
+	VerFileId   string     `desc:"versioned file id"`
+	Name        string     `desc:"file name"`
+	FileKey     string     `desc:"file key"`
+	SizeInBytes int64      `desc:"size in bytes"`
+	UploadTime  miso.ETime `desc:"last upload time"`
+	CreateTime  miso.ETime `desc:"create time of the versioned file record"`
 	UpdateTime  miso.ETime `desc:"Update time of the versioned file record"`
-	Deleted     bool       `desc:"Whether version file record is deleted"`
-	DeleteTime  miso.ETime `desc:"Delete time of the versioned file record"`
+	Deleted     bool       `desc:"whether version file record is deleted"`
+	DeleteTime  miso.ETime `desc:"delete time of the versioned file record"`
 }
 
 func ListVerFile(rail miso.Rail, db *gorm.DB, req ApiListVerFileReq, user common.User) (miso.PageRes[ApiListVerFileRes], error) {
