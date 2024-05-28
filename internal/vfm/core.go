@@ -138,7 +138,6 @@ type FileInfo struct {
 	LogicDeleteTime  miso.ETime
 	PhysicDeleteTime miso.ETime
 	UserGroup        int
-	FsGroupId        int
 	FileType         string
 	ParentFile       string
 	CreateTime       miso.ETime
