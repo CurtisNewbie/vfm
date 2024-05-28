@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	hammer "github.com/curtisnewbie/hammer/api"
 	fstore "github.com/curtisnewbie/mini-fstore/api"
 	"github.com/curtisnewbie/miso/miso"
 	"gorm.io/gorm"
@@ -24,18 +23,16 @@ const (
 )
 
 var (
-	UnzipResultNotifyPipeline        = miso.NewEventPipeline[fstore.UnzipFileReplyEvent](UnzipResultNotifyEventBus)
-	GenVideoThumbnailNotifyPipeline  = miso.NewEventPipeline[hammer.GenVideoThumbnailReplyEvent](GenVideoThumbnailNotifyEventBus)
-	CompressImgNotifyPipeline        = miso.NewEventPipeline[hammer.ImageCompressReplyEvent](CompressImgNotifyEventBus)
-	AddFileToVFolderPipeline         = miso.NewEventPipeline[AddFileToVfolderEvent](AddFileToVFolderEventBus)
-	CalcDirSizePipeline              = miso.NewEventPipeline[CalcDirSizeEvt](CalcDirSizeEventBus)
-	FileLDeletedPipeline             = miso.NewEventPipeline[StreamEvent](FileLDeletedEventBus)
-	ThumbnailUpdatedPipeline         = miso.NewEventPipeline[StreamEvent](ThumbnailUpdatedEventBus)
-	FileSavedPipeline                = miso.NewEventPipeline[StreamEvent](FileSavedEventBus)
-	AddDirGalleryImgPipeline         = miso.NewEventPipeline[CreateGalleryImgEvent](AddDirGalleryImgEventBus)
-	SyncGalleryFileDeletedPipeline   = miso.NewEventPipeline[NotifyFileDeletedEvent](SyncGalleryFileDeletedEventBus)
-	CompressImageTriggerPipeline     = miso.NewEventPipeline[hammer.ImageCompressTriggerEvent](hammer.CompressImageTriggerEventBus)
-	GenVideoThumbnailTriggerPipeline = miso.NewEventPipeline[hammer.GenVideoThumbnailTriggerEvent](hammer.GenVideoThumbnailTriggerEventBus)
+	UnzipResultNotifyPipeline       = miso.NewEventPipeline[fstore.UnzipFileReplyEvent](UnzipResultNotifyEventBus)
+	GenVideoThumbnailNotifyPipeline = miso.NewEventPipeline[fstore.GenVideoThumbnailReplyEvent](GenVideoThumbnailNotifyEventBus)
+	CompressImgNotifyPipeline       = miso.NewEventPipeline[fstore.ImageCompressReplyEvent](CompressImgNotifyEventBus)
+	AddFileToVFolderPipeline        = miso.NewEventPipeline[AddFileToVfolderEvent](AddFileToVFolderEventBus)
+	CalcDirSizePipeline             = miso.NewEventPipeline[CalcDirSizeEvt](CalcDirSizeEventBus)
+	FileLDeletedPipeline            = miso.NewEventPipeline[StreamEvent](FileLDeletedEventBus)
+	ThumbnailUpdatedPipeline        = miso.NewEventPipeline[StreamEvent](ThumbnailUpdatedEventBus)
+	FileSavedPipeline               = miso.NewEventPipeline[StreamEvent](FileSavedEventBus)
+	AddDirGalleryImgPipeline        = miso.NewEventPipeline[CreateGalleryImgEvent](AddDirGalleryImgEventBus)
+	SyncGalleryFileDeletedPipeline  = miso.NewEventPipeline[NotifyFileDeletedEvent](SyncGalleryFileDeletedEventBus)
 )
 
 func PrepareEventBus(rail miso.Rail) error {
@@ -113,20 +110,20 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 	}
 
 	if isImage(f.Name) {
-		evt := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: CompressImgNotifyEventBus}
-		if err := CompressImageTriggerPipeline.Send(rail, evt); err != nil {
+		evt := fstore.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: CompressImgNotifyEventBus}
+		if err := fstore.GenImgThumbnailPipeline.Send(rail, evt); err != nil {
 			return fmt.Errorf("failed to send %#v, uuid: %v, %v", evt, f.Uuid, err)
 		}
 		return nil
 	}
 
 	if isVideo(f.Name) {
-		evt := hammer.GenVideoThumbnailTriggerEvent{
+		evt := fstore.GenVideoThumbnailTriggerEvent{
 			Identifier: f.Uuid,
 			FileId:     f.FstoreFileId,
 			ReplyTo:    GenVideoThumbnailNotifyEventBus,
 		}
-		if err := GenVideoThumbnailTriggerPipeline.Send(rail, evt); err != nil {
+		if err := fstore.GenVidThumbnailPipeline.Send(rail, evt); err != nil {
 			return fmt.Errorf("failed to send %#v, uuid: %v, %v", evt, f.Uuid, err)
 		}
 		return nil
@@ -136,12 +133,12 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 }
 
 // hammer sends event message when the thumbnail image is compressed and saved on mini-fstore
-func OnImageCompressed(rail miso.Rail, evt hammer.ImageCompressReplyEvent) error {
+func OnImageCompressed(rail miso.Rail, evt fstore.ImageCompressReplyEvent) error {
 	rail.Infof("Receive %#v", evt)
 	return OnThumbnailGenerated(rail, miso.GetMySQL(), evt.Identifier, evt.FileId)
 }
 
-func OnVidoeThumbnailGenerated(rail miso.Rail, evt hammer.GenVideoThumbnailReplyEvent) error {
+func OnVidoeThumbnailGenerated(rail miso.Rail, evt fstore.GenVideoThumbnailReplyEvent) error {
 	rail.Infof("Receive %#v", evt)
 	return OnThumbnailGenerated(rail, miso.GetMySQL(), evt.Identifier, evt.FileId)
 }

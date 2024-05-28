@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	hammer "github.com/curtisnewbie/hammer/api"
+	fstore "github.com/curtisnewbie/mini-fstore/api"
 	"github.com/curtisnewbie/miso/miso"
 	"gorm.io/gorm"
 )
@@ -44,8 +44,8 @@ func CompensateThumbnail(rail miso.Rail, tx *gorm.DB) error {
 
 		for _, f := range files {
 			if isImage(f.Name) {
-				event := hammer.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: CompressImgNotifyEventBus}
-				if e := CompressImageTriggerPipeline.Send(rail, event); e != nil {
+				event := fstore.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: CompressImgNotifyEventBus}
+				if e := fstore.GenImgThumbnailPipeline.Send(rail, event); e != nil {
 					rail.Errorf("Failed to send CompressImageEvent, minId: %v, uuid: %v, %v", minId, f.Uuid, e)
 					return e
 				}
@@ -53,12 +53,12 @@ func CompensateThumbnail(rail miso.Rail, tx *gorm.DB) error {
 			}
 
 			if isVideo(f.Name) {
-				evt := hammer.GenVideoThumbnailTriggerEvent{
+				evt := fstore.GenVideoThumbnailTriggerEvent{
 					Identifier: f.Uuid,
 					FileId:     f.FstoreFileId,
 					ReplyTo:    GenVideoThumbnailNotifyEventBus,
 				}
-				if e := GenVideoThumbnailTriggerPipeline.Send(rail, evt); e != nil {
+				if e := fstore.GenVidThumbnailPipeline.Send(rail, evt); e != nil {
 					return fmt.Errorf("failed to send %#v, uuid: %v, %v", evt, f.Uuid, e)
 				}
 				continue
