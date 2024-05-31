@@ -110,7 +110,7 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 	}
 
 	if isImage(f.Name) {
-		evt := fstore.ImageCompressTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: CompressImgNotifyEventBus}
+		evt := fstore.ImgThumbnailTriggerEvent{Identifier: f.Uuid, FileId: f.FstoreFileId, ReplyTo: CompressImgNotifyEventBus}
 		if err := fstore.GenImgThumbnailPipeline.Send(rail, evt); err != nil {
 			return fmt.Errorf("failed to send %#v, uuid: %v, %v", evt, f.Uuid, err)
 		}
@@ -118,7 +118,7 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 	}
 
 	if isVideo(f.Name) {
-		evt := fstore.GenVideoThumbnailTriggerEvent{
+		evt := fstore.VidThumbnailTriggerEvent{
 			Identifier: f.Uuid,
 			FileId:     f.FstoreFileId,
 			ReplyTo:    GenVideoThumbnailNotifyEventBus,

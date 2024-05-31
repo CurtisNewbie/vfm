@@ -29,8 +29,7 @@
     ```ts
     let fileName: any | null = null;
     let parentFileKey: any | null = null;
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<Resp>(`${baseUrl}/open/api/file/upload/duplication/preflight?fileName=${fileName}&parentFileKey=${parentFileKey}`)
+    this.http.get<Resp>(`/open/api/file/upload/duplication/preflight?fileName=${fileName}&parentFileKey=${parentFileKey}`)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -73,8 +72,7 @@
   - Angular HttpClient Demo:
     ```ts
     let fileKey: any | null = null;
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<Resp>(`${baseUrl}/open/api/file/parent?fileKey=${fileKey}`)
+    this.http.get<Resp>(`/open/api/file/parent?fileKey=${fileKey}`)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -119,9 +117,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: MoveIntoDirReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/file/move-to-dir`, req)
+    this.http.post<Resp>(`/open/api/file/move-to-dir`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -168,9 +165,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: MakeDirReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/file/make-dir`, req)
+    this.http.post<Resp>(`/open/api/file/make-dir`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -212,8 +208,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<Resp>(`${baseUrl}/open/api/file/dir/list`)
+    this.http.get<Resp>(`/open/api/file/dir/list`)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -314,9 +309,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: ListFileReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/file/list`, req)
+    this.http.post<Resp>(`/open/api/file/list`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -359,9 +353,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: DeleteFileReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/file/delete`, req)
+    this.http.post<Resp>(`/open/api/file/delete`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -404,9 +397,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: DeleteFileReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/file/dir/truncate`, req)
+    this.http.post<Resp>(`/open/api/file/dir/truncate`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -449,9 +441,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: BatchDeleteFileReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/file/delete/batch`, req)
+    this.http.post<Resp>(`/open/api/file/delete/batch`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -498,9 +489,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: CreateFileReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/file/create`, req)
+    this.http.post<Resp>(`/open/api/file/create`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -524,7 +514,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/info/update' \
       -H 'Content-Type: application/json' \
-      -d '{"sensitiveMode":"","id":0,"name":""}'
+      -d '{"name":"","sensitiveMode":"","id":0}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -547,9 +537,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: UpdateFileReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/file/info/update`, req)
+    this.http.post<Resp>(`/open/api/file/info/update`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -594,9 +583,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: GenerateTempTokenReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/file/token/generate`, req)
+    this.http.post<Resp>(`/open/api/file/token/generate`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -619,7 +607,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/unpack' \
       -H 'Content-Type: application/json' \
-      -d '{"parentFileKey":"","fileKey":""}'
+      -d '{"fileKey":"","parentFileKey":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -641,9 +629,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: UnpackZipReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/file/unpack`, req)
+    this.http.post<Resp>(`/open/api/file/unpack`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -666,8 +653,7 @@
   - Angular HttpClient Demo:
     ```ts
     let token: any | null = null;
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<any>(`${baseUrl}/open/api/file/token/qrcode?token=${token}`)
+    this.http.get<any>(`/open/api/file/token/qrcode?token=${token}`)
       .subscribe({
         next: () => {
         },
@@ -707,8 +693,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<Resp>(`${baseUrl}/open/api/vfolder/brief/owned`)
+    this.http.get<Resp>(`/open/api/vfolder/brief/owned`)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -748,7 +733,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/list' \
       -H 'Content-Type: application/json' \
-      -d '{"paging":{"limit":0,"page":0,"total":0},"name":""}'
+      -d '{"name":"","paging":{"total":0,"limit":0,"page":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -795,9 +780,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: ListVFolderReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/vfolder/list`, req)
+    this.http.post<Resp>(`/open/api/vfolder/list`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -842,9 +826,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: CreateVFolderReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/vfolder/create`, req)
+    this.http.post<Resp>(`/open/api/vfolder/create`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -889,9 +872,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: AddFileToVfolderReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/vfolder/file/add`, req)
+    this.http.post<Resp>(`/open/api/vfolder/file/add`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -936,9 +918,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: RemoveFileFromVfolderReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/vfolder/file/remove`, req)
+    this.http.post<Resp>(`/open/api/vfolder/file/remove`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -983,9 +964,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: ShareVfolderReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/vfolder/share`, req)
+    this.http.post<Resp>(`/open/api/vfolder/share`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1008,7 +988,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/access/remove' \
       -H 'Content-Type: application/json' \
-      -d '{"userNo":"","folderNo":""}'
+      -d '{"folderNo":"","userNo":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1030,9 +1010,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: RemoveGrantedFolderAccessReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/vfolder/access/remove`, req)
+    this.http.post<Resp>(`/open/api/vfolder/access/remove`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1067,7 +1046,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/granted/list' \
       -H 'Content-Type: application/json' \
-      -d '{"paging":{"limit":0,"page":0,"total":0},"folderNo":""}'
+      -d '{"folderNo":"","paging":{"limit":0,"page":0,"total":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1109,9 +1088,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: ListGrantedFolderAccessReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/vfolder/granted/list`, req)
+    this.http.post<Resp>(`/open/api/vfolder/granted/list`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1154,9 +1132,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: RemoveVFolderReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/vfolder/remove`, req)
+    this.http.post<Resp>(`/open/api/vfolder/remove`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1196,8 +1173,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<Resp>(`${baseUrl}/open/api/gallery/brief/owned`)
+    this.http.get<Resp>(`/open/api/gallery/brief/owned`)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1264,9 +1240,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: CreateGalleryCmd | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/gallery/new`, req)
+    this.http.post<Resp>(`/open/api/gallery/new`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1289,7 +1264,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/update' \
       -H 'Content-Type: application/json' \
-      -d '{"name":"","galleryNo":""}'
+      -d '{"galleryNo":"","name":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1311,9 +1286,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: UpdateGalleryCmd | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/gallery/update`, req)
+    this.http.post<Resp>(`/open/api/gallery/update`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1356,9 +1330,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: DeleteGalleryCmd | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/gallery/delete`, req)
+    this.http.post<Resp>(`/open/api/gallery/delete`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1445,9 +1418,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: ListGalleriesCmd | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/gallery/list`, req)
+    this.http.post<Resp>(`/open/api/gallery/list`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1470,7 +1442,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/access/grant' \
       -H 'Content-Type: application/json' \
-      -d '{"username":"","galleryNo":""}'
+      -d '{"galleryNo":"","username":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1492,9 +1464,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: PermitGalleryAccessCmd | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/gallery/access/grant`, req)
+    this.http.post<Resp>(`/open/api/gallery/access/grant`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1539,9 +1510,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: RemoveGalleryAccessCmd | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/gallery/access/remove`, req)
+    this.http.post<Resp>(`/open/api/gallery/access/remove`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1578,7 +1548,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/access/list' \
       -H 'Content-Type: application/json' \
-      -d '{"galleryNo":"","paging":{"page":0,"total":0,"limit":0}}'
+      -d '{"galleryNo":"","paging":{"limit":0,"page":0,"total":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1622,9 +1592,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: ListGrantedGalleryAccessCmd | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/gallery/access/list`, req)
+    this.http.post<Resp>(`/open/api/gallery/access/list`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1658,7 +1627,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/images' \
       -H 'Content-Type: application/json' \
-      -d '{"galleryNo":"","paging":{"limit":0,"page":0,"total":0}}'
+      -d '{"paging":{"limit":0,"page":0,"total":0},"galleryNo":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1699,9 +1668,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: ListGalleryImagesCmd | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/gallery/images`, req)
+    this.http.post<Resp>(`/open/api/gallery/images`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1752,9 +1720,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: TransferGalleryImageReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/gallery/image/transfer`, req)
+    this.http.post<Resp>(`/open/api/gallery/image/transfer`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1843,9 +1810,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: ApiListVerFileReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/versioned-file/list`, req)
+    this.http.post<Resp>(`/open/api/versioned-file/list`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1894,9 +1860,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: ApiCreateVerFileReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/versioned-file/create`, req)
+    this.http.post<Resp>(`/open/api/versioned-file/create`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1941,9 +1906,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: ApiUpdateVerFileReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/versioned-file/update`, req)
+    this.http.post<Resp>(`/open/api/versioned-file/update`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -1986,9 +1950,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let req: ApiDelVerFileReq | null = null;
-    this.http.post<Resp>(`${baseUrl}/open/api/versioned-file/delete`, req)
+    this.http.post<Resp>(`/open/api/versioned-file/delete`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -2020,8 +1983,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.post<Resp>(`${baseUrl}/compensate/thumbnail`)
+    this.http.post<Resp>(`/compensate/thumbnail`)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -2053,8 +2015,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.post<Resp>(`${baseUrl}/compensate/dir/calculate-size`)
+    this.http.post<Resp>(`/compensate/dir/calculate-size`)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -2115,8 +2076,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<GnResp>(`${baseUrl}/auth/resource`)
+    this.http.get<GnResp>(`/auth/resource`)
       .subscribe({
         next: (resp: GnResp) => {
         },
@@ -2138,9 +2098,8 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
     let authorization: any | null = null;
-    this.http.get<any>(`${baseUrl}/metrics`,
+    this.http.get<any>(`/metrics`,
       {
         headers: {
           "Authorization": authorization
@@ -2163,8 +2122,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<any>(`${baseUrl}/debug/pprof`)
+    this.http.get<any>(`/debug/pprof`)
       .subscribe({
         next: () => {
         },
@@ -2182,8 +2140,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<any>(`${baseUrl}/debug/pprof/:name`)
+    this.http.get<any>(`/debug/pprof/:name`)
       .subscribe({
         next: () => {
         },
@@ -2201,8 +2158,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<any>(`${baseUrl}/debug/pprof/cmdline`)
+    this.http.get<any>(`/debug/pprof/cmdline`)
       .subscribe({
         next: () => {
         },
@@ -2220,8 +2176,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<any>(`${baseUrl}/debug/pprof/profile`)
+    this.http.get<any>(`/debug/pprof/profile`)
       .subscribe({
         next: () => {
         },
@@ -2239,8 +2194,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<any>(`${baseUrl}/debug/pprof/symbol`)
+    this.http.get<any>(`/debug/pprof/symbol`)
       .subscribe({
         next: () => {
         },
@@ -2258,8 +2212,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<any>(`${baseUrl}/debug/pprof/trace`)
+    this.http.get<any>(`/debug/pprof/trace`)
       .subscribe({
         next: () => {
         },
@@ -2279,8 +2232,7 @@
 
   - Angular HttpClient Demo:
     ```ts
-    let baseUrl: string = 'http://localhost:8086';
-    this.http.get<any>(`${baseUrl}/doc/api`)
+    this.http.get<any>(`/doc/api`)
       .subscribe({
         next: () => {
         },

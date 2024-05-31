@@ -9,8 +9,8 @@ require (
 )
 
 require (
-	github.com/curtisnewbie/mini-fstore v0.1.17-0.20240528034038-7e5a5976b1cd
-	github.com/curtisnewbie/miso v0.0.32-0.20240526151417-b10419e843b2
+	github.com/curtisnewbie/mini-fstore v0.1.17-0.20240531020202-72f4aba12abf
+	github.com/curtisnewbie/miso v0.0.33-0.20240530160438-95aed5cd8ba9
 	github.com/curtisnewbie/user-vault v0.0.10
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 )
