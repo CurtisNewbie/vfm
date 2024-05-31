@@ -95,7 +95,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/move-to-dir' \
       -H 'Content-Type: application/json' \
-      -d '{"uuid":"","parentFileUuid":""}'
+      -d '{"parentFileUuid":"","uuid":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -142,7 +142,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/make-dir' \
       -H 'Content-Type: application/json' \
-      -d '{"parentFile":"","name":""}'
+      -d '{"name":"","parentFile":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -255,7 +255,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/list' \
       -H 'Content-Type: application/json' \
-      -d '{"filename":"","folderNo":"","fileType":"","parentFile":"","sensitive":false,"paging":{"limit":0,"page":0,"total":0}}'
+      -d '{"folderNo":"","fileType":"","parentFile":"","sensitive":false,"paging":{"limit":0,"page":0,"total":0},"filename":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -733,7 +733,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/list' \
       -H 'Content-Type: application/json' \
-      -d '{"name":"","paging":{"total":0,"limit":0,"page":0}}'
+      -d '{"paging":{"limit":0,"page":0,"total":0},"name":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -850,7 +850,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/file/add' \
       -H 'Content-Type: application/json' \
-      -d '{"folderNo":"","fileKeys":[]}'
+      -d '{"fileKeys":[],"folderNo":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -942,7 +942,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/share' \
       -H 'Content-Type: application/json' \
-      -d '{"folderNo":"","username":""}'
+      -d '{"username":"","folderNo":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1627,7 +1627,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/images' \
       -H 'Content-Type: application/json' \
-      -d '{"paging":{"limit":0,"page":0,"total":0},"galleryNo":""}'
+      -d '{"galleryNo":"","paging":{"limit":0,"page":0,"total":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -2016,6 +2016,136 @@
   - Angular HttpClient Demo:
     ```ts
     this.http.post<Resp>(`/compensate/dir/calculate-size`)
+      .subscribe({
+        next: (resp: Resp) => {
+        },
+        error: (err) => {
+          console.log(err)
+        }
+      });
+    ```
+
+- PUT /bookmark/file/upload
+  - Description: Upload bookmark file
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+  - cURL:
+    ```sh
+    curl -X PUT 'http://localhost:8086/bookmark/file/upload'
+    ```
+
+  - JSON Response Object In TypeScript:
+    ```ts
+    export interface Resp {
+      errorCode?: string             // error code
+      msg?: string                   // message
+      error?: boolean                // whether the request was successful
+    }
+    ```
+
+  - Angular HttpClient Demo:
+    ```ts
+    this.http.put<Resp>(`/bookmark/file/upload`)
+      .subscribe({
+        next: (resp: Resp) => {
+        },
+        error: (err) => {
+          console.log(err)
+        }
+      });
+    ```
+
+- POST /bookmark/list
+  - Description: List bookmarks
+  - JSON Request:
+    - "name": (*string)
+    - "paging": (Paging)
+      - "limit": (int) page limit
+      - "page": (int) page number, 1-based
+      - "total": (int) total count
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+  - cURL:
+    ```sh
+    curl -X POST 'http://localhost:8086/bookmark/list' \
+      -H 'Content-Type: application/json' \
+      -d '{"name":"","paging":{"page":0,"total":0,"limit":0}}'
+    ```
+
+  - JSON Request Object In TypeScript:
+    ```ts
+    export interface ListBookmarksReq {
+      name?: string
+      paging?: Paging
+    }
+    export interface Paging {
+      limit?: number                 // page limit
+      page?: number                  // page number, 1-based
+      total?: number                 // total count
+    }
+    ```
+
+  - JSON Response Object In TypeScript:
+    ```ts
+    export interface Resp {
+      errorCode?: string             // error code
+      msg?: string                   // message
+      error?: boolean                // whether the request was successful
+    }
+    ```
+
+  - Angular HttpClient Demo:
+    ```ts
+    let req: ListBookmarksReq | null = null;
+    this.http.post<Resp>(`/bookmark/list`, req)
+      .subscribe({
+        next: (resp: Resp) => {
+        },
+        error: (err) => {
+          console.log(err)
+        }
+      });
+    ```
+
+- POST /bookmark/remove
+  - Description: Remove bookmark
+  - JSON Request:
+    - "id": (int64)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+  - cURL:
+    ```sh
+    curl -X POST 'http://localhost:8086/bookmark/remove' \
+      -H 'Content-Type: application/json' \
+      -d '{"id":0}'
+    ```
+
+  - JSON Request Object In TypeScript:
+    ```ts
+    export interface RemoveBookmarkReq {
+      id?: number
+    }
+    ```
+
+  - JSON Response Object In TypeScript:
+    ```ts
+    export interface Resp {
+      errorCode?: string             // error code
+      msg?: string                   // message
+      error?: boolean                // whether the request was successful
+    }
+    ```
+
+  - Angular HttpClient Demo:
+    ```ts
+    let req: RemoveBookmarkReq | null = null;
+    this.http.post<Resp>(`/bookmark/remove`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
