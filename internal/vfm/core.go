@@ -1082,7 +1082,7 @@ func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) 
 		}
 		return fmt.Errorf("failed to fetch file info from fstore, %v", e)
 	}
-	if fsf.Status != FileStatusNormal {
+	if fsf.Status != fstore.FileStatusNormal {
 		return miso.NewErrf("File is deleted")
 	}
 
@@ -1189,14 +1189,14 @@ func DeleteFile(rail miso.Rail, tx *gorm.DB, req DeleteFileReq, user common.User
 	}
 
 	if f.FstoreFileId != "" {
-		if e := DeleteFstoreFile(rail, f.FstoreFileId); e != nil {
-			return fmt.Errorf("failed to delete fstore file, fileId: %v, %v", f.FstoreFileId, e)
+		if err := fstore.DeleteFile(rail, f.FstoreFileId); err != nil && !errors.Is(err, fstore.ErrFileDeleted) {
+			return fmt.Errorf("failed to delete fstore file, fileId: %v, %v", f.FstoreFileId, err)
 		}
 	}
 
 	if f.Thumbnail != "" {
-		if e := DeleteFstoreFile(rail, f.Thumbnail); e != nil {
-			return fmt.Errorf("failed to delete fstore file (thumbnail), fileId: %v, %v", f.Thumbnail, e)
+		if err := fstore.DeleteFile(rail, f.Thumbnail); err != nil && !errors.Is(err, fstore.ErrFileDeleted) {
+			return fmt.Errorf("failed to delete fstore file (thumbnail), fileId: %v, %v", f.Thumbnail, err)
 		}
 	}
 
