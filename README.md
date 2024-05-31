@@ -16,11 +16,11 @@ vfm stands for virtual file manager. vfm doesn't manage the actual file storage,
 
 ## Configuration
 
-Check [miso](https://github.com/curtisnewbie/miso) and [gocommon](https://github.com/curtisnewbie/gocommon) for more about configuration.
+Check [miso](https://github.com/curtisnewbie/miso) and [gocommon](https://github.com/curtisnewbie/gocommon) for more configurations.
 
-| Property | Description | Default Value |
-| -------- | ----------- | ------------- |
-|          |             |               |
+| Property      | Description                             | Default Value |
+| ------------- | --------------------------------------- | ------------- |
+| vfm.temp-path | Temporary file path for bootmarks files | /tmp/vfm      |
 
 
 ## Updates
@@ -57,3 +57,4 @@ Everytime the schema is changed, a new SQL script for that specific version is m
 ## Updates
 
 - Since v0.1.19, vfm will migrate schema automatically using [github.com/curtisnewbie/svc](https://github.com/curtisnewbie/svc).
+- Since v0.1.20, vfm has merged [doc-indexer](https://github.com/curtisnewbie/doc-indexer) codebase.
