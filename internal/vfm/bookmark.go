@@ -67,8 +67,8 @@ func ParseNetscapeBookmark(rail miso.Rail, body io.Reader) (NetscapeBookmarkFile
 			}
 		}
 
-		rail.Debugf("tokenType: %v, text: %v, name: %v, isAttr: %v, attr: %v",
-			ttype, text, name, isAttr, attr)
+		// rail.Debugf("tokenType: %v, text: %v, name: %v, isAttr: %v, attr: %v",
+		// 	ttype, text, name, isAttr, attr)
 
 		switch ttype {
 		case html.ErrorToken:
@@ -128,7 +128,14 @@ func ProcessUploadedBookmarkFile(rail miso.Rail, path string, user common.User) 
 		return ErrUnknown.WithInternalMsg("open temp file failed, path: %v", path)
 	}
 
-	return SaveBookmarks(rail, miso.GetMySQL(), bookmarkFile, user)
+	go func() {
+		rail := rail.NextSpan()
+		err := SaveBookmarks(rail, miso.GetMySQL(), bookmarkFile, user)
+		if err != nil {
+			rail.Errorf("failed to save bookmark, user: %s, %v", user.Username, err)
+		}
+	}()
+	return nil
 }
 
 type NewBookmark struct {
@@ -145,6 +152,14 @@ func SaveBookmarks(rail miso.Rail, tx *gorm.DB, bookmarkFile NetscapeBookmarkFil
 	for i := range bookmarkFile.Bookmarks {
 		bm := bookmarkFile.Bookmarks[i]
 		md5 := BookmarkMd5(bm)
+
+		var id int
+		t := tx.Raw(`SELECT id FROM bookmark_blacklist WHERE user_no = ? and md5 = ?`, user.UserNo, md5).Scan(&id)
+		if t.RowsAffected > 0 {
+			rail.Infof("bookmark in blacklist, ignored, userNo: %s, md5: %s, name: %s", user.UserNo, md5, bm.Name)
+			continue
+		}
+
 		bookmarks = append(bookmarks, NewBookmark{
 			UserNo: user.UserNo,
 			Icon:   bm.Icon,
@@ -196,6 +211,32 @@ func ListBookmarks(rail miso.Rail, tx *gorm.DB, req ListBookmarksReq, userNo str
 		Exec(rail, tx)
 }
 
+type RemoveBookmarkInf struct {
+	UserNo string
+	Icon   string
+	Name   string
+	Href   string
+	Md5    string
+}
+
 func RemoveBookmark(rail miso.Rail, tx *gorm.DB, id int64, userNo string) error {
-	return tx.Exec("DELETE FROM bookmark WHERE user_no = ? AND id = ?", userNo, id).Error
+	return tx.Transaction(func(tx *gorm.DB) error {
+		var b RemoveBookmarkInf
+		tx = tx.Raw(`SELECT * FROM bookmark WHERE id = ?`, id).Scan(&b)
+		if tx.Error != nil {
+			return tx.Error
+		}
+		if tx.RowsAffected < 1 {
+			return miso.NewErrf("Bookmark not found")
+		}
+		if b.UserNo != userNo {
+			return miso.ErrNotPermitted
+		}
+
+		err := tx.Exec(`INSERT IGNORE INTO bookmark_blacklist (user_no, icon, name, href, md5) VALUES (?,?,?,?,?)`, b.UserNo, b.Icon, b.Name, b.Href, b.Md5).Error
+		if err != nil {
+			return err
+		}
+		return tx.Exec("DELETE FROM bookmark WHERE user_no = ? AND id = ?", userNo, id).Error
+	})
 }
