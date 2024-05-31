@@ -52,9 +52,7 @@ Everytime the schema is changed, a new SQL script for that specific version is m
 
 ## Doc
 
-- [API Doc](./doc/api.md)
-- [File-Service Migration](./doc/file-service-migration.md)
-- [Fantahsea Migration](./doc/fantahsea-migration.md)
+- [HTTP API Doc](./doc/api.md)
 - [Thumbnail Generation](./doc/thumbnail.md)
 
 ## Updates
