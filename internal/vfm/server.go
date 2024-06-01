@@ -4,6 +4,7 @@ import (
 	"embed"
 	"os"
 
+	"github.com/curtisnewbie/miso/middleware/logbot"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	"github.com/curtisnewbie/vfm/internal/schema"
@@ -16,6 +17,7 @@ var (
 func PrepareServer() {
 	common.LoadBuiltinPropagationKeys()
 	schema.EnableSchemaMigrateOnProd()
+	logbot.EnableLogbotErrLogReport()
 	miso.PreServerBootstrap(PrintVersion)
 	miso.PreServerBootstrap(PrepareEventBus)
 	miso.PreServerBootstrap(RegisterHttpRoutes)
