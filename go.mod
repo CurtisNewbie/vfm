@@ -10,9 +10,10 @@ require (
 
 require (
 	github.com/curtisnewbie/mini-fstore v0.1.17-0.20240531022517-af8794ab4a44
-	github.com/curtisnewbie/miso v0.0.33-beta.2
+	github.com/curtisnewbie/miso v0.0.33-beta.3
 	github.com/curtisnewbie/user-vault v0.0.10
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
+	golang.org/x/net v0.7.0
 )
 
 require (
@@ -71,7 +72,6 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
-	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
