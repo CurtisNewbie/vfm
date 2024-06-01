@@ -16,7 +16,7 @@ vfm stands for virtual file manager. vfm doesn't manage the actual file storage,
 
 ## Configuration
 
-Check [miso](https://github.com/curtisnewbie/miso) and [gocommon](https://github.com/curtisnewbie/gocommon) for more configurations.
+Check [miso](https://github.com/curtisnewbie/miso).
 
 | Property      | Description                             | Default Value |
 | ------------- | --------------------------------------- | ------------- |
