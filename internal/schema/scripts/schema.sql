@@ -165,3 +165,14 @@ CREATE TABLE IF NOT EXISTS bookmark (
   KEY `idx_name` (name),
   UNIQUE `uk_md5` (md5)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bookmark';
+
+CREATE TABLE IF NOT EXISTS bookmark_blacklist (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'primary key',
+  `user_no` varchar(32) NOT NULL COMMENT 'user no',
+  `icon` text COMMENT 'icon encoded blob',
+  `name` varchar(512) NOT NULL DEFAULT '' COMMENT 'bookmark name',
+  `href` varchar(1024) NOT NULL DEFAULT '' COMMENT 'bookmark href',
+  `md5` varchar(32) not null default '' comment 'md5',
+  PRIMARY KEY (`id`),
+  UNIQUE `uk_user_no_md5` (user_no, md5)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Blacklisted Bookmark';
