@@ -267,7 +267,7 @@ func TestCreateFile(t *testing.T) {
 	fakeFileId := r.Data
 	c.Infof("fake fileId: %v", fakeFileId)
 
-	e := CreateFile(c, miso.GetMySQL(), CreateFileReq{
+	_, e := CreateFile(c, miso.GetMySQL(), CreateFileReq{
 		Filename:         "myfile",
 		FakeFstoreFileId: fakeFileId,
 	}, testUser())

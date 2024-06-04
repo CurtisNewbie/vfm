@@ -29,33 +29,29 @@ func CheckVerFile(rail miso.Rail, db *gorm.DB, fileKey string, userNo string) (*
 }
 
 type ApiCreateVerFileReq struct {
-	FileKey string `valid:"notEmpty" desc:"File Key"`
+	Filename         string `json:"filename" valid:"notEmpty"`
+	FakeFstoreFileId string `json:"fstoreFileId" valid:"notEmpty"`
 }
 
 type ApiCreateVerFileRes struct {
 	VerFileId string `desc:"Versioned File Id"`
 }
 
-// Hide normal file_info record, normally, versioned_file records are created based on newly updated file.
-// We hide these records just to avoid user operations.
-func HideVfmFile(rail miso.Rail, db *gorm.DB, fileKey string, user common.User) error {
-	err := db.Exec(`
-		UPDATE file_info SET hidden = 1, update_by = ?
-		WHERE uuid = ?
-	`, user.Username, fileKey).Error
-	if err != nil {
-		return fmt.Errorf("failed to hide file_info record, %v, %v", fileKey, err)
-	}
-	return nil
-}
-
 func CreateVerFile(rail miso.Rail, db *gorm.DB, req ApiCreateVerFileReq, user common.User) (ApiCreateVerFileRes, error) {
 	var res ApiCreateVerFileRes
-	f, err := CheckVerFile(rail, db, req.FileKey, user.UserNo)
+
+	fk, err := CreateFile(rail, db, CreateFileReq{Filename: req.Filename, FakeFstoreFileId: req.FakeFstoreFileId, Hidden: true}, user)
 	if err != nil {
-		return res, err
+		return res, fmt.Errorf("failed to CreateFile, %v, %#v", err, req)
 	}
+
 	verFileId := miso.GenIdP("verf_")
+	rail.Infof("file_info record created, fileKey: %s, req: %#v", fk, req)
+
+	f, err := findFile(rail, db, fk)
+	if err != nil {
+		return res, fmt.Errorf("failed to find file_info record, %s, %v", fk, err)
+	}
 
 	err = db.Transaction(func(tx *gorm.DB) error {
 		err := tx.Exec(`
@@ -65,16 +61,10 @@ func CreateVerFile(rail miso.Rail, db *gorm.DB, req ApiCreateVerFileReq, user co
 		if err != nil {
 			return fmt.Errorf("failed to insert versioned_file, req: #%v, %w", req, err)
 		}
-
 		if err := SaveVerFileLog(rail, tx,
-			SaveVerFileLogReq{VerFileId: verFileId, FileKey: req.FileKey, Username: user.Username}); err != nil {
+			SaveVerFileLogReq{VerFileId: verFileId, FileKey: fk, Username: user.Username}); err != nil {
 			return err
 		}
-
-		if err := HideVfmFile(rail, db, req.FileKey, user); err != nil {
-			return err
-		}
-
 		return nil
 	})
 	if err != nil {
@@ -85,8 +75,9 @@ func CreateVerFile(rail miso.Rail, db *gorm.DB, req ApiCreateVerFileReq, user co
 }
 
 type ApiUpdateVerFileReq struct {
-	VerFileId string `valid:"notEmpty" desc:"versioned file id"`
-	FileKey   string `valid:"notEmpty" desc:"file key"`
+	VerFileId        string `valid:"notEmpty" desc:"versioned file id"`
+	Filename         string `json:"filename" valid:"notEmpty"`
+	FakeFstoreFileId string `json:"fstoreFileId" valid:"notEmpty"`
 }
 
 type UpdateVerFileInf struct {
@@ -106,6 +97,17 @@ func UpdateVerFile(rail miso.Rail, db *gorm.DB, req ApiUpdateVerFileReq, user co
 	}
 	defer lock.Unlock()
 
+	fk, err := CreateFile(rail, db, CreateFileReq{Filename: req.Filename, FakeFstoreFileId: req.FakeFstoreFileId, Hidden: true}, user)
+	if err != nil {
+		return fmt.Errorf("failed to CreateFile, %v, req: %#v", err, req)
+	}
+	rail.Infof("file_info record created, fileKey: %s, req: %#v", fk, req)
+
+	f, err := findFile(rail, db, fk)
+	if err != nil {
+		return fmt.Errorf("failed to find file_info record, %s, %v", fk, err)
+	}
+
 	var uvf UpdateVerFileInf
 	tx := db.Raw(`
 		SELECT file_key,uploader_no,deleted
@@ -124,18 +126,13 @@ func UpdateVerFile(rail miso.Rail, db *gorm.DB, req ApiUpdateVerFileReq, user co
 	if uvf.Deleted {
 		return miso.NewErrf("File already deleted")
 	}
-	if uvf.FileKey == req.FileKey {
-		rail.Infof("Versioned File %v already using file_key: %v", req.VerFileId, req.FileKey)
+	if uvf.FileKey == fk {
+		rail.Infof("Versioned File %v already using file_key: %v", req.VerFileId, fk)
 		return nil
 	}
 
-	f, err := CheckVerFile(rail, db, req.FileKey, user.UserNo)
-	if err != nil {
-		return err
-	}
-
 	return db.Transaction(func(tx *gorm.DB) error {
-		svlr := SaveVerFileLogReq{VerFileId: req.VerFileId, FileKey: req.FileKey, Username: user.Username}
+		svlr := SaveVerFileLogReq{VerFileId: req.VerFileId, FileKey: fk, Username: user.Username}
 		if err := SaveVerFileLog(rail, tx, svlr); err != nil {
 			return err
 		}
@@ -151,10 +148,6 @@ func UpdateVerFile(rail miso.Rail, db *gorm.DB, req ApiUpdateVerFileReq, user co
 		`, f.Uuid, f.Name, f.SizeInBytes, miso.Now(), user.Username, req.VerFileId).Error
 		if err != nil {
 			return fmt.Errorf("failed to update versioned_file, req: #%v, %w", req, err)
-		}
-
-		if err := HideVfmFile(rail, db, req.FileKey, user); err != nil {
-			return err
 		}
 
 		rail.Infof("Versioned file %v updated using %v", req.VerFileId, f.Uuid)
@@ -177,26 +170,38 @@ type ApiListVerFileRes struct {
 	UploadTime  miso.ETime `desc:"last upload time"`
 	CreateTime  miso.ETime `desc:"create time of the versioned file record"`
 	UpdateTime  miso.ETime `desc:"Update time of the versioned file record"`
-	Deleted     bool       `desc:"whether version file record is deleted"`
-	DeleteTime  miso.ETime `desc:"delete time of the versioned file record"`
+	Thumbnail   string     `desc:"thumbnail token"`
 }
 
 func ListVerFile(rail miso.Rail, db *gorm.DB, req ApiListVerFileReq, user common.User) (miso.PageRes[ApiListVerFileRes], error) {
 	return miso.NewPageQuery[ApiListVerFileRes]().
 		WithPage(req.Paging).
 		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
-			tx = tx.Table(`versioned_file`).
-				Where(`uploader_no = ?`, user.UserNo).
-				Where(`deleted = 0`)
+			tx = tx.Table(`versioned_file f`).
+				Joins("LEFT JOIN file_info fi on f.file_key = fi.uuid").
+				Where(`f.uploader_no = ?`, user.UserNo).
+				Where(`f.deleted = 0`)
 
 			if req.Name != nil && *req.Name != "" {
-				tx = tx.Where("match(name) against (? IN NATURAL LANGUAGE MODE)", *req.Name)
+				tx = tx.Where("match(f.name) against (? IN NATURAL LANGUAGE MODE)", *req.Name)
 			}
 
 			return tx
 		}).
 		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
-			return tx.Select(`ver_file_id,name,file_key,size_in_bytes,upload_time,create_time,update_time,deleted,delete_time`)
+			return tx.Select(`f.ver_file_id,f.name,f.file_key,f.size_in_bytes,f.upload_time,f.create_time,f.update_time,fi.thumbnail`)
+		}).
+		ForEach(func(t ApiListVerFileRes) ApiListVerFileRes {
+			if t.Thumbnail != "" {
+				tkn, err := GetFstoreTmpToken(rail, t.Thumbnail, "")
+				if err != nil {
+					rail.Errorf("failed to generate file token for thumbnail: %v, %v", t.Thumbnail, err)
+					t.Thumbnail = ""
+				} else {
+					t.Thumbnail = tkn
+				}
+			}
+			return t
 		}).Exec(rail, db)
 }
 
@@ -265,4 +270,64 @@ func DelVerFile(rail miso.Rail, db *gorm.DB, req ApiDelVerFileReq, user common.U
 		}
 		return nil
 	})
+}
+
+func ListVerFileHistory(rail miso.Rail, db *gorm.DB, req ApiListVerFileHistoryReq, user common.User) (miso.PageRes[ApiListVerFileHistoryRes], error) {
+	if err := checkVerFileAccess(rail, db, user.UserNo, req.VerFileId); err != nil {
+		return miso.PageRes[ApiListVerFileHistoryRes]{}, err
+	}
+
+	return miso.NewPageQuery[ApiListVerFileHistoryRes]().
+		WithPage(req.Paging).
+		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
+			tx = tx.Table(`versioned_file_log f`).
+				Joins("LEFT JOIN file_info fi on f.file_key = fi.uuid").
+				Where(`f.ver_file_id = ?`, req.VerFileId)
+			return tx
+		}).
+		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
+			return tx.Select(`f.file_key,fi.name,fi.size_in_bytes,fi.upload_time,fi.thumbnail`)
+		}).
+		ForEach(func(t ApiListVerFileHistoryRes) ApiListVerFileHistoryRes {
+			if t.Thumbnail != "" {
+				tkn, err := GetFstoreTmpToken(rail, t.Thumbnail, "")
+				if err != nil {
+					rail.Errorf("failed to generate file token for thumbnail: %v, %v", t.Thumbnail, err)
+					t.Thumbnail = ""
+				} else {
+					t.Thumbnail = tkn
+				}
+			}
+			return t
+		}).Exec(rail, db)
+}
+
+func CalcVerFileAccuSize(rail miso.Rail, db *gorm.DB, req ApiQryVerFileAccuSizeReq, user common.User) (ApiQryVerFileAccuSizeRes, error) {
+	if err := checkVerFileAccess(rail, db, user.UserNo, req.VerFileId); err != nil {
+		return ApiQryVerFileAccuSizeRes{}, err
+	}
+
+	var total int64
+	err := db.Raw(`
+	SELECT sum(fi.size_in_bytes) FROM versioned_file_log f
+	LEFT JOIN file_info fi ON f.file_key = fi.uuid
+	WHERE f.ver_file_id = ?
+	`, req.VerFileId).Scan(&total).Error
+	if err != nil {
+		return ApiQryVerFileAccuSizeRes{}, err
+	}
+	return ApiQryVerFileAccuSizeRes{SizeInBytes: total}, nil
+}
+
+func checkVerFileAccess(rail miso.Rail, db *gorm.DB, userNo string, verFileId string) error {
+	var id int
+	t := db.Raw(`SELECT id FROM versioned_file WHERE uploader_no = ? and ver_file_id = ? and deleted = 0 LIMIT 1`,
+		userNo, verFileId).Scan(&id)
+	if t.Error != nil {
+		return t.Error
+	}
+	if t.RowsAffected < 1 {
+		return miso.NewErrf("Versioned file not found")
+	}
+	return nil
 }

@@ -170,6 +170,14 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			Desc("List versioned files").
 			Resource(ManageFilesResource),
 
+		miso.IPost("/versioned-file/history", ApiListVersionedFileHistory).
+			Desc("List versioned file history").
+			Resource(ManageFilesResource),
+
+		miso.IPost("/versioned-file/accumulated-size", ApiQryVersionedFileAccuSize).
+			Desc("Query versioned file log accumulated size").
+			Resource(ManageFilesResource),
+
 		miso.IPost("/versioned-file/create", ApiCreateVersionedFile).
 			Desc("Create versioned file").
 			Resource(ManageFilesResource),
@@ -304,7 +312,8 @@ func BatchDeleteFileEp(inb *miso.Inbound, req BatchDeleteFileReq) (any, error) {
 
 func CreateFileEp(inb *miso.Inbound, req CreateFileReq) (any, error) {
 	rail := inb.Rail()
-	return nil, CreateFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
+	_, err := CreateFile(rail, miso.GetMySQL(), req, common.GetUser(rail))
+	return nil, err
 }
 
 func UpdateFileEp(inb *miso.Inbound, req UpdateFileReq) (any, error) {
@@ -546,4 +555,33 @@ func RemoveBookmarkBlacklistEp(inb *miso.Inbound, req RemoveBookmarkReq) (any, e
 	rail := inb.Rail()
 	user := common.GetUser(rail)
 	return nil, RemoveBookmarkBlacklist(rail, miso.GetMySQL(), req.Id, user.UserNo)
+}
+
+type ApiListVerFileHistoryReq struct {
+	Paging    miso.Paging `desc:"paging params"`
+	VerFileId string      `desc:"versioned file id" valid:"notEmpty"`
+}
+
+type ApiListVerFileHistoryRes struct {
+	Name        string     `desc:"file name"`
+	FileKey     string     `desc:"file key"`
+	SizeInBytes int64      `desc:"size in bytes"`
+	UploadTime  miso.ETime `desc:"last upload time"`
+	Thumbnail   string     `desc:"thumbnail token"`
+}
+
+func ApiListVersionedFileHistory(inb *miso.Inbound, req ApiListVerFileHistoryReq) (miso.PageRes[ApiListVerFileHistoryRes], error) {
+	return ListVerFileHistory(inb.Rail(), miso.GetMySQL(), req, common.GetUser(inb.Rail()))
+}
+
+type ApiQryVerFileAccuSizeReq struct {
+	VerFileId string `desc:"versioned file id" valid:"notEmpty"`
+}
+
+type ApiQryVerFileAccuSizeRes struct {
+	SizeInBytes int64 `desc:"total size in bytes"`
+}
+
+func ApiQryVersionedFileAccuSize(inb *miso.Inbound, req ApiQryVerFileAccuSizeReq) (ApiQryVerFileAccuSizeRes, error) {
+	return CalcVerFileAccuSize(inb.Rail(), miso.GetMySQL(), req, common.GetUser(inb.Rail()))
 }

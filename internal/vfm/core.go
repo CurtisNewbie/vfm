@@ -145,6 +145,7 @@ type FileInfo struct {
 	UpdateTime       miso.ETime
 	UpdateBy         string
 	IsDel            int
+	Hidden           bool
 }
 
 func (f FileInfo) IsZero() bool {
@@ -527,6 +528,7 @@ func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error 
 	f.UploadTime = now
 	f.CreateTime = now
 	f.UploaderNo = user.UserNo
+	f.Hidden = f.Hidden
 
 	err := tx.Table("file_info").
 		Omit("id", "update_time", "update_by").
@@ -1070,26 +1072,28 @@ type CreateFileReq struct {
 	Filename         string `json:"filename"`
 	FakeFstoreFileId string `json:"fstoreFileId"`
 	ParentFile       string `json:"parentFile"`
+	Hidden           bool   `json:"-"`
 }
 
-func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) error {
+func CreateFile(rail miso.Rail, tx *gorm.DB, r CreateFileReq, user common.User) (string, error) {
 	fsf, e := fstore.FetchFileInfo(rail, fstore.FetchFileInfoReq{
 		UploadFileId: r.FakeFstoreFileId,
 	})
 	if e != nil {
 		if errors.Is(e, fstore.ErrFileNotFound) || errors.Is(e, fstore.ErrFileDeleted) {
-			return miso.NewErrf("File not found or deleted")
+			return "", miso.NewErrf("File not found or deleted")
 		}
-		return fmt.Errorf("failed to fetch file info from fstore, %v", e)
+		return "", fmt.Errorf("failed to fetch file info from fstore, %v", e)
 	}
 	if fsf.Status != fstore.FileStatusNormal {
-		return miso.NewErrf("File is deleted")
+		return "", miso.NewErrf("File is deleted")
 	}
 
 	return SaveFileRecord(rail, tx, SaveFileReq{
 		Filename:   r.Filename,
 		Size:       fsf.Size,
 		FileId:     fsf.FileId,
+		Hidden:     r.Hidden,
 		ParentFile: r.ParentFile,
 	}, user)
 }
@@ -1099,26 +1103,28 @@ type SaveFileReq struct {
 	FileId     string
 	Size       int64
 	ParentFile string
+	Hidden     bool
 }
 
-func SaveFileRecord(rail miso.Rail, tx *gorm.DB, r SaveFileReq, user common.User) error {
+func SaveFileRecord(rail miso.Rail, tx *gorm.DB, r SaveFileReq, user common.User) (string, error) {
 	var f FileInfo
 	f.Name = r.Filename
 	f.Uuid = miso.GenIdP("ZZZ")
 	f.FstoreFileId = r.FileId
 	f.SizeInBytes = r.Size
 	f.FileType = FileTypeFile
+	f.Hidden = r.Hidden
 
 	if e := _saveFile(rail, tx, f, user); e != nil {
-		return e
+		return "", e
 	}
 
 	if r.ParentFile != "" {
 		if e := MoveFileToDir(rail, tx, MoveIntoDirReq{Uuid: f.Uuid, ParentFileUuid: r.ParentFile}, user); e != nil {
-			return e
+			return "", e
 		}
 	}
-	return nil
+	return f.Uuid, nil
 }
 
 func isVideo(name string) bool {
@@ -1555,7 +1561,7 @@ func HandleZipUnpackResult(rail miso.Rail, db *gorm.DB, evt fstore.UnzipFileRepl
 
 	return db.Transaction(func(tx *gorm.DB) error {
 		for _, ze := range evt.ZipEntries {
-			err := SaveFileRecord(rail, tx, SaveFileReq{
+			_, err := SaveFileRecord(rail, tx, SaveFileReq{
 				Filename:   ze.Name,
 				FileId:     ze.FileId,
 				Size:       ze.Size,

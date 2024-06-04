@@ -95,7 +95,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/move-to-dir' \
       -H 'Content-Type: application/json' \
-      -d '{"uuid":"","parentFileUuid":""}'
+      -d '{"parentFileUuid":"","uuid":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -255,7 +255,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/list' \
       -H 'Content-Type: application/json' \
-      -d '{"filename":"","folderNo":"","fileType":"","parentFile":"","sensitive":false,"paging":{"limit":0,"page":0,"total":0}}'
+      -d '{"paging":{"limit":0,"page":0,"total":0},"filename":"","folderNo":"","fileType":"","parentFile":"","sensitive":false}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -850,7 +850,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/file/add' \
       -H 'Content-Type: application/json' \
-      -d '{"fileKeys":[],"folderNo":""}'
+      -d '{"folderNo":"","fileKeys":[]}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1264,7 +1264,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/update' \
       -H 'Content-Type: application/json' \
-      -d '{"name":"","galleryNo":""}'
+      -d '{"galleryNo":"","name":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1371,7 +1371,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/list' \
       -H 'Content-Type: application/json' \
-      -d '{"paging":{"page":0,"total":0,"limit":0}}'
+      -d '{"paging":{"total":0,"limit":0,"page":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1548,7 +1548,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/access/list' \
       -H 'Content-Type: application/json' \
-      -d '{"galleryNo":"","paging":{"limit":0,"page":0,"total":0}}'
+      -d '{"galleryNo":"","paging":{"page":0,"total":0,"limit":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1627,7 +1627,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/images' \
       -H 'Content-Type: application/json' \
-      -d '{"paging":{"limit":0,"page":0,"total":0},"galleryNo":""}'
+      -d '{"galleryNo":"","paging":{"limit":0,"page":0,"total":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1756,8 +1756,7 @@
         - "uploadTime": (int64) last upload time
         - "createTime": (int64) create time of the versioned file record
         - "updateTime": (int64) Update time of the versioned file record
-        - "deleted": (bool) whether version file record is deleted
-        - "deleteTime": (int64) delete time of the versioned file record
+        - "thumbnail": (string) thumbnail token
   - cURL:
     ```sh
     curl -X POST 'http://localhost:8086/open/api/versioned-file/list' \
@@ -1803,8 +1802,7 @@
       uploadTime?: number            // last upload time
       createTime?: number            // create time of the versioned file record
       updateTime?: number            // Update time of the versioned file record
-      deleted?: boolean              // whether version file record is deleted
-      deleteTime?: number            // delete time of the versioned file record
+      thumbnail?: string             // thumbnail token
     }
     ```
 
@@ -1821,10 +1819,93 @@
       });
     ```
 
+- POST /open/api/versioned-file/history
+  - Description: List versioned file history
+  - JSON Request:
+    - "paging": (Paging) paging params
+      - "limit": (int) page limit
+      - "page": (int) page number, 1-based
+      - "total": (int) total count
+    - "verFileId": (string) versioned file id
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (PageRes[github.com/curtisnewbie/vfm/internal/vfm.ApiListVerFileHistoryRes]) response data
+      - "paging": (Paging) pagination parameters
+        - "limit": (int) page limit
+        - "page": (int) page number, 1-based
+        - "total": (int) total count
+      - "payload": ([]vfm.ApiListVerFileHistoryRes) payload values in current page
+        - "name": (string) file name
+        - "fileKey": (string) file key
+        - "sizeInBytes": (int64) size in bytes
+        - "uploadTime": (int64) last upload time
+        - "thumbnail": (string) thumbnail token
+  - cURL:
+    ```sh
+    curl -X POST 'http://localhost:8086/open/api/versioned-file/history' \
+      -H 'Content-Type: application/json' \
+      -d '{"paging":{"total":0,"limit":0,"page":0},"verFileId":""}'
+    ```
+
+  - JSON Request Object In TypeScript:
+    ```ts
+    export interface ApiListVerFileHistoryReq {
+      paging?: Paging
+      verFileId?: string             // versioned file id
+    }
+    export interface Paging {
+      limit?: number                 // page limit
+      page?: number                  // page number, 1-based
+      total?: number                 // total count
+    }
+    ```
+
+  - JSON Response Object In TypeScript:
+    ```ts
+    export interface Resp {
+      errorCode?: string             // error code
+      msg?: string                   // message
+      error?: boolean                // whether the request was successful
+      data?: PageRes
+    }
+    export interface PageRes {
+      paging?: Paging
+      payload?: ApiListVerFileHistoryRes[]
+    }
+    export interface Paging {
+      limit?: number                 // page limit
+      page?: number                  // page number, 1-based
+      total?: number                 // total count
+    }
+    export interface ApiListVerFileHistoryRes {
+      name?: string                  // file name
+      fileKey?: string               // file key
+      sizeInBytes?: number           // size in bytes
+      uploadTime?: number            // last upload time
+      thumbnail?: string             // thumbnail token
+    }
+    ```
+
+  - Angular HttpClient Demo:
+    ```ts
+    let req: ApiListVerFileHistoryReq | null = null;
+    this.http.post<Resp>(`/open/api/versioned-file/history`, req)
+      .subscribe({
+        next: (resp: Resp) => {
+        },
+        error: (err) => {
+          console.log(err)
+        }
+      });
+    ```
+
 - POST /open/api/versioned-file/create
   - Description: Create versioned file
   - JSON Request:
-    - "fileKey": (string) File Key
+    - "filename": (string)
+    - "fstoreFileId": (string)
   - JSON Response:
     - "errorCode": (string) error code
     - "msg": (string) message
@@ -1835,13 +1916,14 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/versioned-file/create' \
       -H 'Content-Type: application/json' \
-      -d '{"fileKey":""}'
+      -d '{"fstoreFileId":"","filename":""}'
     ```
 
   - JSON Request Object In TypeScript:
     ```ts
     export interface ApiCreateVerFileReq {
-      fileKey?: string               // File Key
+      filename?: string
+      fstoreFileId?: string
     }
     ```
 
@@ -1875,7 +1957,8 @@
   - Description: Update versioned file
   - JSON Request:
     - "verFileId": (string) versioned file id
-    - "fileKey": (string) file key
+    - "filename": (string)
+    - "fstoreFileId": (string)
   - JSON Response:
     - "errorCode": (string) error code
     - "msg": (string) message
@@ -1884,14 +1967,15 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/versioned-file/update' \
       -H 'Content-Type: application/json' \
-      -d '{"verFileId":"","fileKey":""}'
+      -d '{"verFileId":"","filename":"","fstoreFileId":""}'
     ```
 
   - JSON Request Object In TypeScript:
     ```ts
     export interface ApiUpdateVerFileReq {
       verFileId?: string             // versioned file id
-      fileKey?: string               // file key
+      filename?: string
+      fstoreFileId?: string
     }
     ```
 
@@ -2171,7 +2255,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/bookmark/blacklist/list' \
       -H 'Content-Type: application/json' \
-      -d '{"name":"","paging":{"limit":0,"page":0,"total":0}}'
+      -d '{"name":"","paging":{"page":0,"total":0,"limit":0}}'
     ```
 
   - JSON Request Object In TypeScript:
