@@ -286,7 +286,7 @@ func ListVerFileHistory(rail miso.Rail, db *gorm.DB, req ApiListVerFileHistoryRe
 			return tx
 		}).
 		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
-			return tx.Select(`f.file_key,fi.name,fi.size_in_bytes,fi.upload_time,fi.thumbnail`)
+			return tx.Select(`f.file_key,fi.name,fi.size_in_bytes,fi.upload_time,fi.thumbnail`).Order("f.id DESC")
 		}).
 		ForEach(func(t ApiListVerFileHistoryRes) ApiListVerFileHistoryRes {
 			if t.Thumbnail != "" {
