@@ -19,6 +19,6 @@ func init() {
 }
 
 // starting from v0.1.18, let svc manages the schema migration
-func EnableSchemaMigrateOnProd() {
-	migrate.EnableSchemaMigrateOnProd(SchemaFs, BaseDir, StartingVer)
+func EnableSchemaMigrate() {
+	migrate.EnableSchemaMigrate(SchemaFs, BaseDir, StartingVer)
 }

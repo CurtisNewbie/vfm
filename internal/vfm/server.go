@@ -16,7 +16,7 @@ var (
 
 func PrepareServer() {
 	common.LoadBuiltinPropagationKeys()
-	schema.EnableSchemaMigrateOnProd()
+	schema.EnableSchemaMigrate()
 	logbot.EnableLogbotErrLogReport()
 	miso.PreServerBootstrap(PrintVersion)
 	miso.PreServerBootstrap(PrepareEventBus)
