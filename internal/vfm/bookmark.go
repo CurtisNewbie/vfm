@@ -196,7 +196,12 @@ func ListBookmarks(rail miso.Rail, tx *gorm.DB, req ListBookmarksReq, userNo str
 	return miso.NewPageQuery[ListedBookmark]().
 		WithPage(req.Paging).
 		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
-			tx = tx.Table("bookmark").Where("user_no = ?", userNo)
+			if req.Blacklisted {
+				tx = tx.Table("bookmark_blacklist")
+			} else {
+				tx = tx.Table("bookmark")
+			}
+			tx = tx.Where("user_no = ?", userNo)
 			if req.Name != nil && *req.Name != "" {
 				tx = tx.Where("name like ?", "%"+*req.Name+"%")
 			}
@@ -239,4 +244,8 @@ func RemoveBookmark(rail miso.Rail, tx *gorm.DB, id int64, userNo string) error 
 		}
 		return tx.Exec("DELETE FROM bookmark WHERE user_no = ? AND id = ?", userNo, id).Error
 	})
+}
+
+func RemoveBookmarkBlacklist(rail miso.Rail, tx *gorm.DB, id int64, userNo string) error {
+	return tx.Exec("DELETE FROM bookmark_blacklist WHERE user_no = ? AND id = ?", userNo, id).Error
 }

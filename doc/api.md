@@ -95,7 +95,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/move-to-dir' \
       -H 'Content-Type: application/json' \
-      -d '{"parentFileUuid":"","uuid":""}'
+      -d '{"uuid":"","parentFileUuid":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -142,7 +142,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/make-dir' \
       -H 'Content-Type: application/json' \
-      -d '{"name":"","parentFile":""}'
+      -d '{"parentFile":"","name":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -255,7 +255,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/list' \
       -H 'Content-Type: application/json' \
-      -d '{"folderNo":"","fileType":"","parentFile":"","sensitive":false,"paging":{"limit":0,"page":0,"total":0},"filename":""}'
+      -d '{"filename":"","folderNo":"","fileType":"","parentFile":"","sensitive":false,"paging":{"limit":0,"page":0,"total":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -514,7 +514,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/info/update' \
       -H 'Content-Type: application/json' \
-      -d '{"name":"","sensitiveMode":"","id":0}'
+      -d '{"id":0,"name":"","sensitiveMode":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -942,7 +942,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/share' \
       -H 'Content-Type: application/json' \
-      -d '{"username":"","folderNo":""}'
+      -d '{"folderNo":"","username":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1046,7 +1046,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/granted/list' \
       -H 'Content-Type: application/json' \
-      -d '{"folderNo":"","paging":{"limit":0,"page":0,"total":0}}'
+      -d '{"paging":{"limit":0,"page":0,"total":0},"folderNo":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1264,7 +1264,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/update' \
       -H 'Content-Type: application/json' \
-      -d '{"galleryNo":"","name":""}'
+      -d '{"name":"","galleryNo":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1371,7 +1371,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/list' \
       -H 'Content-Type: application/json' \
-      -d '{"paging":{"limit":0,"page":0,"total":0}}'
+      -d '{"paging":{"page":0,"total":0,"limit":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1627,7 +1627,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/images' \
       -H 'Content-Type: application/json' \
-      -d '{"galleryNo":"","paging":{"limit":0,"page":0,"total":0}}'
+      -d '{"paging":{"limit":0,"page":0,"total":0},"galleryNo":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -2073,7 +2073,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/bookmark/list' \
       -H 'Content-Type: application/json' \
-      -d '{"name":"","paging":{"page":0,"total":0,"limit":0}}'
+      -d '{"name":"","paging":{"limit":0,"page":0,"total":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -2146,6 +2146,104 @@
     ```ts
     let req: RemoveBookmarkReq | null = null;
     this.http.post<Resp>(`/bookmark/remove`, req)
+      .subscribe({
+        next: (resp: Resp) => {
+        },
+        error: (err) => {
+          console.log(err)
+        }
+      });
+    ```
+
+- POST /bookmark/blacklist/list
+  - Description: List bookmark blacklist
+  - JSON Request:
+    - "name": (*string)
+    - "paging": (Paging)
+      - "limit": (int) page limit
+      - "page": (int) page number, 1-based
+      - "total": (int) total count
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+  - cURL:
+    ```sh
+    curl -X POST 'http://localhost:8086/bookmark/blacklist/list' \
+      -H 'Content-Type: application/json' \
+      -d '{"name":"","paging":{"limit":0,"page":0,"total":0}}'
+    ```
+
+  - JSON Request Object In TypeScript:
+    ```ts
+    export interface ListBookmarksReq {
+      name?: string
+      paging?: Paging
+    }
+    export interface Paging {
+      limit?: number                 // page limit
+      page?: number                  // page number, 1-based
+      total?: number                 // total count
+    }
+    ```
+
+  - JSON Response Object In TypeScript:
+    ```ts
+    export interface Resp {
+      errorCode?: string             // error code
+      msg?: string                   // message
+      error?: boolean                // whether the request was successful
+    }
+    ```
+
+  - Angular HttpClient Demo:
+    ```ts
+    let req: ListBookmarksReq | null = null;
+    this.http.post<Resp>(`/bookmark/blacklist/list`, req)
+      .subscribe({
+        next: (resp: Resp) => {
+        },
+        error: (err) => {
+          console.log(err)
+        }
+      });
+    ```
+
+- POST /bookmark/blacklist/remove
+  - Description: Remove bookmark blacklist
+  - JSON Request:
+    - "id": (int64)
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+  - cURL:
+    ```sh
+    curl -X POST 'http://localhost:8086/bookmark/blacklist/remove' \
+      -H 'Content-Type: application/json' \
+      -d '{"id":0}'
+    ```
+
+  - JSON Request Object In TypeScript:
+    ```ts
+    export interface RemoveBookmarkReq {
+      id?: number
+    }
+    ```
+
+  - JSON Response Object In TypeScript:
+    ```ts
+    export interface Resp {
+      errorCode?: string             // error code
+      msg?: string                   // message
+      error?: boolean                // whether the request was successful
+    }
+    ```
+
+  - Angular HttpClient Demo:
+    ```ts
+    let req: RemoveBookmarkReq | null = null;
+    this.http.post<Resp>(`/bookmark/blacklist/remove`, req)
       .subscribe({
         next: (resp: Resp) => {
         },

@@ -183,38 +183,40 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 			Resource(ManageFilesResource),
 	)
 
-	// endpoints used to compensate
-	miso.BaseRoute("/compensate").Group(
+	// --------- endpoints used to compensate -----------
+	// Compensate thumbnail generations, those that are images/videos (guessed by names) are processed to generate thumbnails
+	miso.Post("/compensate/thumbnail",
+		func(inb *miso.Inbound) (any, error) {
+			return nil, CompensateThumbnail(rail, miso.GetMySQL())
+		}).
+		Desc("Compensate thumbnail generation")
 
-		// Compensate thumbnail generations, those that are images/videos (guessed by names) are processed to generate thumbnails
-		// curl -X POST "http://localhost:8086/compensate/thumbnail"
-		miso.Post("/thumbnail",
-			func(inb *miso.Inbound) (any, error) {
-				return nil, CompensateThumbnail(rail, miso.GetMySQL())
-			}).
-			Desc("Compensate thumbnail generation"),
+	miso.Post("/compensate/dir/calculate-size",
+		func(inb *miso.Inbound) (any, error) {
+			return nil, ImMemBatchCalcDirSize(rail, miso.GetMySQL())
+		}).
+		Desc("Calculate size of all directories recursively")
 
-		// curl -X POST "http://localhost:8086/compensate/dir/calculate-size"
-		miso.Post("/dir/calculate-size",
-			func(inb *miso.Inbound) (any, error) {
-				return nil, ImMemBatchCalcDirSize(rail, miso.GetMySQL())
-			}).
-			Desc("Calculate size of all directories recursively"),
-	)
+	// -------- endpoints for managing bookmarks and bookmark blacklist --------
+	miso.Put("/bookmark/file/upload", UploadBookmarkFileEp).
+		Desc("Upload bookmark file").
+		Resource(ResourceManageBookmark)
 
-	miso.BaseRoute("/bookmark").Group(
-		miso.Put("/file/upload", UploadBookmarkFileEp).
-			Desc("Upload bookmark file").
-			Resource(ResourceManageBookmark),
+	miso.IPost[ListBookmarksReq]("/bookmark/list", ListBookmarksEp).
+		Desc("List bookmarks").
+		Resource(ResourceManageBookmark)
 
-		miso.IPost[ListBookmarksReq]("/list", ListBookmarksEp).
-			Desc("List bookmarks").
-			Resource(ResourceManageBookmark),
+	miso.IPost[RemoveBookmarkReq]("/bookmark/remove", RemoveBookmarkEp).
+		Desc("Remove bookmark").
+		Resource(ResourceManageBookmark)
 
-		miso.IPost[RemoveBookmarkReq]("/remove", RemoveBookmarkEp).
-			Desc("Remove bookmark").
-			Resource(ResourceManageBookmark),
-	)
+	miso.IPost[ListBookmarksReq]("/bookmark/blacklist/list", ListBlacklistedBookmarksEp).
+		Desc("List bookmark blacklist").
+		Resource(ResourceManageBookmark)
+
+	miso.IPost[RemoveBookmarkReq]("/bookmark/blacklist/remove", RemoveBookmarkBlacklistEp).
+		Desc("Remove bookmark blacklist").
+		Resource(ResourceManageBookmark)
 
 	return nil
 }
@@ -484,8 +486,9 @@ func ApiDelVersionedFile(inb *miso.Inbound, req ApiDelVerFileReq) (any, error) {
 }
 
 type ListBookmarksReq struct {
-	Name   *string
-	Paging miso.Paging
+	Name        *string
+	Paging      miso.Paging
+	Blacklisted bool `gorm:"-" json:"-"`
 }
 
 // Upload bookmark file endpoint.
@@ -530,4 +533,17 @@ func RemoveBookmarkEp(inb *miso.Inbound, req RemoveBookmarkReq) (any, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
 	return nil, RemoveBookmark(rail, miso.GetMySQL(), req.Id, user.UserNo)
+}
+
+func ListBlacklistedBookmarksEp(inb *miso.Inbound, req ListBookmarksReq) (any, error) {
+	rail := inb.Rail()
+	user := common.GetUser(rail)
+	req.Blacklisted = true
+	return ListBookmarks(rail, miso.GetMySQL(), req, user.UserNo)
+}
+
+func RemoveBookmarkBlacklistEp(inb *miso.Inbound, req RemoveBookmarkReq) (any, error) {
+	rail := inb.Rail()
+	user := common.GetUser(rail)
+	return nil, RemoveBookmarkBlacklist(rail, miso.GetMySQL(), req.Id, user.UserNo)
 }
