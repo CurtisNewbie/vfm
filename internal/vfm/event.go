@@ -145,7 +145,7 @@ func OnVidoeThumbnailGenerated(rail miso.Rail, evt fstore.GenVideoThumbnailReply
 
 func OnThumbnailGenerated(rail miso.Rail, tx *gorm.DB, identifier string, fileId string) error {
 	fileKey := identifier
-	lock := miso.NewRLock(rail, "file:uuid:"+fileKey)
+	lock := fileLock(rail, fileKey)
 	if err := lock.Lock(); err != nil {
 		return err
 	}

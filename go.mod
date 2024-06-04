@@ -10,7 +10,7 @@ require (
 
 require (
 	github.com/curtisnewbie/mini-fstore v0.1.17-0.20240531022517-af8794ab4a44
-	github.com/curtisnewbie/miso v0.0.34-beta.1
+	github.com/curtisnewbie/miso v0.0.34-beta.2
 	github.com/curtisnewbie/user-vault v0.0.10
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	golang.org/x/net v0.7.0

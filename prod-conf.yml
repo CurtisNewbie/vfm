@@ -38,8 +38,8 @@ rabbitmq:
 
 logging:
   rolling.file: "/usr/src/logs/vfm.log"
-  level: info
+  level: debug
 
-vfm: 
+vfm:
   site:
     host: "https://curtisnewbie.com"
