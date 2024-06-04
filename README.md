@@ -1,6 +1,6 @@
 # vfm
 
-> ***main branch is unstable, see tagged versions in releases***
+> **_main branch is unstable, see tagged versions in releases_**
 
 vfm stands for virtual file manager. vfm doesn't manage the actual file storage, the actual files are stored by [mini-fstore](https://github.com/CurtisNewbie/mini-fstore).
 
@@ -21,13 +21,12 @@ Check [miso](https://github.com/curtisnewbie/miso).
 | Property      | Description                             | Default Value |
 | ------------- | --------------------------------------- | ------------- |
 | vfm.temp-path | Temporary file path for bootmarks files | /tmp/vfm      |
-
+| vfm.site.host | Externally accessible host              |               |
 
 ## Updates
 
 - Since v0.0.4, `vfm` relies on `evnet-pump` to listen to the binlog events. Whenever a new `file_info` record is inserted, the `event-pump` sends MQ to `vfm`, which triggers the image compression workflow if the file is an image.
-- Since v0.0.8
-    - Users can only share files using `vfolder`, field `file_info.user_group` and table `file_sharing` are deprecated.
+- Since v0.0.8, Users can only share files using `vfolder`, field `file_info.user_group` and table `file_sharing` are deprecated.
 - Since v0.1.3, [fantahsea](https://github.com/curtisnewbie/fantahsea) has been merged into vfm codebase, see [Fantahsea Migration](./doc/fantahsea-migration.md).
 - Since v0.1.17, file tag functionality is removed.
 
