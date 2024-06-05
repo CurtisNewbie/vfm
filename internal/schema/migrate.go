@@ -3,7 +3,7 @@ package schema
 import (
 	"embed"
 
-	"github.com/curtisnewbie/miso/middleware/svc/migrate"
+	"github.com/curtisnewbie/miso/middleware/svc"
 )
 
 //go:embed scripts/*.sql
@@ -15,10 +15,10 @@ const (
 )
 
 func init() {
-	migrate.ExcludeSchemaFile("schema.sql")
+	svc.ExcludeSchemaFile("schema.sql")
 }
 
 // starting from v0.1.18, let svc manages the schema migration
 func EnableSchemaMigrate() {
-	migrate.EnableSchemaMigrate(SchemaFs, BaseDir, StartingVer)
+	svc.EnableSchemaMigrate(SchemaFs, BaseDir, StartingVer)
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	fstore "github.com/curtisnewbie/mini-fstore/api"
+	"github.com/curtisnewbie/miso/middleware/rabbit"
 	"github.com/curtisnewbie/miso/miso"
 	"gorm.io/gorm"
 )
@@ -23,16 +24,16 @@ const (
 )
 
 var (
-	UnzipResultNotifyPipeline       = miso.NewEventPipeline[fstore.UnzipFileReplyEvent](UnzipResultNotifyEventBus)
-	GenVideoThumbnailNotifyPipeline = miso.NewEventPipeline[fstore.GenVideoThumbnailReplyEvent](GenVideoThumbnailNotifyEventBus)
-	CompressImgNotifyPipeline       = miso.NewEventPipeline[fstore.ImageCompressReplyEvent](CompressImgNotifyEventBus)
-	AddFileToVFolderPipeline        = miso.NewEventPipeline[AddFileToVfolderEvent](AddFileToVFolderEventBus)
-	CalcDirSizePipeline             = miso.NewEventPipeline[CalcDirSizeEvt](CalcDirSizeEventBus)
-	FileLDeletedPipeline            = miso.NewEventPipeline[StreamEvent](FileLDeletedEventBus)
-	ThumbnailUpdatedPipeline        = miso.NewEventPipeline[StreamEvent](ThumbnailUpdatedEventBus)
-	FileSavedPipeline               = miso.NewEventPipeline[StreamEvent](FileSavedEventBus)
-	AddDirGalleryImgPipeline        = miso.NewEventPipeline[CreateGalleryImgEvent](AddDirGalleryImgEventBus)
-	SyncGalleryFileDeletedPipeline  = miso.NewEventPipeline[NotifyFileDeletedEvent](SyncGalleryFileDeletedEventBus)
+	UnzipResultNotifyPipeline       = rabbit.NewEventPipeline[fstore.UnzipFileReplyEvent](UnzipResultNotifyEventBus)
+	GenVideoThumbnailNotifyPipeline = rabbit.NewEventPipeline[fstore.GenVideoThumbnailReplyEvent](GenVideoThumbnailNotifyEventBus)
+	CompressImgNotifyPipeline       = rabbit.NewEventPipeline[fstore.ImageCompressReplyEvent](CompressImgNotifyEventBus)
+	AddFileToVFolderPipeline        = rabbit.NewEventPipeline[AddFileToVfolderEvent](AddFileToVFolderEventBus)
+	CalcDirSizePipeline             = rabbit.NewEventPipeline[CalcDirSizeEvt](CalcDirSizeEventBus)
+	FileLDeletedPipeline            = rabbit.NewEventPipeline[StreamEvent](FileLDeletedEventBus)
+	ThumbnailUpdatedPipeline        = rabbit.NewEventPipeline[StreamEvent](ThumbnailUpdatedEventBus)
+	FileSavedPipeline               = rabbit.NewEventPipeline[StreamEvent](FileSavedEventBus)
+	AddDirGalleryImgPipeline        = rabbit.NewEventPipeline[CreateGalleryImgEvent](AddDirGalleryImgEventBus)
+	SyncGalleryFileDeletedPipeline  = rabbit.NewEventPipeline[NotifyFileDeletedEvent](SyncGalleryFileDeletedEventBus)
 )
 
 func PrepareEventBus(rail miso.Rail) error {

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/curtisnewbie/miso/middleware/rabbit"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	vault "github.com/curtisnewbie/user-vault/api"
@@ -43,9 +44,9 @@ func corePreTest(t *testing.T) {
 		t.Fatal(e)
 	}
 
-	miso.SetProp(miso.PropRabbitMqUsername, "guest")
-	miso.SetProp(miso.PropRabbitMqPassword, "guest")
-	if e := miso.StartRabbitMqClient(rail); e != nil {
+	miso.SetProp(rabbit.PropRabbitMqUsername, "guest")
+	miso.SetProp(rabbit.PropRabbitMqPassword, "guest")
+	if e := rabbit.StartRabbitMqClient(rail); e != nil {
 		t.Fatal(e)
 	}
 	miso.SetProp("client.addr.fstore.host", "localhost")

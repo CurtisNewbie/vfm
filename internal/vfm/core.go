@@ -1004,28 +1004,6 @@ func ListGrantedFolderAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedFolderA
 	if e != nil {
 		return ListGrantedFolderAccessRes{}, fmt.Errorf("failed to count granted folder access, req: %+v, %v", req, e)
 	}
-
-	userNos := []string{}
-	for _, p := range l {
-		if p.Username == "" {
-			userNos = append(userNos, p.UserNo)
-		}
-	}
-
-	if len(userNos) > 0 { // since v0.0.4 this is not needed anymore, but we keep it here for backward compatibility
-		unr, e := vault.FetchUsernames(rail, vault.FetchUsernameReq{UserNos: userNos})
-		if e != nil {
-			rail.Errorf("Failed to fetch usernames, %v", e)
-		} else {
-			for i, p := range l {
-				if name, ok := unr.UserNoToUsername[p.UserNo]; ok {
-					p.Username = name
-					l[i] = p
-				}
-			}
-		}
-	}
-
 	return ListGrantedFolderAccessRes{Payload: l, Page: miso.RespPage(req.Page, total)}, nil
 }
 

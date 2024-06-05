@@ -38,7 +38,7 @@ rabbitmq:
 
 logging:
   rolling.file: "/usr/src/logs/vfm.log"
-  level: debug
+  level: info
 
 vfm:
   site:
