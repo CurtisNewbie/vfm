@@ -95,7 +95,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/move-to-dir' \
       -H 'Content-Type: application/json' \
-      -d '{"parentFileUuid":"","uuid":""}'
+      -d '{"uuid":"","parentFileUuid":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -255,7 +255,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/list' \
       -H 'Content-Type: application/json' \
-      -d '{"paging":{"limit":0,"page":0,"total":0},"filename":"","folderNo":"","fileType":"","parentFile":"","sensitive":false}'
+      -d '{"sensitive":false,"paging":{"limit":0,"page":0,"total":0},"filename":"","folderNo":"","fileType":"","parentFile":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -514,7 +514,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/info/update' \
       -H 'Content-Type: application/json' \
-      -d '{"id":0,"name":"","sensitiveMode":""}'
+      -d '{"sensitiveMode":"","id":0,"name":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1371,7 +1371,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/list' \
       -H 'Content-Type: application/json' \
-      -d '{"paging":{"total":0,"limit":0,"page":0}}'
+      -d '{"paging":{"limit":0,"page":0,"total":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1548,7 +1548,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/access/list' \
       -H 'Content-Type: application/json' \
-      -d '{"galleryNo":"","paging":{"page":0,"total":0,"limit":0}}'
+      -d '{"galleryNo":"","paging":{"total":0,"limit":0,"page":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1846,7 +1846,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/versioned-file/history' \
       -H 'Content-Type: application/json' \
-      -d '{"paging":{"total":0,"limit":0,"page":0},"verFileId":""}'
+      -d '{"paging":{"limit":0,"page":0,"total":0},"verFileId":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1892,6 +1892,56 @@
     ```ts
     let req: ApiListVerFileHistoryReq | null = null;
     this.http.post<Resp>(`/open/api/versioned-file/history`, req)
+      .subscribe({
+        next: (resp: Resp) => {
+        },
+        error: (err) => {
+          console.log(err)
+        }
+      });
+    ```
+
+- POST /open/api/versioned-file/accumulated-size
+  - Description: Query versioned file log accumulated size
+  - JSON Request:
+    - "verFileId": (string) versioned file id
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+    - "data": (ApiQryVerFileAccuSizeRes) response data
+      - "sizeInBytes": (int64) total size in bytes
+  - cURL:
+    ```sh
+    curl -X POST 'http://localhost:8086/open/api/versioned-file/accumulated-size' \
+      -H 'Content-Type: application/json' \
+      -d '{"verFileId":""}'
+    ```
+
+  - JSON Request Object In TypeScript:
+    ```ts
+    export interface ApiQryVerFileAccuSizeReq {
+      verFileId?: string             // versioned file id
+    }
+    ```
+
+  - JSON Response Object In TypeScript:
+    ```ts
+    export interface Resp {
+      errorCode?: string             // error code
+      msg?: string                   // message
+      error?: boolean                // whether the request was successful
+      data?: ApiQryVerFileAccuSizeRes
+    }
+    export interface ApiQryVerFileAccuSizeRes {
+      sizeInBytes?: number           // total size in bytes
+    }
+    ```
+
+  - Angular HttpClient Demo:
+    ```ts
+    let req: ApiQryVerFileAccuSizeReq | null = null;
+    this.http.post<Resp>(`/open/api/versioned-file/accumulated-size`, req)
       .subscribe({
         next: (resp: Resp) => {
         },
@@ -2255,7 +2305,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/bookmark/blacklist/list' \
       -H 'Content-Type: application/json' \
-      -d '{"name":"","paging":{"page":0,"total":0,"limit":0}}'
+      -d '{"paging":{"total":0,"limit":0,"page":0},"name":""}'
     ```
 
   - JSON Request Object In TypeScript:
