@@ -73,8 +73,8 @@ github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403/go.mod h1:WmhPx2Nbnht
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/curtisnewbie/mini-fstore v0.1.18-0.20240608034057-f694d3b1bc18 h1:a70UNDbJPKUxffJMMFMpZzs9f7r6ZFrcQIIWzWMIjso=
 github.com/curtisnewbie/mini-fstore v0.1.18-0.20240608034057-f694d3b1bc18/go.mod h1:2M9umX8bTiyH/+NOHtoaRurlEVMPA3iml6Cyj6xtlv8=
-github.com/curtisnewbie/miso v0.1.0-beta.4.0.20240608040602-c060bb81bb20 h1:bxQwMCKSHuCNPyt1YRkh3KkBsc1/ZCztho+Uf5+zoVU=
-github.com/curtisnewbie/miso v0.1.0-beta.4.0.20240608040602-c060bb81bb20/go.mod h1:LuUtaY5YmWVjBOoN2AqSEFObrl3EUfr0WN0tB/dpoJI=
+github.com/curtisnewbie/miso v0.1.0 h1:U5EKOibkmZXgZpo9ZTKrlH2LyBDP1rFOsge5MpGfEmU=
+github.com/curtisnewbie/miso v0.1.0/go.mod h1:LuUtaY5YmWVjBOoN2AqSEFObrl3EUfr0WN0tB/dpoJI=
 github.com/curtisnewbie/svc v0.0.8 h1:fiDeVk1v2ygDAF2YfY2fn3piX6vfporUWGOY9YpcVRc=
 github.com/curtisnewbie/svc v0.0.8/go.mod h1:Ow2lgxDwJG46p0VsVXZWm3cegzGdnn/rbT0EdXgA7wI=
 github.com/curtisnewbie/user-vault v0.0.23-0.20240608035658-1df1e456f3dd h1:it76FFVcWAMxFGPEAKFUQs1PuyaGtVq2FKf9mEtqybA=
