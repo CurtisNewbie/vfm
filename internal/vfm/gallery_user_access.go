@@ -6,6 +6,7 @@ import (
 
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
+	"github.com/curtisnewbie/miso/util"
 	vault "github.com/curtisnewbie/user-vault/api"
 	"gorm.io/gorm"
 )
@@ -146,7 +147,7 @@ type ListedGalleryAccessRes struct {
 	GalleryNo  string
 	UserNo     string
 	Username   string
-	CreateTime miso.ETime
+	CreateTime util.ETime
 }
 
 type PermitGalleryAccessCmd struct {

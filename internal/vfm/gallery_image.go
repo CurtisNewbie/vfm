@@ -6,6 +6,7 @@ import (
 
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
+	"github.com/curtisnewbie/miso/util"
 	"gorm.io/gorm"
 )
 
@@ -117,13 +118,13 @@ func CreateGalleryImage(rail miso.Rail, cmd CreateGalleryImageCmd, userNo string
 		return nil
 	}
 
-	imageNo := miso.GenNoL("IMG", 25)
+	imageNo := util.GenNoL("IMG", 25)
 	return tx.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Exec(`insert into gallery_image (gallery_no, image_no, name, file_key, create_by) values (?, ?, ?, ?, ?)`,
 			cmd.GalleryNo, imageNo, cmd.Name, cmd.FileKey, username).Error; err != nil {
 			return err
 		}
-		return tx.Exec(`update gallery set update_time = ? where gallery_no = ?`, miso.Now(), cmd.GalleryNo).Error
+		return tx.Exec(`update gallery set update_time = ? where gallery_no = ?`, util.Now(), cmd.GalleryNo).Error
 	})
 }
 
@@ -132,7 +133,7 @@ type FstoreTmpToken struct {
 	TempKey string
 }
 
-func GenFstoreTknBatch(rail miso.Rail, futures *miso.AwaitFutures[FstoreTmpToken], fileId string, name string) {
+func GenFstoreTknBatch(rail miso.Rail, futures *util.AwaitFutures[FstoreTmpToken], fileId string, name string) {
 	futures.SubmitAsync(func() (FstoreTmpToken, error) {
 		tkn, err := GetFstoreTmpToken(rail.NextSpan(), fileId, name)
 		if err != nil {
@@ -145,8 +146,8 @@ func GenFstoreTknBatch(rail miso.Rail, futures *miso.AwaitFutures[FstoreTmpToken
 	})
 }
 
-func GenFstoreTknAsync(rail miso.Rail, fileId string, name string) miso.Future[FstoreTmpToken] {
-	return miso.SubmitAsync[FstoreTmpToken](vfmPool,
+func GenFstoreTknAsync(rail miso.Rail, fileId string, name string) util.Future[FstoreTmpToken] {
+	return util.SubmitAsync[FstoreTmpToken](vfmPool,
 		func() (FstoreTmpToken, error) {
 			tkn, err := GetFstoreTmpToken(rail.NextSpan(), fileId, name)
 			if err != nil {
@@ -181,7 +182,7 @@ func ListGalleryImages(rail miso.Rail, tx *gorm.DB, cmd ListGalleryImagesCmd, us
 	}
 
 	// count total asynchronoulsy (normally, when the SELECT is successful, the COUNT doesn't really fail)
-	countFuture := miso.SubmitAsync(vfmPool, func() (int, error) {
+	countFuture := util.SubmitAsync(vfmPool, func() (int, error) {
 		var total int
 		t := tx.Raw(`select count(*) from gallery_image where gallery_no = ?`, cmd.GalleryNo).Scan(&total)
 		if t.Error == nil {
@@ -193,7 +194,7 @@ func ListGalleryImages(rail miso.Rail, tx *gorm.DB, cmd ListGalleryImagesCmd, us
 	// generate temp tokens for the actual files and the thumbnail, these are served by mini-fstore
 	images := []ImageInfo{}
 	if len(galleryImages) > 0 {
-		awaitFutures := miso.NewAwaitFutures[FstoreTmpToken](vfmPool)
+		awaitFutures := util.NewAwaitFutures[FstoreTmpToken](vfmPool)
 		for _, img := range galleryImages {
 			fi, e := findFile(rail, tx, img.FileKey)
 			if e != nil || fi == nil {

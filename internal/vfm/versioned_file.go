@@ -5,6 +5,7 @@ import (
 
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
+	"github.com/curtisnewbie/miso/util"
 	"gorm.io/gorm"
 )
 
@@ -45,7 +46,7 @@ func CreateVerFile(rail miso.Rail, db *gorm.DB, req ApiCreateVerFileReq, user co
 		return res, fmt.Errorf("failed to CreateFile, %v, %#v", err, req)
 	}
 
-	verFileId := miso.GenIdP("verf_")
+	verFileId := util.GenIdP("verf_")
 	rail.Infof("file_info record created, fileKey: %s, req: %#v", fk, req)
 
 	f, err := findFile(rail, db, fk)
@@ -57,7 +58,7 @@ func CreateVerFile(rail miso.Rail, db *gorm.DB, req ApiCreateVerFileReq, user co
 		err := tx.Exec(`
 			INSERT INTO versioned_file (ver_file_id,file_key,name,size_in_bytes,uploader_no,uploader_name,upload_time,created_by)
 			VALUES (?,?,?,?,?,?,?,?)
-		`, verFileId, f.Uuid, f.Name, f.SizeInBytes, f.UploaderNo, f.UploaderName, miso.Now(), user.Username).Error
+		`, verFileId, f.Uuid, f.Name, f.SizeInBytes, f.UploaderNo, f.UploaderName, util.Now(), user.Username).Error
 		if err != nil {
 			return fmt.Errorf("failed to insert versioned_file, req: #%v, %w", req, err)
 		}
@@ -145,7 +146,7 @@ func UpdateVerFile(rail miso.Rail, db *gorm.DB, req ApiUpdateVerFileReq, user co
 				upload_time = ?,
 				updated_by = ?
 			WHERE ver_file_id = ?
-		`, f.Uuid, f.Name, f.SizeInBytes, miso.Now(), user.Username, req.VerFileId).Error
+		`, f.Uuid, f.Name, f.SizeInBytes, util.Now(), user.Username, req.VerFileId).Error
 		if err != nil {
 			return fmt.Errorf("failed to update versioned_file, req: #%v, %w", req, err)
 		}
@@ -167,9 +168,9 @@ type ApiListVerFileRes struct {
 	Name        string     `desc:"file name"`
 	FileKey     string     `desc:"file key"`
 	SizeInBytes int64      `desc:"size in bytes"`
-	UploadTime  miso.ETime `desc:"last upload time"`
-	CreateTime  miso.ETime `desc:"create time of the versioned file record"`
-	UpdateTime  miso.ETime `desc:"Update time of the versioned file record"`
+	UploadTime  util.ETime `desc:"last upload time"`
+	CreateTime  util.ETime `desc:"create time of the versioned file record"`
+	UpdateTime  util.ETime `desc:"Update time of the versioned file record"`
 	Thumbnail   string     `desc:"thumbnail token"`
 }
 
@@ -252,7 +253,7 @@ func DelVerFile(rail miso.Rail, db *gorm.DB, req ApiDelVerFileReq, user common.U
 
 	return db.Transaction(func(tx *gorm.DB) error {
 		err := tx.Exec(`UPDATE versioned_file SET deleted = 1, updated_by = ?, delete_time = ? WHERE ver_file_id = ?`,
-			user.Username, miso.Now(), req.VerFileId).Error
+			user.Username, util.Now(), req.VerFileId).Error
 		if err != nil {
 			return fmt.Errorf("failed to mark versioend_file deleted, %v, %w", req.VerFileId, err)
 		}

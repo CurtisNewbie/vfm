@@ -10,6 +10,7 @@ import (
 
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
+	"github.com/curtisnewbie/miso/util"
 	"golang.org/x/net/html"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -103,7 +104,7 @@ func ParseNetscapeBookmark(rail miso.Rail, body io.Reader) (NetscapeBookmarkFile
 }
 
 func TransferTmpFile(rail miso.Rail, reader io.Reader) (string, error) {
-	path := TempFilePath(miso.RandAlpha(15))
+	path := TempFilePath(util.RandAlpha(15))
 
 	f, err := os.Create(path)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
+	"github.com/curtisnewbie/miso/util"
 	"gorm.io/gorm"
 )
 
@@ -17,9 +18,9 @@ type Gallery struct {
 	UserNo     string
 	Name       string
 	DirFileKey string
-	CreateTime miso.ETime
+	CreateTime util.ETime
 	CreateBy   string
-	UpdateTime miso.ETime
+	UpdateTime util.ETime
 	UpdateBy   string
 	IsDel      bool
 }
@@ -65,8 +66,8 @@ type VGallery struct {
 	GalleryNo     string     `json:"galleryNo"`
 	UserNo        string     `json:"userNo"`
 	Name          string     `json:"name"`
-	CreateTime    miso.ETime `json:"-"`
-	UpdateTime    miso.ETime `json:"-"`
+	CreateTime    util.ETime `json:"-"`
+	UpdateTime    util.ETime `json:"-"`
 	CreateBy      string     `json:"createBy"`
 	UpdateBy      string     `json:"updateBy"`
 	IsOwner       bool       `json:"isOwner"`
@@ -151,7 +152,7 @@ func CreateGalleryForDir(rail miso.Rail, cmd CreateGalleryForDirCmd, tx *gorm.DB
 			}
 
 			if galleryNo == "" {
-				galleryNo = miso.GenNoL("GAL", 25)
+				galleryNo = util.GenNoL("GAL", 25)
 				rail.Infof("Creating gallery (%s) for directory %s (%s)", galleryNo, cmd.DirName, cmd.DirFileKey)
 
 				err := tx.Transaction(func(tx *gorm.DB) error {
@@ -188,7 +189,7 @@ func CreateGallery(rail miso.Rail, cmd CreateGalleryCmd, user common.User, tx *g
 			return nil, miso.NewErrf("You already have a gallery with the same name, please change and try again")
 		}
 
-		galleryNo := miso.GenNoL("GAL", 25)
+		galleryNo := util.GenNoL("GAL", 25)
 		gallery := &Gallery{
 			GalleryNo: galleryNo,
 			Name:      cmd.Name,

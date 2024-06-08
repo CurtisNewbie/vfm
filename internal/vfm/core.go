@@ -9,6 +9,7 @@ import (
 	fstore "github.com/curtisnewbie/mini-fstore/api"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
+	"github.com/curtisnewbie/miso/util"
 	vault "github.com/curtisnewbie/user-vault/api"
 	"gorm.io/gorm"
 )
@@ -28,8 +29,8 @@ const (
 )
 
 var (
-	_imageSuffix = miso.NewSet[string]()
-	_videoSuffix = miso.NewSet[string]()
+	_imageSuffix = util.NewSet[string]()
+	_videoSuffix = util.NewSet[string]()
 )
 
 func init() {
@@ -40,9 +41,9 @@ func init() {
 type FileVFolder struct {
 	FolderNo   string
 	Uuid       string
-	CreateTime miso.ETime
+	CreateTime util.ETime
 	CreateBy   string
-	UpdateTime miso.ETime
+	UpdateTime util.ETime
 	UpdateBy   string
 	IsDel      bool
 }
@@ -62,11 +63,11 @@ type ListedFile struct {
 	Id             int        `json:"id"`
 	Uuid           string     `json:"uuid"`
 	Name           string     `json:"name"`
-	UploadTime     miso.ETime `json:"uploadTime"`
+	UploadTime     util.ETime `json:"uploadTime"`
 	UploaderName   string     `json:"uploaderName"`
 	SizeInBytes    int64      `json:"sizeInBytes"`
 	FileType       string     `json:"fileType"`
-	UpdateTime     miso.ETime `json:"updateTime"`
+	UpdateTime     util.ETime `json:"updateTime"`
 	ParentFileName string     `json:"parentFileName"`
 	SensitiveMode  string     `json:"sensitiveMode"`
 	ThumbnailToken string     `json:"thumbnailToken"`
@@ -83,9 +84,9 @@ type ListedVFolder struct {
 	Id         int        `json:"id"`
 	FolderNo   string     `json:"folderNo"`
 	Name       string     `json:"name"`
-	CreateTime miso.ETime `json:"createTime"`
+	CreateTime util.ETime `json:"createTime"`
 	CreateBy   string     `json:"createBy"`
-	UpdateTime miso.ETime `json:"updateTime"`
+	UpdateTime util.ETime `json:"updateTime"`
 	UpdateBy   string     `json:"updateBy"`
 	Ownership  string     `json:"ownership"`
 }
@@ -134,15 +135,15 @@ type FileInfo struct {
 	SizeInBytes      int64
 	UploaderNo       string // uploader's user_no
 	UploaderName     string
-	UploadTime       miso.ETime
-	LogicDeleteTime  miso.ETime
-	PhysicDeleteTime miso.ETime
+	UploadTime       util.ETime
+	LogicDeleteTime  util.ETime
+	PhysicDeleteTime util.ETime
 	UserGroup        int
 	FileType         string
 	ParentFile       string
-	CreateTime       miso.ETime
+	CreateTime       util.ETime
 	CreateBy         string
-	UpdateTime       miso.ETime
+	UpdateTime       util.ETime
 	UpdateBy         string
 	IsDel            int
 	Hidden           bool
@@ -156,9 +157,9 @@ type VFolderWithOwnership struct {
 	Id         int
 	FolderNo   string
 	Name       string
-	CreateTime miso.ETime
+	CreateTime util.ETime
 	CreateBy   string
-	UpdateTime miso.ETime
+	UpdateTime util.ETime
 	UpdateBy   string
 	Ownership  string
 }
@@ -171,9 +172,9 @@ type VFolder struct {
 	Id         int
 	FolderNo   string
 	Name       string
-	CreateTime miso.ETime
+	CreateTime util.ETime
 	CreateBy   string
-	UpdateTime miso.ETime
+	UpdateTime util.ETime
 	UpdateBy   string
 }
 
@@ -184,9 +185,9 @@ type UserVFolder struct {
 	FolderNo   string
 	Ownership  string
 	GrantedBy  string // grantedBy (user_no)
-	CreateTime miso.ETime
+	CreateTime util.ETime
 	CreateBy   string
-	UpdateTime miso.ETime
+	UpdateTime util.ETime
 	UpdateBy   string
 }
 
@@ -250,7 +251,7 @@ func ListFiles(rail miso.Rail, tx *gorm.DB, req ListFileReq, user common.User) (
 		return res, e
 	}
 
-	parentFileKeys := miso.NewSet[string]()
+	parentFileKeys := util.NewSet[string]()
 	for _, f := range res.Payload {
 		if f.ParentFile != "" {
 			parentFileKeys.Add(f.ParentFile)
@@ -417,7 +418,7 @@ func MakeDir(rail miso.Rail, tx *gorm.DB, req MakeDirReq, user common.User) (str
 
 	var dir FileInfo
 	dir.Name = req.Name
-	dir.Uuid = miso.GenIdP("ZZZ")
+	dir.Uuid = util.GenIdP("ZZZ")
 	dir.SizeInBytes = 0
 	dir.FileType = FileTypeDir
 
@@ -503,7 +504,7 @@ func MoveFileToDir(rail miso.Rail, db *gorm.DB, req MoveIntoDirReq, user common.
 
 		}
 
-		if !miso.IsBlankStr(fi.ParentFile) {
+		if !util.IsBlankStr(fi.ParentFile) {
 
 			// calculate the dir size asynchronously
 			if err := CalcDirSizePipeline.Send(rail, CalcDirSizeEvt{FileKey: fi.ParentFile}); err != nil {
@@ -519,7 +520,7 @@ func MoveFileToDir(rail miso.Rail, db *gorm.DB, req MoveIntoDirReq, user common.
 
 func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error {
 	uname := user.Username
-	now := miso.Now()
+	now := util.Now()
 
 	f.IsLogicDeleted = LDelN
 	f.IsPhysicDeleted = PDelN
@@ -568,11 +569,11 @@ func CreateVFolder(rail miso.Rail, tx *gorm.DB, r CreateVFolderReq, user common.
 			return "", miso.NewErrf(fmt.Sprintf("Found folder with same name ('%s')", r.Name))
 		}
 
-		folderNo := miso.GenIdP("VFLD")
+		folderNo := util.GenIdP("VFLD")
 
 		e := tx.Transaction(func(tx *gorm.DB) error {
 
-			ctime := miso.Now()
+			ctime := util.Now()
 
 			// for the vfolder
 			vf := VFolder{Name: r.Name, FolderNo: folderNo, CreateTime: ctime, CreateBy: user.Username}
@@ -676,7 +677,7 @@ func ShareVFolder(rail miso.Rail, tx *gorm.DB, sharedTo vault.UserInfo, folderNo
 			Username:   sharedTo.Username,
 			Ownership:  VfolderGranted,
 			GrantedBy:  user.Username,
-			CreateTime: miso.Now(),
+			CreateTime: util.Now(),
 			CreateBy:   user.Username,
 		}
 		if e := tx.Omit("id", "update_by", "update_time").Table("user_vfolder").Create(&uv).Error; e != nil {
@@ -747,17 +748,17 @@ func HandleAddFileToVFolderEvent(rail miso.Rail, tx *gorm.DB, evt AddFileToVfold
 		return miso.NewErrf("Operation not permitted")
 	}
 
-	distinct := miso.NewSet[string]()
+	distinct := util.NewSet[string]()
 	for _, fk := range evt.FileKeys {
 		distinct.Add(fk)
 	}
 
-	filtered := miso.Distinct(evt.FileKeys)
+	filtered := util.Distinct(evt.FileKeys)
 	if len(filtered) < 1 {
 		return nil
 	}
 
-	now := miso.Now()
+	now := util.Now()
 	username := evt.Username
 	doAddFileToVfolder := func(rail miso.Rail, folderNo string, fk string) error {
 		var id int
@@ -886,7 +887,7 @@ func RemoveFileFromVFolder(rail miso.Rail, tx *gorm.DB, req RemoveFileFromVfolde
 			return miso.NewErrf("Operation not permitted")
 		}
 
-		filtered := miso.Distinct(req.FileKeys)
+		filtered := util.Distinct(req.FileKeys)
 		if len(filtered) < 1 {
 			return nil
 		}
@@ -974,7 +975,7 @@ type ListGrantedFolderAccessRes struct {
 type ListedFolderAccess struct {
 	UserNo     string     `json:"userNo"`
 	Username   string     `json:"username"`
-	CreateTime miso.ETime `json:"createTime"`
+	CreateTime util.ETime `json:"createTime"`
 }
 
 func ListGrantedFolderAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedFolderAccessReq, user common.User) (ListGrantedFolderAccessRes, error) {
@@ -1087,7 +1088,7 @@ type SaveFileReq struct {
 func SaveFileRecord(rail miso.Rail, tx *gorm.DB, r SaveFileReq, user common.User) (string, error) {
 	var f FileInfo
 	f.Name = r.Filename
-	f.Uuid = miso.GenIdP("ZZZ")
+	f.Uuid = util.GenIdP("ZZZ")
 	f.FstoreFileId = r.FileId
 	f.SizeInBytes = r.Size
 	f.FileType = FileTypeFile
@@ -1411,7 +1412,7 @@ func ImMemBatchCalcDirSize(rail miso.Rail, db *gorm.DB) error {
 		return fmt.Errorf("failed to list dir files, %v", err)
 	}
 
-	parDirSet := miso.NewSet[string]()
+	parDirSet := util.NewSet[string]()
 	for _, f := range files {
 		parDirSet.Add(f.ParentFile)
 	}
@@ -1506,7 +1507,7 @@ func UnpackZip(rail miso.Rail, db *gorm.DB, user common.User, req UnpackZipReq) 
 		return fmt.Errorf("failed to make directory before unpacking zip, %w", err)
 	}
 
-	extra, err := miso.WriteJson(UnpackZipExtra{
+	extra, err := util.WriteJson(UnpackZipExtra{
 		FileKey:       req.FileKey,
 		ParentFileKey: dir,
 		UserNo:        user.UserNo,
@@ -1529,7 +1530,7 @@ func UnpackZip(rail miso.Rail, db *gorm.DB, user common.User, req UnpackZipReq) 
 
 func HandleZipUnpackResult(rail miso.Rail, db *gorm.DB, evt fstore.UnzipFileReplyEvent) error {
 	var extra UnpackZipExtra
-	if err := miso.ParseJson([]byte(evt.Extra), &extra); err != nil {
+	if err := util.ParseJson([]byte(evt.Extra), &extra); err != nil {
 		return fmt.Errorf("failed to unmarshal from extra, %v", err)
 	}
 

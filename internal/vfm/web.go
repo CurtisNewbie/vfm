@@ -10,6 +10,7 @@ import (
 	"github.com/curtisnewbie/miso/middleware/user-vault/auth"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
+	"github.com/curtisnewbie/miso/util"
 	vault "github.com/curtisnewbie/user-vault/api"
 	"github.com/skip2/go-qrcode"
 )
@@ -454,7 +455,7 @@ func GenFileTknQRCodeEp(inb *miso.Inbound) {
 	w, r := inb.Unwrap()
 	rail := inb.Rail()
 	token := r.URL.Query().Get("token")
-	if miso.IsBlankStr(token) {
+	if util.IsBlankStr(token) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -566,7 +567,7 @@ type ApiListVerFileHistoryRes struct {
 	Name        string     `desc:"file name"`
 	FileKey     string     `desc:"file key"`
 	SizeInBytes int64      `desc:"size in bytes"`
-	UploadTime  miso.ETime `desc:"last upload time"`
+	UploadTime  util.ETime `desc:"last upload time"`
 	Thumbnail   string     `desc:"thumbnail token"`
 }
 

@@ -9,9 +9,9 @@ require (
 )
 
 require (
-	github.com/curtisnewbie/mini-fstore v0.1.18-0.20240605065400-e245a50b3230
-	github.com/curtisnewbie/miso v0.1.0-beta.2
-	github.com/curtisnewbie/user-vault v0.0.23-0.20240605065609-9a3974cd7b55
+	github.com/curtisnewbie/mini-fstore v0.1.18-0.20240608034057-f694d3b1bc18
+	github.com/curtisnewbie/miso v0.1.0-beta.4.0.20240608040602-c060bb81bb20
+	github.com/curtisnewbie/user-vault v0.0.23-0.20240608035658-1df1e456f3dd
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	golang.org/x/net v0.7.0
 )
@@ -21,7 +21,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bsm/redislock v0.0.0-20191219095057-3d76f17a9f1e // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
-	github.com/curtisnewbie/svc v0.0.7 // indirect
+	github.com/curtisnewbie/svc v0.0.8 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
