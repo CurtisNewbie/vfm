@@ -2,6 +2,7 @@
 
 - GET /open/api/file/upload/duplication/preflight
   - Description: Preflight check for duplicate file uploads
+  - Bound to Resource: `"manage-files"`
   - Query Parameter:
     - "fileName":
     - "parentFileKey":
@@ -27,20 +28,35 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let fileName: any | null = null;
     let parentFileKey: any | null = null;
-    this.http.get<Resp>(`/open/api/file/upload/duplication/preflight?fileName=${fileName}&parentFileKey=${parentFileKey}`)
+    this.http.get<any>(`/open/api/file/upload/duplication/preflight?fileName=${fileName}&parentFileKey=${parentFileKey}`)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: boolean = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - GET /open/api/file/parent
   - Description: User fetch parent file info
+  - Bound to Resource: `"manage-files"`
   - Query Parameter:
     - "fileKey":
   - JSON Response:
@@ -71,19 +87,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let fileKey: any | null = null;
-    this.http.get<Resp>(`/open/api/file/parent?fileKey=${fileKey}`)
+    this.http.get<any>(`/open/api/file/parent?fileKey=${fileKey}`)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: ParentFileInfo = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/file/move-to-dir
   - Description: User move files into directory
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "uuid": (string)
     - "parentFileUuid": (string)
@@ -95,7 +126,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/move-to-dir' \
       -H 'Content-Type: application/json' \
-      -d '{"uuid":"","parentFileUuid":""}'
+      -d '{"parentFileUuid":"","uuid":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -117,19 +148,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: MoveIntoDirReq | null = null;
-    this.http.post<Resp>(`/open/api/file/move-to-dir`, req)
+    this.http.post<any>(`/open/api/file/move-to-dir`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/file/make-dir
   - Description: User make directory
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "parentFile": (string)
     - "name": (string)
@@ -165,19 +210,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: MakeDirReq | null = null;
-    this.http.post<Resp>(`/open/api/file/make-dir`, req)
+    this.http.post<any>(`/open/api/file/make-dir`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: string = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - GET /open/api/file/dir/list
   - Description: User list directories
+  - Bound to Resource: `"manage-files"`
   - JSON Response:
     - "errorCode": (string) error code
     - "msg": (string) message
@@ -208,18 +268,33 @@
 
   - Angular HttpClient Demo:
     ```ts
-    this.http.get<Resp>(`/open/api/file/dir/list`)
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
+    this.http.get<any>(`/open/api/file/dir/list`)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: ListedDir[] = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/file/list
   - Description: User list files
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "paging": (Paging)
       - "limit": (int) page limit
@@ -255,7 +330,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/list' \
       -H 'Content-Type: application/json' \
-      -d '{"sensitive":false,"paging":{"limit":0,"page":0,"total":0},"filename":"","folderNo":"","fileType":"","parentFile":""}'
+      -d '{"paging":{"limit":0,"page":0,"total":0},"filename":"","folderNo":"","fileType":"","parentFile":"","sensitive":false}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -309,19 +384,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ListFileReq | null = null;
-    this.http.post<Resp>(`/open/api/file/list`, req)
+    this.http.post<any>(`/open/api/file/list`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: PageRes = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/file/delete
   - Description: User delete file
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "uuid": (string)
   - JSON Response:
@@ -353,19 +443,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: DeleteFileReq | null = null;
-    this.http.post<Resp>(`/open/api/file/delete`, req)
+    this.http.post<any>(`/open/api/file/delete`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/file/dir/truncate
   - Description: User delete truncate directory recursively
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "uuid": (string)
   - JSON Response:
@@ -397,19 +501,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: DeleteFileReq | null = null;
-    this.http.post<Resp>(`/open/api/file/dir/truncate`, req)
+    this.http.post<any>(`/open/api/file/dir/truncate`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/file/delete/batch
   - Description: User delete file in batch
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "fileKeys": ([]string)
   - JSON Response:
@@ -441,19 +559,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: BatchDeleteFileReq | null = null;
-    this.http.post<Resp>(`/open/api/file/delete/batch`, req)
+    this.http.post<any>(`/open/api/file/delete/batch`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/file/create
   - Description: User create file
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "filename": (string)
     - "fstoreFileId": (string)
@@ -489,19 +621,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: CreateFileReq | null = null;
-    this.http.post<Resp>(`/open/api/file/create`, req)
+    this.http.post<any>(`/open/api/file/create`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/file/info/update
   - Description: User update file
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "id": (int)
     - "name": (string)
@@ -514,7 +660,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/file/info/update' \
       -H 'Content-Type: application/json' \
-      -d '{"sensitiveMode":"","id":0,"name":""}'
+      -d '{"id":0,"name":"","sensitiveMode":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -537,19 +683,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: UpdateFileReq | null = null;
-    this.http.post<Resp>(`/open/api/file/info/update`, req)
+    this.http.post<any>(`/open/api/file/info/update`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/file/token/generate
   - Description: User generate temporary token
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "fileKey": (string)
   - JSON Response:
@@ -583,19 +743,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: GenerateTempTokenReq | null = null;
-    this.http.post<Resp>(`/open/api/file/token/generate`, req)
+    this.http.post<any>(`/open/api/file/token/generate`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: string = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/file/unpack
   - Description: User unpack zip
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "fileKey": (string)
     - "parentFileKey": (string)
@@ -629,13 +804,26 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: UnpackZipReq | null = null;
-    this.http.post<Resp>(`/open/api/file/unpack`, req)
+    this.http.post<any>(`/open/api/file/unpack`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -652,6 +840,14 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let token: any | null = null;
     this.http.get<any>(`/open/api/file/token/qrcode?token=${token}`)
       .subscribe({
@@ -659,12 +855,14 @@
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - GET /open/api/vfolder/brief/owned
   - Description: User list virtual folder briefs
+  - Bound to Resource: `"manage-files"`
   - JSON Response:
     - "errorCode": (string) error code
     - "msg": (string) message
@@ -693,18 +891,33 @@
 
   - Angular HttpClient Demo:
     ```ts
-    this.http.get<Resp>(`/open/api/vfolder/brief/owned`)
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
+    this.http.get<any>(`/open/api/vfolder/brief/owned`)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: VFolderBrief[] = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/vfolder/list
   - Description: User list virtual folders
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "paging": (Paging)
       - "limit": (int) page limit
@@ -780,19 +993,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ListVFolderReq | null = null;
-    this.http.post<Resp>(`/open/api/vfolder/list`, req)
+    this.http.post<any>(`/open/api/vfolder/list`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: ListVFolderRes = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/vfolder/create
   - Description: User create virtual folder
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "name": (string)
   - JSON Response:
@@ -826,19 +1054,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: CreateVFolderReq | null = null;
-    this.http.post<Resp>(`/open/api/vfolder/create`, req)
+    this.http.post<any>(`/open/api/vfolder/create`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: string = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/vfolder/file/add
   - Description: User add file to virtual folder
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "folderNo": (string)
     - "fileKeys": ([]string)
@@ -872,19 +1115,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: AddFileToVfolderReq | null = null;
-    this.http.post<Resp>(`/open/api/vfolder/file/add`, req)
+    this.http.post<any>(`/open/api/vfolder/file/add`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/vfolder/file/remove
   - Description: User remove file from virtual folder
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "folderNo": (string)
     - "fileKeys": ([]string)
@@ -896,7 +1153,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/file/remove' \
       -H 'Content-Type: application/json' \
-      -d '{"folderNo":"","fileKeys":[]}'
+      -d '{"fileKeys":[],"folderNo":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -918,19 +1175,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: RemoveFileFromVfolderReq | null = null;
-    this.http.post<Resp>(`/open/api/vfolder/file/remove`, req)
+    this.http.post<any>(`/open/api/vfolder/file/remove`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/vfolder/share
   - Description: Share access to virtual folder
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "folderNo": (string)
     - "username": (string)
@@ -942,7 +1213,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/share' \
       -H 'Content-Type: application/json' \
-      -d '{"folderNo":"","username":""}'
+      -d '{"username":"","folderNo":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -964,19 +1235,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ShareVfolderReq | null = null;
-    this.http.post<Resp>(`/open/api/vfolder/share`, req)
+    this.http.post<any>(`/open/api/vfolder/share`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/vfolder/access/remove
   - Description: Remove granted access to virtual folder
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "folderNo": (string)
     - "userNo": (string)
@@ -1010,19 +1295,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: RemoveGrantedFolderAccessReq | null = null;
-    this.http.post<Resp>(`/open/api/vfolder/access/remove`, req)
+    this.http.post<any>(`/open/api/vfolder/access/remove`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/vfolder/granted/list
   - Description: List granted access to virtual folder
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "paging": (Paging)
       - "limit": (int) page limit
@@ -1046,7 +1345,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/vfolder/granted/list' \
       -H 'Content-Type: application/json' \
-      -d '{"paging":{"limit":0,"page":0,"total":0},"folderNo":""}'
+      -d '{"paging":{"total":0,"limit":0,"page":0},"folderNo":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1088,19 +1387,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ListGrantedFolderAccessReq | null = null;
-    this.http.post<Resp>(`/open/api/vfolder/granted/list`, req)
+    this.http.post<any>(`/open/api/vfolder/granted/list`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: ListGrantedFolderAccessRes = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/vfolder/remove
   - Description: Remove virtual folder
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "folderNo": (string)
   - JSON Response:
@@ -1132,19 +1446,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: RemoveVFolderReq | null = null;
-    this.http.post<Resp>(`/open/api/vfolder/remove`, req)
+    this.http.post<any>(`/open/api/vfolder/remove`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - GET /open/api/gallery/brief/owned
   - Description: List owned gallery brief info
+  - Bound to Resource: `"manage-files"`
   - JSON Response:
     - "errorCode": (string) error code
     - "msg": (string) message
@@ -1173,18 +1501,33 @@
 
   - Angular HttpClient Demo:
     ```ts
-    this.http.get<Resp>(`/open/api/gallery/brief/owned`)
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
+    this.http.get<any>(`/open/api/gallery/brief/owned`)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: VGalleryBrief[] = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/gallery/new
   - Description: Create new gallery
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "name": (string)
   - JSON Response:
@@ -1240,19 +1583,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: CreateGalleryCmd | null = null;
-    this.http.post<Resp>(`/open/api/gallery/new`, req)
+    this.http.post<any>(`/open/api/gallery/new`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: Gallery = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/gallery/update
   - Description: Update gallery
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "galleryNo": (string)
     - "name": (string)
@@ -1286,19 +1644,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: UpdateGalleryCmd | null = null;
-    this.http.post<Resp>(`/open/api/gallery/update`, req)
+    this.http.post<any>(`/open/api/gallery/update`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/gallery/delete
   - Description: Delete gallery
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "galleryNo": (string)
   - JSON Response:
@@ -1330,19 +1702,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: DeleteGalleryCmd | null = null;
-    this.http.post<Resp>(`/open/api/gallery/delete`, req)
+    this.http.post<any>(`/open/api/gallery/delete`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/gallery/list
   - Description: List galleries
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "paging": (Paging)
       - "limit": (int) page limit
@@ -1418,19 +1804,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ListGalleriesCmd | null = null;
-    this.http.post<Resp>(`/open/api/gallery/list`, req)
+    this.http.post<any>(`/open/api/gallery/list`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: PageRes = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/gallery/access/grant
   - Description: Grant access to the galleries
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "galleryNo": (string)
     - "username": (string)
@@ -1464,19 +1865,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: PermitGalleryAccessCmd | null = null;
-    this.http.post<Resp>(`/open/api/gallery/access/grant`, req)
+    this.http.post<any>(`/open/api/gallery/access/grant`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/gallery/access/remove
   - Description: Remove access to the galleries
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "galleryNo": (string)
     - "userNo": (string)
@@ -1510,19 +1925,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: RemoveGalleryAccessCmd | null = null;
-    this.http.post<Resp>(`/open/api/gallery/access/remove`, req)
+    this.http.post<any>(`/open/api/gallery/access/remove`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/gallery/access/list
   - Description: List granted access to the galleries
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "galleryNo": (string)
     - "paging": (Paging)
@@ -1548,7 +1977,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/access/list' \
       -H 'Content-Type: application/json' \
-      -d '{"galleryNo":"","paging":{"total":0,"limit":0,"page":0}}'
+      -d '{"galleryNo":"","paging":{"limit":0,"page":0,"total":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1592,19 +2021,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ListGrantedGalleryAccessCmd | null = null;
-    this.http.post<Resp>(`/open/api/gallery/access/list`, req)
+    this.http.post<any>(`/open/api/gallery/access/list`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: PageRes = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/gallery/images
   - Description: List images of gallery
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "galleryNo": (string)
     - "paging": (Paging)
@@ -1668,19 +2112,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ListGalleryImagesCmd | null = null;
-    this.http.post<Resp>(`/open/api/gallery/images`, req)
+    this.http.post<any>(`/open/api/gallery/images`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: ListGalleryImagesResp = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/gallery/image/transfer
   - Description: Host selected images on gallery
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "images": ([]vfm.CreateGalleryImageCmd)
       - "galleryNo": (string)
@@ -1694,7 +2153,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/gallery/image/transfer' \
       -H 'Content-Type: application/json' \
-      -d '{"images":{"galleryNo":"","name":"","fileKey":""}}'
+      -d '{"images":{"name":"","fileKey":"","galleryNo":""}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1720,19 +2179,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: TransferGalleryImageReq | null = null;
-    this.http.post<Resp>(`/open/api/gallery/image/transfer`, req)
+    this.http.post<any>(`/open/api/gallery/image/transfer`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/versioned-file/list
   - Description: List versioned files
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "paging": (Paging) paging params
       - "limit": (int) page limit
@@ -1808,19 +2281,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ApiListVerFileReq | null = null;
-    this.http.post<Resp>(`/open/api/versioned-file/list`, req)
+    this.http.post<any>(`/open/api/versioned-file/list`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: PageRes = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/versioned-file/history
   - Description: List versioned file history
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "paging": (Paging) paging params
       - "limit": (int) page limit
@@ -1890,19 +2378,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ApiListVerFileHistoryReq | null = null;
-    this.http.post<Resp>(`/open/api/versioned-file/history`, req)
+    this.http.post<any>(`/open/api/versioned-file/history`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: PageRes = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/versioned-file/accumulated-size
   - Description: Query versioned file log accumulated size
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "verFileId": (string) versioned file id
   - JSON Response:
@@ -1940,19 +2443,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ApiQryVerFileAccuSizeReq | null = null;
-    this.http.post<Resp>(`/open/api/versioned-file/accumulated-size`, req)
+    this.http.post<any>(`/open/api/versioned-file/accumulated-size`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: ApiQryVerFileAccuSizeRes = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/versioned-file/create
   - Description: Create versioned file
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "filename": (string)
     - "fstoreFileId": (string)
@@ -1966,7 +2484,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/open/api/versioned-file/create' \
       -H 'Content-Type: application/json' \
-      -d '{"fstoreFileId":"","filename":""}'
+      -d '{"filename":"","fstoreFileId":""}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -1992,19 +2510,34 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ApiCreateVerFileReq | null = null;
-    this.http.post<Resp>(`/open/api/versioned-file/create`, req)
+    this.http.post<any>(`/open/api/versioned-file/create`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: ApiCreateVerFileRes = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/versioned-file/update
   - Description: Update versioned file
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "verFileId": (string) versioned file id
     - "filename": (string)
@@ -2040,19 +2573,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ApiUpdateVerFileReq | null = null;
-    this.http.post<Resp>(`/open/api/versioned-file/update`, req)
+    this.http.post<any>(`/open/api/versioned-file/update`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /open/api/versioned-file/delete
   - Description: Delete versioned file
+  - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "verFileId": (string) Versioned File Id
   - JSON Response:
@@ -2084,13 +2631,26 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ApiDelVerFileReq | null = null;
-    this.http.post<Resp>(`/open/api/versioned-file/delete`, req)
+    this.http.post<any>(`/open/api/versioned-file/delete`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -2117,12 +2677,25 @@
 
   - Angular HttpClient Demo:
     ```ts
-    this.http.post<Resp>(`/compensate/thumbnail`)
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
+    this.http.post<any>(`/compensate/thumbnail`)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -2149,18 +2722,32 @@
 
   - Angular HttpClient Demo:
     ```ts
-    this.http.post<Resp>(`/compensate/dir/calculate-size`)
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
+    this.http.post<any>(`/compensate/dir/calculate-size`)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - PUT /bookmark/file/upload
   - Description: Upload bookmark file
+  - Bound to Resource: `"manage-bookmarks"`
   - JSON Response:
     - "errorCode": (string) error code
     - "msg": (string) message
@@ -2181,18 +2768,32 @@
 
   - Angular HttpClient Demo:
     ```ts
-    this.http.put<Resp>(`/bookmark/file/upload`)
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
+    this.http.put<any>(`/bookmark/file/upload`)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /bookmark/list
   - Description: List bookmarks
+  - Bound to Resource: `"manage-bookmarks"`
   - JSON Request:
     - "name": (*string)
     - "paging": (Paging)
@@ -2234,19 +2835,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ListBookmarksReq | null = null;
-    this.http.post<Resp>(`/bookmark/list`, req)
+    this.http.post<any>(`/bookmark/list`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /bookmark/remove
   - Description: Remove bookmark
+  - Bound to Resource: `"manage-bookmarks"`
   - JSON Request:
     - "id": (int64)
   - JSON Response:
@@ -2278,19 +2893,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: RemoveBookmarkReq | null = null;
-    this.http.post<Resp>(`/bookmark/remove`, req)
+    this.http.post<any>(`/bookmark/remove`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /bookmark/blacklist/list
   - Description: List bookmark blacklist
+  - Bound to Resource: `"manage-bookmarks"`
   - JSON Request:
     - "name": (*string)
     - "paging": (Paging)
@@ -2305,7 +2934,7 @@
     ```sh
     curl -X POST 'http://localhost:8086/bookmark/blacklist/list' \
       -H 'Content-Type: application/json' \
-      -d '{"paging":{"total":0,"limit":0,"page":0},"name":""}'
+      -d '{"name":"","paging":{"limit":0,"page":0,"total":0}}'
     ```
 
   - JSON Request Object In TypeScript:
@@ -2332,19 +2961,33 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: ListBookmarksReq | null = null;
-    this.http.post<Resp>(`/bookmark/blacklist/list`, req)
+    this.http.post<any>(`/bookmark/blacklist/list`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
 
 - POST /bookmark/blacklist/remove
   - Description: Remove bookmark blacklist
+  - Bound to Resource: `"manage-bookmarks"`
   - JSON Request:
     - "id": (int64)
   - JSON Response:
@@ -2376,13 +3019,26 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let req: RemoveBookmarkReq | null = null;
-    this.http.post<Resp>(`/bookmark/blacklist/remove`, req)
+    this.http.post<any>(`/bookmark/blacklist/remove`, req)
       .subscribe({
-        next: (resp: Resp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -2438,12 +3094,26 @@
 
   - Angular HttpClient Demo:
     ```ts
-    this.http.get<GnResp>(`/auth/resource`)
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
+    this.http.get<any>(`/auth/resource`)
       .subscribe({
-        next: (resp: GnResp) => {
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+          let dat: ResourceInfoRes = resp.data;
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -2460,6 +3130,14 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     let authorization: any | null = null;
     this.http.get<any>(`/metrics`,
       {
@@ -2472,6 +3150,7 @@
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -2484,12 +3163,21 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     this.http.get<any>(`/debug/pprof`)
       .subscribe({
         next: () => {
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -2502,12 +3190,21 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     this.http.get<any>(`/debug/pprof/:name`)
       .subscribe({
         next: () => {
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -2520,12 +3217,21 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     this.http.get<any>(`/debug/pprof/cmdline`)
       .subscribe({
         next: () => {
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -2538,12 +3244,21 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     this.http.get<any>(`/debug/pprof/profile`)
       .subscribe({
         next: () => {
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -2556,12 +3271,21 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     this.http.get<any>(`/debug/pprof/symbol`)
       .subscribe({
         next: () => {
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -2574,12 +3298,21 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     this.http.get<any>(`/debug/pprof/trace`)
       .subscribe({
         next: () => {
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
@@ -2594,12 +3327,21 @@
 
   - Angular HttpClient Demo:
     ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
     this.http.get<any>(`/doc/api`)
       .subscribe({
         next: () => {
         },
         error: (err) => {
           console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
         }
       });
     ```
