@@ -3,6 +3,8 @@ package vfm
 import (
 	"fmt"
 
+	"github.com/curtisnewbie/miso/middleware/mysql"
+	"github.com/curtisnewbie/miso/middleware/redis"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	"github.com/curtisnewbie/miso/util"
@@ -93,7 +95,7 @@ func ListOwnedGalleryBriefs(rail miso.Rail, user common.User, tx *gorm.DB) ([]VG
 
 /* List Galleries */
 func ListGalleries(rail miso.Rail, cmd ListGalleriesCmd, user common.User, db *gorm.DB) (miso.PageRes[VGallery], error) {
-	return miso.NewPageQuery[VGallery]().
+	return mysql.NewPageQuery[VGallery]().
 		WithPage(cmd.Paging).
 		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
 			return tx.Table("gallery g").
@@ -144,7 +146,7 @@ func IsGalleryNameUsed(name string, userNo string, tx *gorm.DB) (bool, error) {
 // Create a new Gallery for dir
 func CreateGalleryForDir(rail miso.Rail, cmd CreateGalleryForDirCmd, tx *gorm.DB) (string, error) {
 
-	return miso.RLockRun(rail, "fantahsea:gallery:create:"+cmd.UserNo,
+	return redis.RLockRun(rail, "fantahsea:gallery:create:"+cmd.UserNo,
 		func() (string, error) {
 			galleryNo, err := GalleryNoOfDir(cmd.DirFileKey, tx)
 			if err != nil {
@@ -180,7 +182,7 @@ func CreateGalleryForDir(rail miso.Rail, cmd CreateGalleryForDirCmd, tx *gorm.DB
 func CreateGallery(rail miso.Rail, cmd CreateGalleryCmd, user common.User, tx *gorm.DB) (*Gallery, error) {
 	rail.Infof("Creating gallery, cmd: %#v, user: %#v", cmd, user)
 
-	gal, er := miso.RLockRun(rail, "fantahsea:gallery:create:"+user.UserNo, func() (*Gallery, error) {
+	gal, er := redis.RLockRun(rail, "fantahsea:gallery:create:"+user.UserNo, func() (*Gallery, error) {
 
 		if isUsed, err := IsGalleryNameUsed(cmd.Name, user.UserNo, tx); isUsed || err != nil {
 			if err != nil {
@@ -307,7 +309,7 @@ func GalleryExists(rail miso.Rail, tx *gorm.DB, galleryNo string) (bool, error) 
 
 func OnCreateGalleryImgEvent(rail miso.Rail, evt CreateGalleryImgEvent) error {
 	rail.Infof("Received CreateGalleryImgEvent %+v", evt)
-	tx := miso.GetMySQL()
+	tx := mysql.GetMySQL()
 
 	// it's meant to be used for adding image to the gallery that belongs to the directory
 	if evt.DirFileKey == "" {
@@ -339,5 +341,5 @@ func OnCreateGalleryImgEvent(rail miso.Rail, evt CreateGalleryImgEvent) error {
 
 func OnNotifyFileDeletedEvent(rail miso.Rail, evt NotifyFileDeletedEvent) error {
 	rail.Infof("Received NotifyFileDeletedEvent: %+v", evt)
-	return DeleteGalleryImage(rail, miso.GetMySQL(), evt.FileKey)
+	return DeleteGalleryImage(rail, mysql.GetMySQL(), evt.FileKey)
 }

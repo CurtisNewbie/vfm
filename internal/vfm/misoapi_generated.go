@@ -2,6 +2,7 @@
 package vfm
 
 import (
+	"github.com/curtisnewbie/miso/middleware/mysql"
 	"github.com/curtisnewbie/miso/miso"
 )
 
@@ -279,13 +280,13 @@ func init() {
 
 	miso.Post("/compensate/thumbnail",
 		func(inb *miso.Inbound) (any, error) {
-			return CompensateThumbnailEp(inb.Rail(), miso.GetMySQL())
+			return CompensateThumbnailEp(inb.Rail(), mysql.GetMySQL())
 		}).
 		Desc("Compensate thumbnail generation")
 
 	miso.Post("/compensate/dir/calculate-size",
 		func(inb *miso.Inbound) (any, error) {
-			return ImMemBatchCalcDirSizeEp(inb.Rail(), miso.GetMySQL())
+			return ImMemBatchCalcDirSizeEp(inb.Rail(), mysql.GetMySQL())
 		}).
 		Desc("Calculate size of all directories recursively")
 

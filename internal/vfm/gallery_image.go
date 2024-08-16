@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/curtisnewbie/miso/middleware/redis"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	"github.com/curtisnewbie/miso/util"
@@ -400,6 +401,6 @@ func isImgCreatedAlready(rail miso.Rail, tx *gorm.DB, galleryNo string, fileKey 
 	return true, nil
 }
 
-func NewGalleryFileLock(rail miso.Rail, galleryNo string, fileKey string) *miso.RLock {
-	return miso.NewRLockf(rail, "gallery:image:%v:%v", galleryNo, fileKey)
+func NewGalleryFileLock(rail miso.Rail, galleryNo string, fileKey string) *redis.RLock {
+	return redis.NewRLockf(rail, "gallery:image:%v:%v", galleryNo, fileKey)
 }

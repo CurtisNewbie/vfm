@@ -3,6 +3,8 @@ package vfm
 import (
 	"fmt"
 
+	"github.com/curtisnewbie/miso/middleware/mysql"
+	"github.com/curtisnewbie/miso/middleware/redis"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	"github.com/curtisnewbie/miso/util"
@@ -87,8 +89,8 @@ type UpdateVerFileInf struct {
 	Deleted    bool
 }
 
-func NewVerFileLock(rail miso.Rail, verFileId string) *miso.RLock {
-	return miso.NewRLockf(rail, "rlock:version_file:%v", verFileId)
+func NewVerFileLock(rail miso.Rail, verFileId string) *redis.RLock {
+	return redis.NewRLockf(rail, "rlock:version_file:%v", verFileId)
 }
 
 func UpdateVerFile(rail miso.Rail, db *gorm.DB, req ApiUpdateVerFileReq, user common.User) error {
@@ -175,7 +177,7 @@ type ApiListVerFileRes struct {
 }
 
 func ListVerFile(rail miso.Rail, db *gorm.DB, req ApiListVerFileReq, user common.User) (miso.PageRes[ApiListVerFileRes], error) {
-	return miso.NewPageQuery[ApiListVerFileRes]().
+	return mysql.NewPageQuery[ApiListVerFileRes]().
 		WithPage(req.Paging).
 		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
 			tx = tx.Table(`versioned_file f`).
@@ -278,7 +280,7 @@ func ListVerFileHistory(rail miso.Rail, db *gorm.DB, req ApiListVerFileHistoryRe
 		return miso.PageRes[ApiListVerFileHistoryRes]{}, err
 	}
 
-	return miso.NewPageQuery[ApiListVerFileHistoryRes]().
+	return mysql.NewPageQuery[ApiListVerFileHistoryRes]().
 		WithPage(req.Paging).
 		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
 			tx = tx.Table(`versioned_file_log f`).

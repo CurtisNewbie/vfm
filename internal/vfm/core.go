@@ -7,6 +7,9 @@ import (
 	"time"
 
 	fstore "github.com/curtisnewbie/mini-fstore/api"
+	"github.com/curtisnewbie/miso/encoding"
+	"github.com/curtisnewbie/miso/middleware/mysql"
+	"github.com/curtisnewbie/miso/middleware/redis"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	"github.com/curtisnewbie/miso/util"
@@ -192,7 +195,7 @@ type UserVFolder struct {
 }
 
 func listFilesInVFolder(rail miso.Rail, tx *gorm.DB, page miso.Paging, folderNo string, user common.User) (miso.PageRes[ListedFile], error) {
-	return miso.NewPageQuery[ListedFile]().
+	return mysql.NewPageQuery[ListedFile]().
 		WithPage(page).
 		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
 			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes,
@@ -291,7 +294,7 @@ func listFilesSelective(rail miso.Rail, tx *gorm.DB, req ListFileReq, user commo
 		req.ParentFile = new(string) // top-level file/dir
 	}
 
-	return miso.NewPageQuery[ListedFile]().
+	return mysql.NewPageQuery[ListedFile]().
 		WithPage(req.Page).
 		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
 			return tx.Select(`fi.id, fi.name, fi.parent_file, fi.uuid, fi.size_in_bytes,
@@ -540,8 +543,8 @@ func _saveFile(rail miso.Rail, tx *gorm.DB, f FileInfo, user common.User) error 
 	return err
 }
 
-func fileLock(rail miso.Rail, fileKey string) *miso.RLock {
-	return miso.NewCustomRLock(rail, "file:uuid:"+fileKey, miso.RLockConfig{BackoffDuration: time.Second * 5})
+func fileLock(rail miso.Rail, fileKey string) *redis.RLock {
+	return redis.NewCustomRLock(rail, "file:uuid:"+fileKey, redis.RLockConfig{BackoffDuration: time.Second * 5})
 }
 
 type CreateVFolderReq struct {
@@ -551,7 +554,7 @@ type CreateVFolderReq struct {
 func CreateVFolder(rail miso.Rail, tx *gorm.DB, r CreateVFolderReq, user common.User) (string, error) {
 	userNo := user.UserNo
 
-	v, e := miso.RLockRun(rail, "vfolder:user:"+userNo, func() (any, error) {
+	v, e := redis.RLockRun(rail, "vfolder:user:"+userNo, func() (any, error) {
 
 		var id int
 		t := tx.Table("vfolder vf").
@@ -638,8 +641,8 @@ func findVFolder(rail miso.Rail, tx *gorm.DB, folderNo string, userNo string) (V
 	return vfo, nil
 }
 
-func _lockFolderExec(c miso.Rail, folderNo string, r miso.Runnable) error {
-	return miso.RLockExec(c, "vfolder:"+folderNo, r)
+func _lockFolderExec(c miso.Rail, folderNo string, r redis.Runnable) error {
+	return redis.RLockExec(c, "vfolder:"+folderNo, r)
 }
 
 func ShareVFolder(rail miso.Rail, tx *gorm.DB, sharedTo vault.UserInfo, folderNo string, user common.User) error {
@@ -728,8 +731,8 @@ type AddFileToVfolderReq struct {
 	Sync     bool     `json:"-"`
 }
 
-func NewVFolderLock(rail miso.Rail, folderNo string) *miso.RLock {
-	return miso.NewRLock(rail, "vfolder:"+folderNo)
+func NewVFolderLock(rail miso.Rail, folderNo string) *redis.RLock {
+	return redis.NewRLock(rail, "vfolder:"+folderNo)
 }
 
 func HandleAddFileToVFolderEvent(rail miso.Rail, tx *gorm.DB, evt AddFileToVfolderEvent) error {
@@ -1507,7 +1510,7 @@ func UnpackZip(rail miso.Rail, db *gorm.DB, user common.User, req UnpackZipReq) 
 		return fmt.Errorf("failed to make directory before unpacking zip, %w", err)
 	}
 
-	extra, err := util.WriteJson(UnpackZipExtra{
+	extra, err := encoding.WriteJson(UnpackZipExtra{
 		FileKey:       req.FileKey,
 		ParentFileKey: dir,
 		UserNo:        user.UserNo,
@@ -1530,7 +1533,7 @@ func UnpackZip(rail miso.Rail, db *gorm.DB, user common.User, req UnpackZipReq) 
 
 func HandleZipUnpackResult(rail miso.Rail, db *gorm.DB, evt fstore.UnzipFileReplyEvent) error {
 	var extra UnpackZipExtra
-	if err := util.ParseJson([]byte(evt.Extra), &extra); err != nil {
+	if err := encoding.ParseJson([]byte(evt.Extra), &extra); err != nil {
 		return fmt.Errorf("failed to unmarshal from extra, %v", err)
 	}
 

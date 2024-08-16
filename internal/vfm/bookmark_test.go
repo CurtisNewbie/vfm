@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/curtisnewbie/miso/middleware/mysql"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 )
@@ -35,9 +36,9 @@ func TestNetscapeBookmark(t *testing.T) {
 func TestProcessUploadedBookmarkFile(t *testing.T) {
 	rail := miso.EmptyRail()
 	miso.SetLogLevel("debug")
-	miso.SetProp(miso.PropMySQLSchema, "docindexer")
+	miso.SetProp(mysql.PropMySQLSchema, "docindexer")
 
-	if err := miso.InitMySQLFromProp(rail); err != nil {
+	if err := mysql.InitMySQLFromProp(rail); err != nil {
 		t.Log(err)
 		t.FailNow()
 	}

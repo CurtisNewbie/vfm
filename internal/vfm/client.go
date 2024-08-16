@@ -4,12 +4,13 @@ import (
 	"time"
 
 	fstore "github.com/curtisnewbie/mini-fstore/api"
+	"github.com/curtisnewbie/miso/middleware/redis"
 	"github.com/curtisnewbie/miso/miso"
 	vault "github.com/curtisnewbie/user-vault/api"
 )
 
 var (
-	userIdInfoCache = miso.NewRCache[vault.UserInfo]("vfm:user:info:userno", miso.RCacheConfig{Exp: 5 * time.Minute, NoSync: true})
+	userIdInfoCache = redis.NewRCache[vault.UserInfo]("vfm:user:info:userno", redis.RCacheConfig{Exp: 5 * time.Minute, NoSync: true})
 )
 
 func CachedFindUser(rail miso.Rail, userNo string) (vault.UserInfo, error) {

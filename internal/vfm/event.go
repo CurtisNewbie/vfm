@@ -5,6 +5,7 @@ import (
 	"time"
 
 	fstore "github.com/curtisnewbie/mini-fstore/api"
+	"github.com/curtisnewbie/miso/middleware/mysql"
 	"github.com/curtisnewbie/miso/middleware/rabbit"
 	"github.com/curtisnewbie/miso/miso"
 	"gorm.io/gorm"
@@ -91,7 +92,7 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 	}
 	defer lock.Unlock()
 
-	f, err := findFile(rail, miso.GetMySQL(), uuid)
+	f, err := findFile(rail, mysql.GetMySQL(), uuid)
 	if err != nil {
 		return err
 	}
@@ -136,12 +137,12 @@ func OnFileSaved(rail miso.Rail, evt StreamEvent) error {
 // hammer sends event message when the thumbnail image is compressed and saved on mini-fstore
 func OnImageCompressed(rail miso.Rail, evt fstore.ImageCompressReplyEvent) error {
 	rail.Infof("Receive %#v", evt)
-	return OnThumbnailGenerated(rail, miso.GetMySQL(), evt.Identifier, evt.FileId)
+	return OnThumbnailGenerated(rail, mysql.GetMySQL(), evt.Identifier, evt.FileId)
 }
 
 func OnVidoeThumbnailGenerated(rail miso.Rail, evt fstore.GenVideoThumbnailReplyEvent) error {
 	rail.Infof("Receive %#v", evt)
-	return OnThumbnailGenerated(rail, miso.GetMySQL(), evt.Identifier, evt.FileId)
+	return OnThumbnailGenerated(rail, mysql.GetMySQL(), evt.Identifier, evt.FileId)
 }
 
 func OnThumbnailGenerated(rail miso.Rail, tx *gorm.DB, identifier string, fileId string) error {
@@ -195,7 +196,7 @@ func OnThumbnailUpdated(rail miso.Rail, evt StreamEvent) error {
 	}
 	defer lock.Unlock()
 
-	f, err := findFile(rail, miso.GetMySQL(), uuid)
+	f, err := findFile(rail, mysql.GetMySQL(), uuid)
 	if err != nil {
 		return err
 	}
@@ -210,7 +211,7 @@ func OnThumbnailUpdated(rail miso.Rail, evt StreamEvent) error {
 		return nil
 	}
 
-	pf, err := findFile(rail, miso.GetMySQL(), f.ParentFile)
+	pf, err := findFile(rail, mysql.GetMySQL(), f.ParentFile)
 	if err != nil {
 		return err
 	}
@@ -276,7 +277,7 @@ type AddFileToVfolderEvent struct {
 }
 
 func OnAddFileToVfolderEvent(rail miso.Rail, evt AddFileToVfolderEvent) error {
-	return HandleAddFileToVFolderEvent(rail, miso.GetMySQL(), evt)
+	return HandleAddFileToVFolderEvent(rail, mysql.GetMySQL(), evt)
 }
 
 type CalcDirSizeEvt struct {
@@ -285,10 +286,10 @@ type CalcDirSizeEvt struct {
 
 func OnCalcDirSizeEvt(rail miso.Rail, evt CalcDirSizeEvt) error {
 	defer miso.TimeOp(rail, time.Now(), fmt.Sprintf("Process CalcDirSizeEvt: %+v", evt))
-	return CalcDirSize(rail, evt.FileKey, miso.GetMySQL())
+	return CalcDirSize(rail, evt.FileKey, mysql.GetMySQL())
 }
 
 func OnUnzipFileReplyEvent(rail miso.Rail, evt fstore.UnzipFileReplyEvent) error {
 	rail.Infof("received UnzipFileReplyEvent: %+v", evt)
-	return HandleZipUnpackResult(rail, miso.GetMySQL(), evt)
+	return HandleZipUnpackResult(rail, mysql.GetMySQL(), evt)
 }

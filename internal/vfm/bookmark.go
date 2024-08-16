@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/curtisnewbie/miso/middleware/mysql"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	"github.com/curtisnewbie/miso/util"
@@ -131,7 +132,7 @@ func ProcessUploadedBookmarkFile(rail miso.Rail, path string, user common.User) 
 
 	go func() {
 		rail := rail.NextSpan()
-		err := SaveBookmarks(rail, miso.GetMySQL(), bookmarkFile, user)
+		err := SaveBookmarks(rail, mysql.GetMySQL(), bookmarkFile, user)
 		if err != nil {
 			rail.Errorf("failed to save bookmark, user: %s, %v", user.Username, err)
 		}
@@ -194,7 +195,7 @@ type ListedBookmark struct {
 }
 
 func ListBookmarks(rail miso.Rail, tx *gorm.DB, req ListBookmarksReq, userNo string) (any, error) {
-	return miso.NewPageQuery[ListedBookmark]().
+	return mysql.NewPageQuery[ListedBookmark]().
 		WithPage(req.Paging).
 		WithBaseQuery(func(tx *gorm.DB) *gorm.DB {
 			if req.Blacklisted {

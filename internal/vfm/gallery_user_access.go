@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/curtisnewbie/miso/middleware/mysql"
 	"github.com/curtisnewbie/miso/middleware/user-vault/common"
 	"github.com/curtisnewbie/miso/miso"
 	"github.com/curtisnewbie/miso/util"
@@ -164,7 +165,7 @@ func ListedGrantedGalleryAccess(rail miso.Rail, tx *gorm.DB, req ListGrantedGall
 		return miso.PageRes[ListedGalleryAccessRes]{}, miso.NewErrf("Operation not allowed")
 	}
 
-	return miso.NewPageQuery[ListedGalleryAccessRes]().
+	return mysql.NewPageQuery[ListedGalleryAccessRes]().
 		WithPage(req.Paging).
 		WithSelectQuery(func(tx *gorm.DB) *gorm.DB {
 			return tx.Select("id", "gallery_no", "user_no", "create_time").

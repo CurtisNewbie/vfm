@@ -3,13 +3,14 @@ package vfm
 import (
 	"testing"
 
+	"github.com/curtisnewbie/miso/middleware/mysql"
 	"github.com/curtisnewbie/miso/miso"
 )
 
 func TestListVerFile(t *testing.T) {
 	corePreTest(t)
 	rail := miso.EmptyRail()
-	files, err := ListVerFile(rail, miso.GetMySQL(), ApiListVerFileReq{}, testUser())
+	files, err := ListVerFile(rail, mysql.GetMySQL(), ApiListVerFileReq{}, testUser())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -21,7 +22,7 @@ func TestDelVerFile(t *testing.T) {
 	rail := miso.EmptyRail()
 	verFileId := "verf_1224911895724032158144"
 
-	err := DelVerFile(rail, miso.GetMySQL(),
+	err := DelVerFile(rail, mysql.GetMySQL(),
 		ApiDelVerFileReq{VerFileId: verFileId},
 		testUser())
 
