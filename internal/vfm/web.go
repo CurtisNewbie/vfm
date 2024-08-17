@@ -468,7 +468,7 @@ type ListBookmarksReq struct {
 //
 // misoapi-http: PUT /bookmark/file/upload
 // misoapi-desc: Upload bookmark file
-// misoapi-resource: manage-bookmarks
+// misoapi-resource: ref(ResourceManageBookmark)
 func UploadBookmarkFileEp(inb *miso.Inbound) (any, error) {
 	rail := inb.Rail()
 	_, r := inb.Unwrap()
@@ -498,7 +498,7 @@ func UploadBookmarkFileEp(inb *miso.Inbound) (any, error) {
 //
 // misoapi-http: POST /bookmark/list
 // misoapi-desc: List bookmarks
-// misoapi-resource: manage-bookmarks
+// misoapi-resource: ref(ResourceManageBookmark)
 func ListBookmarksEp(inb *miso.Inbound, req ListBookmarksReq) (any, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -513,7 +513,7 @@ type RemoveBookmarkReq struct {
 //
 // misoapi-http: POST /bookmark/remove
 // misoapi-desc: Remove bookmark
-// misoapi-resource: manage-bookmarks
+// misoapi-resource: ref(ResourceManageBookmark)
 func RemoveBookmarkEp(inb *miso.Inbound, req RemoveBookmarkReq) (any, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -522,7 +522,7 @@ func RemoveBookmarkEp(inb *miso.Inbound, req RemoveBookmarkReq) (any, error) {
 
 // misoapi-http: POST /bookmark/blacklist/list
 // misoapi-desc: List bookmark blacklist
-// misoapi-resource: manage-bookmarks
+// misoapi-resource: ref(ResourceManageBookmark)
 func ListBlacklistedBookmarksEp(inb *miso.Inbound, req ListBookmarksReq) (any, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -532,7 +532,7 @@ func ListBlacklistedBookmarksEp(inb *miso.Inbound, req ListBookmarksReq) (any, e
 
 // misoapi-http: POST /bookmark/blacklist/remove
 // misoapi-desc: Remove bookmark blacklist
-// misoapi-resource: manage-bookmarks
+// misoapi-resource: ref(ResourceManageBookmark)
 func RemoveBookmarkBlacklistEp(inb *miso.Inbound, req RemoveBookmarkReq) (any, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
