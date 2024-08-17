@@ -40,7 +40,7 @@ func RegisterHttpRoutes(rail miso.Rail) error {
 
 // misoapi-http: GET /open/api/file/upload/duplication/preflight
 // misoapi-desc: Preflight check for duplicate file uploads
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func DupPreflightCheckEp(inb *miso.Inbound, req PreflightCheckReq) (bool, error) {
 	rail := inb.Rail()
 	return FileExists(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -48,7 +48,7 @@ func DupPreflightCheckEp(inb *miso.Inbound, req PreflightCheckReq) (bool, error)
 
 // misoapi-http: GET /open/api/file/parent
 // misoapi-desc: User fetch parent file info
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func GetParentFileEp(inb *miso.Inbound, req FetchParentFileReq) (*ParentFileInfo, error) {
 	rail := inb.Rail()
 	if req.FileKey == "" {
@@ -66,7 +66,7 @@ func GetParentFileEp(inb *miso.Inbound, req FetchParentFileReq) (*ParentFileInfo
 
 // misoapi-http: POST /open/api/file/move-to-dir
 // misoapi-desc: User move files into directory
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func MoveFileToDirEp(inb *miso.Inbound, req MoveIntoDirReq) (any, error) {
 	rail := inb.Rail()
 	return nil, MoveFileToDir(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -74,7 +74,7 @@ func MoveFileToDirEp(inb *miso.Inbound, req MoveIntoDirReq) (any, error) {
 
 // misoapi-http: POST /open/api/file/make-dir
 // misoapi-desc: User make directory
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func MakeDirEp(inb *miso.Inbound, req MakeDirReq) (string, error) {
 	rail := inb.Rail()
 	return MakeDir(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -82,7 +82,7 @@ func MakeDirEp(inb *miso.Inbound, req MakeDirReq) (string, error) {
 
 // misoapi-http: GET /open/api/file/dir/list
 // misoapi-desc: User list directories
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ListDirEp(inb *miso.Inbound) ([]ListedDir, error) {
 	rail := inb.Rail()
 	return ListDirs(rail, mysql.GetMySQL(), common.GetUser(rail))
@@ -90,7 +90,7 @@ func ListDirEp(inb *miso.Inbound) ([]ListedDir, error) {
 
 // misoapi-http: POST /open/api/file/list
 // misoapi-desc: User list files
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ListFilesEp(inb *miso.Inbound, req ListFileReq) (miso.PageRes[ListedFile], error) {
 	rail := inb.Rail()
 	return ListFiles(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -98,7 +98,7 @@ func ListFilesEp(inb *miso.Inbound, req ListFileReq) (miso.PageRes[ListedFile], 
 
 // misoapi-http: POST /open/api/file/delete
 // misoapi-desc: User delete file
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func DeleteFileEp(inb *miso.Inbound, req DeleteFileReq) (any, error) {
 	rail := inb.Rail()
 	return nil, DeleteFile(rail, mysql.GetMySQL(), req, common.GetUser(rail), nil)
@@ -106,7 +106,7 @@ func DeleteFileEp(inb *miso.Inbound, req DeleteFileReq) (any, error) {
 
 // misoapi-http: POST /open/api/file/dir/truncate
 // misoapi-desc: User delete truncate directory recursively
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func TruncateDirEp(inb *miso.Inbound, req DeleteFileReq) (any, error) {
 	rail := inb.Rail()
 	return nil, TruncateDir(rail, mysql.GetMySQL(), req, common.GetUser(rail), true)
@@ -118,7 +118,7 @@ type BatchDeleteFileReq struct {
 
 // misoapi-http: POST /open/api/file/delete/batch
 // misoapi-desc: User delete file in batch
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func BatchDeleteFileEp(inb *miso.Inbound, req BatchDeleteFileReq) (any, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -148,7 +148,7 @@ func BatchDeleteFileEp(inb *miso.Inbound, req BatchDeleteFileReq) (any, error) {
 
 // misoapi-http: POST /open/api/file/create
 // misoapi-desc: User create file
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func CreateFileEp(inb *miso.Inbound, req CreateFileReq) (any, error) {
 	rail := inb.Rail()
 	_, err := CreateFile(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -157,7 +157,7 @@ func CreateFileEp(inb *miso.Inbound, req CreateFileReq) (any, error) {
 
 // misoapi-http: POST /open/api/file/info/update
 // misoapi-desc: User update file
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func UpdateFileEp(inb *miso.Inbound, req UpdateFileReq) (any, error) {
 	rail := inb.Rail()
 	return nil, UpdateFile(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -165,7 +165,7 @@ func UpdateFileEp(inb *miso.Inbound, req UpdateFileReq) (any, error) {
 
 // misoapi-http: POST /open/api/file/token/generate
 // misoapi-desc: User generate temporary token
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func GenFileTknEp(inb *miso.Inbound, req GenerateTempTokenReq) (string, error) {
 	rail := inb.Rail()
 	return GenTempToken(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -173,7 +173,7 @@ func GenFileTknEp(inb *miso.Inbound, req GenerateTempTokenReq) (string, error) {
 
 // misoapi-http: POST /open/api/file/unpack
 // misoapi-desc: User unpack zip
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func UnpackZipEp(inb *miso.Inbound, req UnpackZipReq) (any, error) {
 	rail := inb.Rail()
 	err := UnpackZip(rail, mysql.GetMySQL(), common.GetUser(rail), req)
@@ -214,7 +214,7 @@ func GenFileTknQRCodeEp(inb *miso.Inbound) {
 
 // misoapi-http: GET /open/api/vfolder/brief/owned
 // misoapi-desc: User list virtual folder briefs
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ListVFolderBriefEp(inb *miso.Inbound) ([]VFolderBrief, error) {
 	rail := inb.Rail()
 	return ListVFolderBrief(rail, mysql.GetMySQL(), common.GetUser(rail))
@@ -222,7 +222,7 @@ func ListVFolderBriefEp(inb *miso.Inbound) ([]VFolderBrief, error) {
 
 // misoapi-http: POST /open/api/vfolder/list
 // misoapi-desc: User list virtual folders
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ListVFoldersEp(inb *miso.Inbound, req ListVFolderReq) (ListVFolderRes, error) {
 	rail := inb.Rail()
 	return ListVFolders(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -230,7 +230,7 @@ func ListVFoldersEp(inb *miso.Inbound, req ListVFolderReq) (ListVFolderRes, erro
 
 // misoapi-http: POST /open/api/vfolder/create
 // misoapi-desc: User create virtual folder
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func CreateVFolderEp(inb *miso.Inbound, req CreateVFolderReq) (string, error) {
 	rail := inb.Rail()
 	return CreateVFolder(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -238,7 +238,7 @@ func CreateVFolderEp(inb *miso.Inbound, req CreateVFolderReq) (string, error) {
 
 // misoapi-http: POST /open/api/vfolder/file/add
 // misoapi-desc: User add file to virtual folder
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func VFolderAddFileEp(inb *miso.Inbound, req AddFileToVfolderReq) (any, error) {
 	rail := inb.Rail()
 	return nil, AddFileToVFolder(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -246,7 +246,7 @@ func VFolderAddFileEp(inb *miso.Inbound, req AddFileToVfolderReq) (any, error) {
 
 // misoapi-http: POST /open/api/vfolder/file/remove
 // misoapi-desc: User remove file from virtual folder
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func VFolderRemoveFileEp(inb *miso.Inbound, req RemoveFileFromVfolderReq) (any, error) {
 	rail := inb.Rail()
 	return nil, RemoveFileFromVFolder(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -254,7 +254,7 @@ func VFolderRemoveFileEp(inb *miso.Inbound, req RemoveFileFromVfolderReq) (any, 
 
 // misoapi-http: POST /open/api/vfolder/share
 // misoapi-desc: Share access to virtual folder
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ShareVFolderEp(inb *miso.Inbound, req ShareVfolderReq) (any, error) {
 	rail := inb.Rail()
 	sharedTo, e := vault.FindUser(rail, vault.FindUserReq{Username: &req.Username})
@@ -267,7 +267,7 @@ func ShareVFolderEp(inb *miso.Inbound, req ShareVfolderReq) (any, error) {
 
 // misoapi-http: POST /open/api/vfolder/access/remove
 // misoapi-desc: Remove granted access to virtual folder
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func RemoveVFolderAccessEp(inb *miso.Inbound, req RemoveGrantedFolderAccessReq) (any, error) {
 	rail := inb.Rail()
 	return nil, RemoveVFolderAccess(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -275,7 +275,7 @@ func RemoveVFolderAccessEp(inb *miso.Inbound, req RemoveGrantedFolderAccessReq) 
 
 // misoapi-http: POST /open/api/vfolder/granted/list
 // misoapi-desc: List granted access to virtual folder
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ListVFolderAccessEp(inb *miso.Inbound, req ListGrantedFolderAccessReq) (ListGrantedFolderAccessRes, error) {
 	rail := inb.Rail()
 	return ListGrantedFolderAccess(rail, mysql.GetMySQL(), req, common.GetUser(rail))
@@ -283,7 +283,7 @@ func ListVFolderAccessEp(inb *miso.Inbound, req ListGrantedFolderAccessReq) (Lis
 
 // misoapi-http: POST /open/api/vfolder/remove
 // misoapi-desc: Remove virtual folder
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func RemoveVFolderEp(inb *miso.Inbound, req RemoveVFolderReq) (any, error) {
 	rail := inb.Rail()
 	return nil, RemoveVFolder(rail, mysql.GetMySQL(), common.GetUser(rail), req)
@@ -291,7 +291,7 @@ func RemoveVFolderEp(inb *miso.Inbound, req RemoveVFolderReq) (any, error) {
 
 // misoapi-http: GET /open/api/gallery/brief/owned
 // misoapi-desc: List owned gallery brief info
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ListGalleryBriefsEp(inb *miso.Inbound) ([]VGalleryBrief, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -300,7 +300,7 @@ func ListGalleryBriefsEp(inb *miso.Inbound) ([]VGalleryBrief, error) {
 
 // misoapi-http: POST /open/api/gallery/new
 // misoapi-desc: Create new gallery
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func CreateGalleryEp(inb *miso.Inbound, cmd CreateGalleryCmd) (*Gallery, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -309,7 +309,7 @@ func CreateGalleryEp(inb *miso.Inbound, cmd CreateGalleryCmd) (*Gallery, error) 
 
 // misoapi-http: POST /open/api/gallery/update
 // misoapi-desc: Update gallery
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func UpdateGalleryEp(inb *miso.Inbound, cmd UpdateGalleryCmd) (any, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -319,7 +319,7 @@ func UpdateGalleryEp(inb *miso.Inbound, cmd UpdateGalleryCmd) (any, error) {
 
 // misoapi-http: POST /open/api/gallery/delete
 // misoapi-desc: Delete gallery
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func DeleteGalleryEp(inb *miso.Inbound, cmd DeleteGalleryCmd) (any, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -329,7 +329,7 @@ func DeleteGalleryEp(inb *miso.Inbound, cmd DeleteGalleryCmd) (any, error) {
 
 // misoapi-http: POST /open/api/gallery/list
 // misoapi-desc: List galleries
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ListGalleriesEp(inb *miso.Inbound, cmd ListGalleriesCmd) (miso.PageRes[VGallery], error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -338,7 +338,7 @@ func ListGalleriesEp(inb *miso.Inbound, cmd ListGalleriesCmd) (miso.PageRes[VGal
 
 // misoapi-http: POST /open/api/gallery/access/grant
 // misoapi-desc: Grant access to the galleries
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func GranteGalleryAccessEp(inb *miso.Inbound, cmd PermitGalleryAccessCmd) (any, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -348,7 +348,7 @@ func GranteGalleryAccessEp(inb *miso.Inbound, cmd PermitGalleryAccessCmd) (any, 
 
 // misoapi-http: POST /open/api/gallery/access/remove
 // misoapi-desc: Remove access to the galleries
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func RemoveGalleryAccessEp(inb *miso.Inbound, cmd RemoveGalleryAccessCmd) (any, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -358,7 +358,7 @@ func RemoveGalleryAccessEp(inb *miso.Inbound, cmd RemoveGalleryAccessCmd) (any, 
 
 // misoapi-http: POST /open/api/gallery/access/list
 // misoapi-desc: List granted access to the galleries
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ListGalleryAccessEp(inb *miso.Inbound, cmd ListGrantedGalleryAccessCmd) (miso.PageRes[ListedGalleryAccessRes], error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -367,7 +367,7 @@ func ListGalleryAccessEp(inb *miso.Inbound, cmd ListGrantedGalleryAccessCmd) (mi
 
 // misoapi-http: POST /open/api/gallery/images
 // misoapi-desc: List images of gallery
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ListGalleryImagesEp(inb *miso.Inbound, cmd ListGalleryImagesCmd) (*ListGalleryImagesResp, error) {
 	rail := inb.Rail()
 	return ListGalleryImages(rail, mysql.GetMySQL(), cmd, common.GetUser(rail))
@@ -375,7 +375,7 @@ func ListGalleryImagesEp(inb *miso.Inbound, cmd ListGalleryImagesCmd) (*ListGall
 
 // misoapi-http: POST /open/api/gallery/image/transfer
 // misoapi-desc: Host selected images on gallery
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func TransferGalleryImageEp(inb *miso.Inbound, cmd TransferGalleryImageReq) (any, error) {
 	rail := inb.Rail()
 	user := common.GetUser(rail)
@@ -384,7 +384,7 @@ func TransferGalleryImageEp(inb *miso.Inbound, cmd TransferGalleryImageReq) (any
 
 // misoapi-http: POST /open/api/versioned-file/list
 // misoapi-desc: List versioned files
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ApiListVersionedFile(inb *miso.Inbound, req ApiListVerFileReq) (miso.PageRes[ApiListVerFileRes], error) {
 	return ListVerFile(inb.Rail(), mysql.GetMySQL(), req, common.GetUser(inb.Rail()))
 }
@@ -404,7 +404,7 @@ type ApiListVerFileHistoryRes struct {
 
 // misoapi-http: POST /open/api/versioned-file/history
 // misoapi-desc: List versioned file history
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ApiListVersionedFileHistory(inb *miso.Inbound, req ApiListVerFileHistoryReq) (miso.PageRes[ApiListVerFileHistoryRes], error) {
 	return ListVerFileHistory(inb.Rail(), mysql.GetMySQL(), req, common.GetUser(inb.Rail()))
 }
@@ -419,28 +419,28 @@ type ApiQryVerFileAccuSizeRes struct {
 
 // misoapi-http: POST /open/api/versioned-file/accumulated-size
 // misoapi-desc: Query versioned file log accumulated size
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ApiQryVersionedFileAccuSize(inb *miso.Inbound, req ApiQryVerFileAccuSizeReq) (ApiQryVerFileAccuSizeRes, error) {
 	return CalcVerFileAccuSize(inb.Rail(), mysql.GetMySQL(), req, common.GetUser(inb.Rail()))
 }
 
 // misoapi-http: POST /open/api/versioned-file/create
 // misoapi-desc: Create versioned file
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ApiCreateVersionedFile(inb *miso.Inbound, req ApiCreateVerFileReq) (ApiCreateVerFileRes, error) {
 	return CreateVerFile(inb.Rail(), mysql.GetMySQL(), req, common.GetUser(inb.Rail()))
 }
 
 // misoapi-http: POST /open/api/versioned-file/update
 // misoapi-desc: Update versioned file
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ApiUpdateVersionedFile(inb *miso.Inbound, req ApiUpdateVerFileReq) (any, error) {
 	return nil, UpdateVerFile(inb.Rail(), mysql.GetMySQL(), req, common.GetUser(inb.Rail()))
 }
 
 // misoapi-http: POST /open/api/versioned-file/delete
 // misoapi-desc: Delete versioned file
-// misoapi-resource: manage-files
+// misoapi-resource: ref(ManageFilesResource)
 func ApiDelVersionedFile(inb *miso.Inbound, req ApiDelVerFileReq) (any, error) {
 	return nil, DelVerFile(inb.Rail(), mysql.GetMySQL(), req, common.GetUser(inb.Rail()))
 }
