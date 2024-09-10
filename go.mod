@@ -9,7 +9,7 @@ require (
 )
 
 require (
-	github.com/curtisnewbie/event-pump v0.0.11-beta.1
+	github.com/curtisnewbie/event-pump v0.0.11-beta.2
 	github.com/curtisnewbie/mini-fstore v0.1.18
 	github.com/curtisnewbie/miso v0.1.7-beta.1
 	github.com/curtisnewbie/user-vault v0.0.23
