@@ -113,7 +113,7 @@
     ```
 
 - POST /open/api/file/move-to-dir
-  - Description: User move files into directory
+  - Description: User move file into directory
   - Bound to Resource: `"manage-files"`
   - JSON Request:
     - "uuid": (string) 
@@ -158,6 +158,70 @@
 
     let req: MoveIntoDirReq | null = null;
     this.http.post<any>(`/vfm/open/api/file/move-to-dir`, req)
+      .subscribe({
+        next: (resp) => {
+          if (resp.error) {
+            this.snackBar.open(resp.msg, "ok", { duration: 6000 })
+            return;
+          }
+        },
+        error: (err) => {
+          console.log(err)
+          this.snackBar.open("Request failed, unknown error", "ok", { duration: 3000 })
+        }
+      });
+    ```
+
+- POST /open/api/file/batch-move-to-dir
+  - Description: User move files into directory
+  - Bound to Resource: `"manage-files"`
+  - JSON Request:
+    - "instructions": ([]vfm.MoveIntoDirReq) 
+      - "uuid": (string) 
+      - "parentFileUuid": (string) 
+  - JSON Response:
+    - "errorCode": (string) error code
+    - "msg": (string) message
+    - "error": (bool) whether the request was successful
+  - cURL:
+    ```sh
+    curl -X POST 'http://localhost:8086/open/api/file/batch-move-to-dir' \
+      -H 'Content-Type: application/json' \
+      -d '{"instructions":{"parentFileUuid":"","uuid":""}}'
+    ```
+
+  - JSON Request Object In TypeScript:
+    ```ts
+    export interface BatchMoveIntoDirReq {
+      instructions?: MoveIntoDirReq[]
+    }
+    export interface MoveIntoDirReq {
+      uuid?: string
+      parentFileUuid?: string
+    }
+    ```
+
+  - JSON Response Object In TypeScript:
+    ```ts
+    export interface Resp {
+      errorCode?: string             // error code
+      msg?: string                   // message
+      error?: boolean                // whether the request was successful
+    }
+    ```
+
+  - Angular HttpClient Demo:
+    ```ts
+    import { MatSnackBar } from "@angular/material/snack-bar";
+    import { HttpClient } from "@angular/common/http";
+
+    constructor(
+      private snackBar: MatSnackBar,
+      private http: HttpClient
+    ) {}
+
+    let req: BatchMoveIntoDirReq | null = null;
+    this.http.post<any>(`/vfm/open/api/file/batch-move-to-dir`, req)
       .subscribe({
         next: (resp) => {
           if (resp.error) {
