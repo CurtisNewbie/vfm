@@ -26,14 +26,15 @@ const (
 )
 
 var (
+	// FileLDeletedPipeline            = rabbit.NewEventPipeline[ep.StreamEvent](FileLDeletedEventBus)
+	// ThumbnailUpdatedPipeline        = rabbit.NewEventPipeline[ep.StreamEvent](ThumbnailUpdatedEventBus)
+	// FileSavedPipeline               = rabbit.NewEventPipeline[ep.StreamEvent](FileSavedEventBus)
+
 	UnzipResultNotifyPipeline       = rabbit.NewEventPipeline[fstore.UnzipFileReplyEvent](UnzipResultNotifyEventBus)
 	GenVideoThumbnailNotifyPipeline = rabbit.NewEventPipeline[fstore.GenVideoThumbnailReplyEvent](GenVideoThumbnailNotifyEventBus)
 	CompressImgNotifyPipeline       = rabbit.NewEventPipeline[fstore.ImageCompressReplyEvent](CompressImgNotifyEventBus)
 	AddFileToVFolderPipeline        = rabbit.NewEventPipeline[AddFileToVfolderEvent](AddFileToVFolderEventBus)
 	CalcDirSizePipeline             = rabbit.NewEventPipeline[CalcDirSizeEvt](CalcDirSizeEventBus)
-	FileLDeletedPipeline            = rabbit.NewEventPipeline[ep.StreamEvent](FileLDeletedEventBus)
-	ThumbnailUpdatedPipeline        = rabbit.NewEventPipeline[ep.StreamEvent](ThumbnailUpdatedEventBus)
-	FileSavedPipeline               = rabbit.NewEventPipeline[ep.StreamEvent](FileSavedEventBus)
 	AddDirGalleryImgPipeline        = rabbit.NewEventPipeline[CreateGalleryImgEvent](AddDirGalleryImgEventBus)
 	SyncGalleryFileDeletedPipeline  = rabbit.NewEventPipeline[NotifyFileDeletedEvent](SyncGalleryFileDeletedEventBus)
 )
@@ -44,11 +45,12 @@ func PrepareEventBus(rail miso.Rail) error {
 	CompressImgNotifyPipeline.Listen(2, OnImageCompressed)
 	AddFileToVFolderPipeline.Listen(2, OnAddFileToVfolderEvent)
 	CalcDirSizePipeline.Listen(1, OnCalcDirSizeEvt)
-	FileLDeletedPipeline.Listen(2, OnFileDeleted)
-	ThumbnailUpdatedPipeline.Listen(2, OnThumbnailUpdated)
-	FileSavedPipeline.Listen(2, OnFileSaved)
 	AddDirGalleryImgPipeline.Listen(2, OnCreateGalleryImgEvent)
 	SyncGalleryFileDeletedPipeline.Listen(2, OnNotifyFileDeletedEvent)
+
+	// FileLDeletedPipeline.Listen(2, OnFileDeleted)
+	// ThumbnailUpdatedPipeline.Listen(2, OnThumbnailUpdated)
+	// FileSavedPipeline.Listen(2, OnFileSaved)
 	return nil
 }
 
