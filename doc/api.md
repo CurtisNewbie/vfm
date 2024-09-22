@@ -79,6 +79,7 @@
       error?: boolean                // whether the request was successful
       data?: ParentFileInfo
     }
+
     export interface ParentFileInfo {
       fileKey?: string
       fileName?: string
@@ -195,6 +196,7 @@
     export interface BatchMoveIntoDirReq {
       instructions?: MoveIntoDirReq[]
     }
+
     export interface MoveIntoDirReq {
       uuid?: string
       parentFileUuid?: string
@@ -323,6 +325,7 @@
       error?: boolean                // whether the request was successful
       data?: ListedDir[]
     }
+
     export interface ListedDir {
       id?: number
       uuid?: string
@@ -407,6 +410,7 @@
       parentFile?: string
       sensitive?: boolean
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
@@ -422,15 +426,18 @@
       error?: boolean                // whether the request was successful
       data?: PageRes
     }
+
     export interface PageRes {
       paging?: Paging
       payload?: ListedFile[]
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
       total?: number                 // total count
     }
+
     export interface ListedFile {
       id?: number
       uuid?: string
@@ -947,6 +954,7 @@
       error?: boolean                // whether the request was successful
       data?: VFolderBrief[]
     }
+
     export interface VFolderBrief {
       folderNo?: string
       name?: string
@@ -1019,6 +1027,7 @@
       paging?: Paging
       name?: string
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
@@ -1034,15 +1043,18 @@
       error?: boolean                // whether the request was successful
       data?: ListVFolderRes
     }
+
     export interface ListVFolderRes {
       paging?: Paging
       payload?: ListedVFolder[]
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
       total?: number                 // total count
     }
+
     export interface ListedVFolder {
       id?: number
       folderNo?: string
@@ -1418,6 +1430,7 @@
       paging?: Paging
       folderNo?: string
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
@@ -1433,15 +1446,18 @@
       error?: boolean                // whether the request was successful
       data?: ListGrantedFolderAccessRes
     }
+
     export interface ListGrantedFolderAccessRes {
       paging?: Paging
       payload?: ListedFolderAccess[]
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
       total?: number                 // total count
     }
+
     export interface ListedFolderAccess {
       userNo?: string
       username?: string
@@ -1557,6 +1573,7 @@
       error?: boolean                // whether the request was successful
       data?: VGalleryBrief[]
     }
+
     export interface VGalleryBrief {
       galleryNo?: string
       name?: string
@@ -1631,6 +1648,7 @@
       error?: boolean                // whether the request was successful
       data?: Gallery
     }
+
     export interface Gallery {
       id?: number
       galleryNo?: string
@@ -1829,6 +1847,7 @@
     export interface ListGalleriesCmd {
       paging?: Paging
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
@@ -1844,15 +1863,18 @@
       error?: boolean                // whether the request was successful
       data?: PageRes
     }
+
     export interface PageRes {
       paging?: Paging
       payload?: VGallery[]
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
       total?: number                 // total count
     }
+
     export interface VGallery {
       id?: number
       galleryNo?: string
@@ -2050,6 +2072,7 @@
       galleryNo?: string
       paging?: Paging
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
@@ -2065,15 +2088,18 @@
       error?: boolean                // whether the request was successful
       data?: PageRes
     }
+
     export interface PageRes {
       paging?: Paging
       payload?: ListedGalleryAccessRes[]
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
       total?: number                 // total count
     }
+
     export interface ListedGalleryAccessRes {
       id?: number
       galleryNo?: string
@@ -2144,6 +2170,7 @@
       galleryNo?: string
       paging?: Paging
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
@@ -2159,14 +2186,17 @@
       error?: boolean                // whether the request was successful
       data?: ListGalleryImagesResp
     }
+
     export interface ListGalleryImagesResp {
       images?: ImageInfo[]
       paging?: Paging
     }
+
     export interface ImageInfo {
       thumbnailToken?: string
       fileTempToken?: string
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
@@ -2225,6 +2255,7 @@
     export interface TransferGalleryImageReq {
       images?: CreateGalleryImageCmd[]
     }
+
     export interface CreateGalleryImageCmd {
       galleryNo?: string
       name?: string
@@ -2307,6 +2338,7 @@
       paging?: Paging
       name?: string                  // file name
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
@@ -2322,15 +2354,18 @@
       error?: boolean                // whether the request was successful
       data?: PageRes
     }
+
     export interface PageRes {
       paging?: Paging
       payload?: ApiListVerFileRes[]
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
       total?: number                 // total count
     }
+
     export interface ApiListVerFileRes {
       verFileId?: string             // versioned file id
       name?: string                  // file name
@@ -2407,6 +2442,7 @@
       paging?: Paging
       verFileId?: string             // versioned file id
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
@@ -2422,15 +2458,18 @@
       error?: boolean                // whether the request was successful
       data?: PageRes
     }
+
     export interface PageRes {
       paging?: Paging
       payload?: ApiListVerFileHistoryRes[]
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
       total?: number                 // total count
     }
+
     export interface ApiListVerFileHistoryRes {
       name?: string                  // file name
       fileKey?: string               // file key
@@ -2500,6 +2539,7 @@
       error?: boolean                // whether the request was successful
       data?: ApiQryVerFileAccuSizeRes
     }
+
     export interface ApiQryVerFileAccuSizeRes {
       sizeInBytes?: number           // total size in bytes
     }
@@ -2567,6 +2607,7 @@
       error?: boolean                // whether the request was successful
       data?: ApiCreateVerFileRes
     }
+
     export interface ApiCreateVerFileRes {
       verFileId?: string             // Versioned File Id
     }
@@ -2881,6 +2922,7 @@
       name?: string
       paging?: Paging
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
@@ -3007,6 +3049,7 @@
       name?: string
       paging?: Paging
     }
+
     export interface Paging {
       limit?: number                 // page limit
       page?: number                  // page number, 1-based
@@ -3138,14 +3181,17 @@
       error?: boolean                // whether the request was successful
       data?: ResourceInfoRes
     }
+
     export interface ResourceInfoRes {
       resources?: Resource[]
       paths?: Endpoint[]
     }
+
     export interface Resource {
       name?: string                  // resource name
       code?: string                  // resource code, unique identifier
     }
+
     export interface Endpoint {
       type?: string                  // access scope type: PROTECTED/PUBLIC
       url?: string                   // endpoint url
