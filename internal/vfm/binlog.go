@@ -14,7 +14,7 @@ func SubscribeBinlogChanges() {
 			Schema:     miso.GetPropStr(mysql.PropMySQLSchema),
 			Table:      "file_info",
 			EventTypes: []client.EventType{client.EventTypeInsert},
-			Stream:     FileSavedEventBus,
+			Stream:     "event.bus.vfm.file.saved",
 		},
 		Concurrency:   2,
 		ContinueOnErr: true,
@@ -26,7 +26,7 @@ func SubscribeBinlogChanges() {
 			Schema:     miso.GetPropStr(mysql.PropMySQLSchema),
 			Table:      "file_info",
 			EventTypes: []client.EventType{client.EventTypeUpdate},
-			Stream:     ThumbnailUpdatedEventBus,
+			Stream:     "event.bus.vfm.file.thumbnail.updated",
 			Condition: client.Condition{
 				ColumnChanged: []string{"thumbnail"},
 			},
@@ -41,7 +41,7 @@ func SubscribeBinlogChanges() {
 			Schema:     miso.GetPropStr(mysql.PropMySQLSchema),
 			Table:      "file_info",
 			EventTypes: []client.EventType{client.EventTypeUpdate},
-			Stream:     FileLDeletedEventBus,
+			Stream:     "event.bus.vfm.file.logic.deleted",
 			Condition: client.Condition{
 				ColumnChanged: []string{"is_logic_deleted"},
 			},
@@ -49,5 +49,20 @@ func SubscribeBinlogChanges() {
 		Concurrency:   2,
 		ContinueOnErr: true,
 		Listener:      OnFileDeleted,
+	})
+
+	binlog.SubscribeBinlogEventsOnBootstrapV2(binlog.SubscribeBinlogOption{
+		Pipeline: client.Pipeline{
+			Schema:     miso.GetPropStr(mysql.PropMySQLSchema),
+			Table:      "file_info",
+			EventTypes: []client.EventType{client.EventTypeUpdate},
+			Stream:     "event.bus.vfm.file.moved",
+			Condition: client.Condition{
+				ColumnChanged: []string{"parent_file"},
+			},
+		},
+		Concurrency:   2,
+		ContinueOnErr: true,
+		Listener:      OnFileMoved,
 	})
 }

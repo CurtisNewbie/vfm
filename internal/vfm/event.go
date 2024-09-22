@@ -13,9 +13,6 @@ import (
 )
 
 const (
-	FileSavedEventBus               = "event.bus.vfm.file.saved"
-	ThumbnailUpdatedEventBus        = "event.bus.vfm.file.thumbnail.updated"
-	FileLDeletedEventBus            = "event.bus.vfm.file.logic.deleted"
 	CalcDirSizeEventBus             = "event.bus.vfm.dir.size.calc"
 	AddFileToVFolderEventBus        = "event.bus.vfm.file.vfolder.add"
 	CompressImgNotifyEventBus       = "vfm.image.compressed.event"
@@ -26,10 +23,6 @@ const (
 )
 
 var (
-	// FileLDeletedPipeline            = rabbit.NewEventPipeline[ep.StreamEvent](FileLDeletedEventBus)
-	// ThumbnailUpdatedPipeline        = rabbit.NewEventPipeline[ep.StreamEvent](ThumbnailUpdatedEventBus)
-	// FileSavedPipeline               = rabbit.NewEventPipeline[ep.StreamEvent](FileSavedEventBus)
-
 	UnzipResultNotifyPipeline       = rabbit.NewEventPipeline[fstore.UnzipFileReplyEvent](UnzipResultNotifyEventBus)
 	GenVideoThumbnailNotifyPipeline = rabbit.NewEventPipeline[fstore.GenVideoThumbnailReplyEvent](GenVideoThumbnailNotifyEventBus)
 	CompressImgNotifyPipeline       = rabbit.NewEventPipeline[fstore.ImageCompressReplyEvent](CompressImgNotifyEventBus)
@@ -277,4 +270,67 @@ func OnCalcDirSizeEvt(rail miso.Rail, evt CalcDirSizeEvt) error {
 func OnUnzipFileReplyEvent(rail miso.Rail, evt fstore.UnzipFileReplyEvent) error {
 	rail.Infof("received UnzipFileReplyEvent: %+v", evt)
 	return HandleZipUnpackResult(rail, mysql.GetMySQL(), evt)
+}
+
+// file is moved to another directory.
+func OnFileMoved(rail miso.Rail, evt ep.StreamEvent) error {
+	fileKey, ok := evt.ColumnAfter("uuid")
+	if !ok {
+		rail.Errorf("Event doesn't contain uuid column, %+v", evt)
+		return nil
+	}
+
+	v, ok := evt.Columns["parent_file"]
+	if !ok {
+		rail.Errorf("Event doesn't contain parent_file column, %+v", evt)
+		return nil
+	}
+	rail.Infof("Filed %v is moved from %v to %v", fileKey, v.Before, v.After)
+
+	db := mysql.GetMySQL()
+	if v.Before != "" {
+		// TODO: remove from gallery
+	}
+	if v.After != "" {
+		// lock before we do anything about it
+		lock := fileLock(rail, fileKey)
+		if err := lock.Lock(); err != nil {
+			return err
+		}
+		defer lock.Unlock()
+
+		f, err := findFile(rail, db, fileKey)
+		if err != nil {
+			return err
+		}
+		if f == nil || f.FileType != FileTypeFile ||
+			f.Thumbnail == "" || !isImage(f.Name) {
+			return nil
+		}
+
+		pf, err := findFile(rail, db, v.After)
+		if err != nil {
+			return err
+		}
+		if pf == nil {
+			rail.Infof("parent file not found, %v", f.ParentFile)
+			return nil
+		}
+
+		user, err := CachedFindUser(rail, f.UploaderNo)
+		if err != nil {
+			return err
+		}
+
+		cfi := CreateGalleryImgEvent{
+			Username:     user.Username,
+			UserNo:       user.UserNo,
+			DirFileKey:   pf.Uuid,
+			DirName:      pf.Name,
+			ImageName:    f.Name,
+			ImageFileKey: f.Uuid,
+		}
+		return AddDirGalleryImgPipeline.Send(rail, cfi)
+	}
+	return nil
 }
