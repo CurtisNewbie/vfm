@@ -26,10 +26,11 @@ var (
 	UnzipResultNotifyPipeline       = rabbit.NewEventPipeline[fstore.UnzipFileReplyEvent](UnzipResultNotifyEventBus)
 	GenVideoThumbnailNotifyPipeline = rabbit.NewEventPipeline[fstore.GenVideoThumbnailReplyEvent](GenVideoThumbnailNotifyEventBus)
 	CompressImgNotifyPipeline       = rabbit.NewEventPipeline[fstore.ImageCompressReplyEvent](CompressImgNotifyEventBus)
-	AddFileToVFolderPipeline        = rabbit.NewEventPipeline[AddFileToVfolderEvent](AddFileToVFolderEventBus)
-	CalcDirSizePipeline             = rabbit.NewEventPipeline[CalcDirSizeEvt](CalcDirSizeEventBus)
-	AddDirGalleryImgPipeline        = rabbit.NewEventPipeline[CreateGalleryImgEvent](AddDirGalleryImgEventBus)
-	SyncGalleryFileDeletedPipeline  = rabbit.NewEventPipeline[NotifyFileDeletedEvent](SyncGalleryFileDeletedEventBus)
+
+	AddFileToVFolderPipeline       = rabbit.NewEventPipeline[AddFileToVfolderEvent](AddFileToVFolderEventBus)
+	CalcDirSizePipeline            = rabbit.NewEventPipeline[CalcDirSizeEvt](CalcDirSizeEventBus)
+	AddDirGalleryImgPipeline       = rabbit.NewEventPipeline[CreateGalleryImgEvent](AddDirGalleryImgEventBus)        // deprecated
+	SyncGalleryFileDeletedPipeline = rabbit.NewEventPipeline[NotifyFileDeletedEvent](SyncGalleryFileDeletedEventBus) // deprecated
 )
 
 func PrepareEventBus(rail miso.Rail) error {
@@ -38,8 +39,9 @@ func PrepareEventBus(rail miso.Rail) error {
 	CompressImgNotifyPipeline.Listen(2, OnImageCompressed)
 	AddFileToVFolderPipeline.Listen(2, OnAddFileToVfolderEvent)
 	CalcDirSizePipeline.Listen(1, OnCalcDirSizeEvt)
-	AddDirGalleryImgPipeline.Listen(2, OnCreateGalleryImgEvent)
-	SyncGalleryFileDeletedPipeline.Listen(2, OnNotifyFileDeletedEvent)
+
+	AddDirGalleryImgPipeline.Listen(2, OnCreateGalleryImgEvent)        // deprecated
+	SyncGalleryFileDeletedPipeline.Listen(2, OnNotifyFileDeletedEvent) // deprecated
 
 	// FileLDeletedPipeline.Listen(2, OnFileDeleted)
 	// ThumbnailUpdatedPipeline.Listen(2, OnThumbnailUpdated)
@@ -213,7 +215,7 @@ func OnThumbnailUpdated(rail miso.Rail, evt ep.StreamEvent) error {
 		ImageName:    f.Name,
 		ImageFileKey: f.Uuid,
 	}
-	return AddDirGalleryImgPipeline.Send(rail, cfi)
+	return OnCreateGalleryImgEvent(rail, cfi)
 }
 
 // event-pump send binlog event when a file_info is deleted (is_logic_deleted changed)
@@ -241,7 +243,7 @@ func OnFileDeleted(rail miso.Rail, evt ep.StreamEvent) error {
 
 	rail.Infof("File logically deleted, %v", uuid)
 
-	if e := SyncGalleryFileDeletedPipeline.Send(rail, NotifyFileDeletedEvent{FileKey: uuid}); e != nil {
+	if e := OnNotifyFileDeletedEvent(rail, NotifyFileDeletedEvent{FileKey: uuid}); e != nil {
 		return fmt.Errorf("failed to send NotifyFileDeletedEvent, uuid: %v, %v", uuid, e)
 	}
 	return nil
@@ -330,7 +332,7 @@ func OnFileMoved(rail miso.Rail, evt ep.StreamEvent) error {
 			ImageName:    f.Name,
 			ImageFileKey: f.Uuid,
 		}
-		return AddDirGalleryImgPipeline.Send(rail, cfi)
+		return OnCreateGalleryImgEvent(rail, cfi)
 	}
 	return nil
 }
