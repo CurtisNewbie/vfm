@@ -18,7 +18,7 @@ func PrepareServer() {
 	common.LoadBuiltinPropagationKeys()
 	schema.EnableSchemaMigrate()
 	logbot.EnableLogbotErrLogReport()
-	SubscribeBinlogChanges()
+	miso.PreServerBootstrap(SubscribeBinlogChanges)
 	miso.PreServerBootstrap(PrintVersion)
 	miso.PreServerBootstrap(PrepareEventBus)
 	miso.PreServerBootstrap(RegisterHttpRoutes)

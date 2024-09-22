@@ -7,7 +7,7 @@ import (
 	"github.com/curtisnewbie/miso/miso"
 )
 
-func SubscribeBinlogChanges() {
+func SubscribeBinlogChanges(rail miso.Rail) error {
 
 	binlog.SubscribeBinlogEventsOnBootstrapV2(binlog.SubscribeBinlogOption{
 		Pipeline: client.Pipeline{
@@ -65,4 +65,6 @@ func SubscribeBinlogChanges() {
 		ContinueOnErr: true,
 		Listener:      OnFileMoved,
 	})
+
+	return nil
 }
