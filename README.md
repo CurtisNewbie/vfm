@@ -1,8 +1,6 @@
 # vfm
 
-> **_main branch is unstable, see tagged versions in releases_**
-
-> **_This project is part of a monorepo ([https://github.com/CurtisNewbie/moon-monorepo](https://github.com/CurtisNewbie/moon-monorepo))._**
+> **_This project is part of the monorepo ([https://github.com/CurtisNewbie/moon-monorepo](https://github.com/CurtisNewbie/moon-monorepo)). This repo is nolonger maintained, latest changes are commited to the monorepo instead._**
 
 vfm stands for virtual file manager. vfm doesn't manage the actual file storage, the actual files are stored by [mini-fstore](https://github.com/CurtisNewbie/mini-fstore).
 
